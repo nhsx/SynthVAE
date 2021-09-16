@@ -1,8 +1,6 @@
 # Synthetic Data Exploration: Variational Autoencoders
 
-This repository holds code for the PhD internship project contextualising and
-investigating the potential use of VAEs for synthetic health data
-generation.
+This repository holds code for the PhD internship project (previously known as Synthetic Data Generation - VAE) contextualising and investigating the potential use of VAEs for synthetic health data generation.
 
 To create a suitable environment:
 - `python -m venv synth_env`
