@@ -1,0 +1,6 @@
+synth_env
+__pycache__
+*.png
+*.pt
+*.pkl
+.DS_Store
