@@ -1,3 +1,5 @@
+import warnings
+
 # Standard imports
 import numpy as np
 import pandas as pd
@@ -23,14 +25,15 @@ from torch.utils.data import TensorDataset
 from VAE import Decoder, Encoder, VAE
 
 # SDV aspects
-# from sdgym.synthesizers import Independent
 from sdv.evaluation import evaluate
-from sdv.tabular import TVAE, GaussianCopula, CTGAN, CopulaGAN
+
 from sdv.metrics.tabular import NumericalLR, NumericalMLP, NumericalSVR
 
 # Other
 from utils import set_seed
 
+
+warnings.filterwarnings("ignore")
 set_seed(0)
 
 n_seeds = 10
@@ -118,14 +121,16 @@ gowers = []
 target_delta = 1e-3
 target_eps = 10.0
 
-for i in range(1):
-    print(f"Train+Generate+Evaluate Run {i+1}/{n_seeds}")
+for i in range(n_seeds):
+    print(f"Train + Generate + Evaluate VAE - Run {i+1}/{n_seeds}")
     set_seed(my_seeds[i])
 
     # Create VAE
     latent_dim = 2
     encoder = Encoder(x_train.shape[1], latent_dim)
-    decoder = Decoder(latent_dim, num_continuous, num_categories=num_categories)
+    decoder = Decoder(
+        latent_dim, num_continuous, num_categories=num_categories
+    )
     vae = VAE(encoder, decoder)
 
     vae.train(data_loader, n_epochs=60)

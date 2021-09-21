@@ -1,5 +1,5 @@
 # Synthetic Data Exploration: Variational Autoencoders
-[![Python v3.8](https://img.shields.io/badge/python-3.8-blue.svg)](https://www.python.org/downloads/release/python-380/)
+[![Python v3.8](https://img.shields.io/badge/python-v3.8-blue.svg)](https://www.python.org/downloads/release/python-380/)
 
 This repository holds code for the PhD internship project (previously known as Synthetic Data Generation - VAE) contextualising and investigating the potential use of VAEs for synthetic health data generation.
 

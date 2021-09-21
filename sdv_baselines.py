@@ -1,3 +1,5 @@
+import warnings
+
 # Standard imports
 import numpy as np
 import pandas as pd
@@ -23,6 +25,8 @@ from sdv.metrics.tabular import NumericalLR, NumericalMLP, NumericalSVR
 # Other
 from utils import set_seed
 
+
+warnings.filterwarnings("ignore")
 set_seed(0)
 
 n_seeds = 10
@@ -83,12 +87,16 @@ gowers = []
 
 # Perform the train/generate/evaluate runs
 for i in range(n_seeds):
-    print(f"Train+Generate+Evaluate Run {i+1}/{n_seeds}")
     set_seed(my_seeds[i])
 
-    ########### CHANGE THE LINE BELOW TO CHANGE MODELS ###########
+    # CHANGE THE LINE BELOW TO CHANGE MODELS #####################
+    # TVAE, GaussianCopula, CTGAN, or CopulaGAN ##################
     model = GaussianCopula(field_transformers=transformer_dtypes)
     ##############################################################
+    print(
+        f"Train + Generate + Evaluate {type(model).__name__}"
+        f" - Run {i+1}/{n_seeds}"
+    )
 
     model.fit(data)
 
@@ -153,6 +161,7 @@ for i in range(n_seeds):
         sensitive_fields=["x0"],
     )
     svr_privs.append(svr_priv)
+
 bns = np.array(bns)
 lrs = np.array(lrs)
 svcs = np.array(svcs)
