@@ -19,7 +19,7 @@ from opacus.utils.uniform_sampler import UniformWithReplacementSampler
 from pycox.datasets import support
 
 # For VAE dataset formatting
-from torch.utils.data import TensorDataset
+from torch.utils.data import TensorDataset, DataLoader
 
 # VAE functions
 from VAE import Decoder, Encoder, VAE
@@ -96,10 +96,7 @@ data_loader = torch.utils.data.DataLoader(
 
 # shuffle = True
 # data_loader = DataLoader(
-#   dataset,
-#   batch_size=batch_size,
-#   pin_memory=True,
-#   shuffle=shuffle
+#     dataset, batch_size=batch_size, pin_memory=True, shuffle=shuffle
 # )
 
 # Define lists to contain the metrics achieved on the
@@ -136,12 +133,12 @@ for i in range(n_seeds):
     vae.train(data_loader, n_epochs=60)
 
     # vae.diff_priv_train(
-    #   data_loader,
-    #   n_epochs=60,
-    #   C=10,
-    #   target_eps=target_eps,
-    #   target_delta=target_delta,
-    #   sample_rate=sample_rate
+    #     data_loader,
+    #     n_epochs=60,
+    #     C=10,
+    #     target_eps=target_eps,
+    #     target_delta=target_delta,
+    #     sample_rate=sample_rate,
     # )
     # print(vae.get_privacy_spent(target_delta))
 

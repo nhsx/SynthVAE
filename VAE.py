@@ -199,10 +199,10 @@ class VAE(nn.Module):
                 # counter += 1
                 # l2_norm = 0
                 # for p in self.parameters():
-                #   if p.requires_grad:
-                #     p_norm = p.grad.detach().data.norm(2)
-                #     l2_norm += p_norm.item() ** 2
-                # l2_norm = l2_norm ** 0.5 #/ Y_subset.shape[0]
+                #     if p.requires_grad:
+                #         p_norm = p.grad.detach().data.norm(2)
+                #         l2_norm += p_norm.item() ** 2
+                # l2_norm = l2_norm ** 0.5  # / Y_subset.shape[0]
                 # mean_norm = (mean_norm * (counter - 1) + l2_norm) / counter
 
             if epoch % logging_freq == 0:
