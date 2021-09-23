@@ -10,7 +10,7 @@ We love contributions! We've compiled these docs to help you understand our cont
 
 
 ## Code of Conduct
-Please read [CODE_OF_CONDUCT.md](https://github.com/nhsx/SynthVAE/blob/main/CODE_OF_CONDUCT.md) before contributing.
+Please read [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md) before contributing.
 
 
 ## Commit hygiene
@@ -34,4 +34,4 @@ These sections follow [semantic versioning](https://semver.org/spec/v2.0.0.html)
 - `New features` corresponds to a `minor` (X.1.X) change.
 - `Fixes` corresponds to a `patch` (X.X.1) change.
 
-See the [`CHANGELOG.md`](https://github.com/nhsx/SynthVAE/blob/main/CHANGELOG.md) for an example for how this looks.
+See the [`CHANGELOG.md`](./CHANGELOG.md) for an example for how this looks.

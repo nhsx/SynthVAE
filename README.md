@@ -56,11 +56,11 @@ Contributions are what make the open source community such an amazing place to l
 4. Push to the Branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
-_See [CONTRIBUTING.md](https://github.com/nhsx/SynthVAE/blob/main/CONTRIBUTING.md) for detailed guidance._
+_See [CONTRIBUTING.md](./CONTRIBUTING.md) for detailed guidance._
 
 ## License
 
-Distributed under the MIT License. _See [LICENSE](https://github.com/nhsx/SynthVAE/blob/main/LICENSE) for more information._
+Distributed under the MIT License. _See [LICENSE](./LICENSE) for more information._
 
 ## Contact
 
