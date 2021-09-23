@@ -3,7 +3,7 @@
 
 ## About the Project
 
-This repository holds code for the PhD internship project (previously known as Synthetic Data Generation - VAE) contextualising and investigating the potential use of Variational AutoEncoders (VAEs) for synthetic health data generation undetraken by Dominic Danks.
+This repository holds code for the PhD internship project (previously known as Synthetic Data Generation - VAE) contextualising and investigating the potential use of Variational AutoEncoders (VAEs) for synthetic health data generation undertaken by Dominic Danks.
 
 [Project Description - Synthetic Data Exploration: Variational Autoencoders](https://nhsx.github.io/nhsx-internship-projects/synthetic-data-exploration-vae/)
 
@@ -13,7 +13,7 @@ _**Note:** No data, public or private are shared in this repository._
 
 - The main code is found in the root of the repository (see Usage below for more information)
 - A copy of [Opacus](https://github.com/pytorch/opacus) (v0.14.0), a library for training PyTorch models with differential privacy, is contained within the repository - some additional features were added to make this version of the library compatible with the VAE setup and may be removed in the future
-- The accompanying [report](https://github.com/nhsx/SynthVAE/blob/main/report.pdf) is also in the repository
+- The accompanying [report](https://github.com/nhsx/SynthVAE/blob/main/report.pdf) is also available in the repository
 
 ### Built With
 
