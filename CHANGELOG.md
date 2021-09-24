@@ -2,21 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
-Instructions on how to update this Changelog are available in the `Updating the Changelog` section of the [`CONTRIBUTING.md`](./CHANGELOG.md).  This project follows [semantic versioning](https://semver.org/spec/v2.0.0.html).
+Instructions on how to update this Changelog are available in the `Updating the Changelog` section of the [`CONTRIBUTING.md`](./CONTRIBUTING.md).  This project follows [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-### Added 
+### New Features 
 
 - Added project from `djdnx` working repository
 - Added missing project files
+- Added `argparse` approach to running experiments
 
 ### Fixed
 
 - Fixed black and flake8 adherence
 
-### Added
-
-- `argparse` approach to running experiments
 
 [Unreleased]: https://github.com/nhsx/SynthVAE/tree/main
