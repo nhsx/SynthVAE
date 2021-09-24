@@ -15,4 +15,8 @@ Instructions on how to update this Changelog are available in the `Updating the 
 
 - Fixed black and flake8 adherence
 
+### Added
+
+- `argparse` approach to running experiments
+
 [Unreleased]: https://github.com/nhsx/SynthVAE/tree/main
