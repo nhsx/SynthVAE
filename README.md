@@ -12,8 +12,9 @@ _**Note:** No data, public or private are shared in this repository._
 ### Project Stucture
 
 - The main code is found in the root of the repository (see Usage below for more information)
-- A copy of [Opacus](https://github.com/pytorch/opacus) (v0.14.0), a library for training PyTorch models with differential privacy, is contained within the repository - some additional features were added to make this version of the library compatible with the VAE setup and may be removed in the future
-- The accompanying [report](https://github.com/nhsx/SynthVAE/blob/main/report.pdf) is also available in the repository
+- The accompanying [report](./reports/report.pdf) is also available in the `reports` folder
+
+**N.B.** A copy of [Opacus](https://github.com/pytorch/opacus) (v0.14.0), a library for training PyTorch models with differential privacy, is contained within the repository - some additional features were added to make this version of the library compatible with the VAE setup and may be removed in the future.
 
 ### Built With
 
@@ -38,9 +39,41 @@ To create a suitable environment:
 
 ## Usage
 
-To reproduce the experiments contained in the report:
-- `python sdv_baselines.py`
-- `python scratch_vae_expts.py`
+### SDV Baselines
+
+To reproduce the experiments contained in the report involving the [SDV](https://github.com/sdv-dev/SDV) baseline models (e.g. CopulaGAN, CTGAN, GaussianCopula and TVAE), the parameters can be found using the `--help` flag:
+
+```
+python sdv_baselines.py --help
+
+usage: sdv_baselines.py [-h] [--n_runs N_RUNS] [--model_type {CopulaGAN,CTGAN,GaussianCopula,TVAE}]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --n_runs N_RUNS       set number of runs/seeds
+  --model_type {CopulaGAN,CTGAN,GaussianCopula,TVAE}
+                        set model for baseline experiment
+```
+
+### Scratch VAE + Differential Privacy
+
+To reproduce the experiments contained in the report involving the VAE with/without differential privacy, the parameters can be found using the `--help` flag:
+
+```
+python scratch_vae_expts.py --help
+
+usage: scratch_vae_expts.py [-h] [--n_runs N_RUNS] [--diff_priv DIFF_PRIV]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --n_runs N_RUNS       set number of runs/seeds
+  --diff_priv DIFF_PRIV
+                        run VAE with differential privacy
+```
+
+### Dataset
+
+Experiments are run against the [Study to Understand Prognoses Preferences Outcomes and Risks of Treatment (SUPPORT) dataset](https://biostat.app.vumc.org/wiki/Main/SupportDesc) accessed via the [pycox](https://github.com/havakv/pycox) python library.
 
 ## Roadmap
 

@@ -1,3 +1,4 @@
+import argparse
 import warnings
 
 # Standard imports
@@ -19,7 +20,7 @@ from pycox.datasets import support
 
 # from sdv.demo import load_tabular_demo
 from sdv.evaluation import evaluate
-from sdv.tabular import TVAE, GaussianCopula, CTGAN, CopulaGAN
+from sdv.tabular import CopulaGAN, CTGAN, GaussianCopula, TVAE
 from sdv.metrics.tabular import NumericalLR, NumericalMLP, NumericalSVR
 
 # Other
@@ -29,8 +30,34 @@ from utils import set_seed
 warnings.filterwarnings("ignore")
 set_seed(0)
 
-n_seeds = 10
+MODEL_CLASSES = {
+    "CopulaGAN": CopulaGAN,
+    "CTGAN": CTGAN,
+    "GaussianCopula": GaussianCopula,
+    "TVAE": TVAE,
+}
+
+parser = argparse.ArgumentParser()
+
+parser.add_argument(
+    "--n_runs",
+    default=10,
+    type=int,
+    help="set number of runs/seeds",
+)
+parser.add_argument(
+    "--model_type",
+    default="GaussianCopula",
+    choices=MODEL_CLASSES.keys(),
+    type=str,
+    help="set model for baseline experiment",
+)
+
+args = parser.parse_args()
+
+n_seeds = args.n_runs
 my_seeds = np.random.randint(1e6, size=n_seeds)
+
 
 data_supp = support.read_df()
 
@@ -85,16 +112,17 @@ mlp_privs = []
 svr_privs = []
 gowers = []
 
+
 # Perform the train/generate/evaluate runs
 for i in range(n_seeds):
     set_seed(my_seeds[i])
 
-    # CHANGE THE LINE BELOW TO CHANGE MODELS #####################
-    # TVAE, GaussianCopula, CTGAN, or CopulaGAN ##################
-    model = GaussianCopula(field_transformers=transformer_dtypes)
-    ##############################################################
+    chosen_model = MODEL_CLASSES[args.model_type]
+
+    model = chosen_model(field_transformers=transformer_dtypes)
+
     print(
-        f"Train + Generate + Evaluate {type(model).__name__}"
+        f"Train + Generate + Evaluate {args.model_type}"
         f" - Run {i+1}/{n_seeds}"
     )
 

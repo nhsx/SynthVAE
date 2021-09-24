@@ -1,3 +1,4 @@
+import argparse
 import warnings
 
 # Standard imports
@@ -36,7 +37,24 @@ from utils import set_seed
 warnings.filterwarnings("ignore")
 set_seed(0)
 
-n_seeds = 10
+parser = argparse.ArgumentParser()
+
+parser.add_argument(
+    "--n_runs",
+    default=10,
+    type=int,
+    help="set number of runs/seeds",
+)
+parser.add_argument(
+    "--diff_priv",
+    default=False,
+    type=bool,
+    help="run VAE with differential privacy",
+)
+
+args = parser.parse_args()
+
+n_seeds = args.n_runs
 my_seeds = np.random.randint(1e6, size=n_seeds)
 
 # Load in the support data
@@ -85,7 +103,7 @@ batch_size = 32
 
 generator = None
 sample_rate = batch_size / len(dataset)
-data_loader = torch.utils.data.DataLoader(
+data_loader = DataLoader(
     dataset,
     batch_sampler=UniformWithReplacementSampler(
         num_samples=len(dataset), sample_rate=sample_rate, generator=generator
@@ -119,7 +137,13 @@ target_delta = 1e-3
 target_eps = 10.0
 
 for i in range(n_seeds):
-    print(f"Train + Generate + Evaluate VAE - Run {i+1}/{n_seeds}")
+    diff_priv_in = ""
+    if args.diff_priv:
+        diff_priv_in = " with differential privacy"
+
+    print(
+        f"Train + Generate + Evaluate VAE{diff_priv_in} - Run {i+1}/{n_seeds}"
+    )
     set_seed(my_seeds[i])
 
     # Create VAE
@@ -130,17 +154,18 @@ for i in range(n_seeds):
     )
     vae = VAE(encoder, decoder)
 
-    vae.train(data_loader, n_epochs=60)
-
-    # vae.diff_priv_train(
-    #     data_loader,
-    #     n_epochs=60,
-    #     C=10,
-    #     target_eps=target_eps,
-    #     target_delta=target_delta,
-    #     sample_rate=sample_rate,
-    # )
-    # print(vae.get_privacy_spent(target_delta))
+    if args.diff_priv:
+        vae.diff_priv_train(
+            data_loader,
+            n_epochs=60,
+            C=10,
+            target_eps=target_eps,
+            target_delta=target_delta,
+            sample_rate=sample_rate,
+        )
+        print(vae.get_privacy_spent(target_delta))
+    else:
+        vae.train(data_loader, n_epochs=60)
 
     #  Collect samples and transform them out of one-hot, standardised form
     samples_ = vae.generate(data_supp.shape[0]).detach().numpy()
