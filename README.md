@@ -13,7 +13,7 @@ _**Note:** No data, public or private are shared in this repository._
 
 - The main code is found in the root of the repository (see Usage below for more information)
 - The accompanying [report](./reports/report.pdf) is also available in the `reports` folder
-- More information about the VAE with Differnetial Privacy can be found in the [model card](./model_card.md)
+- More information about the VAE with Differential Privacy can be found in the [model card](./model_card.md)
 
 **N.B.** A copy of [Opacus](https://github.com/pytorch/opacus) (v0.14.0), a library for training PyTorch models with differential privacy, is contained within the repository - some additional features were added to make this version of the library compatible with the VAE setup, and will be removed in the future.
 
