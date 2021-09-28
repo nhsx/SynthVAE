@@ -163,7 +163,7 @@ for i in range(n_seeds):
             target_delta=target_delta,
             sample_rate=sample_rate,
         )
-        print(vae.get_privacy_spent(target_delta))
+        print(f"(epsilon, delta): {vae.get_privacy_spent(target_delta)}")
     else:
         vae.train(data_loader, n_epochs=60)
 

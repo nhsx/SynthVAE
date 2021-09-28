@@ -8,7 +8,7 @@ Instructions on how to update this Changelog are available in the `Updating the 
 
 ### New Features 
 
-- Added project from `djdnx` working repository
+- Added project from Dom's [(djdnx)](https://github.com/djdnx) working repository
 - Added missing project files
 - Added `argparse` approach to running experiments
 

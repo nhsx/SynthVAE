@@ -1,9 +1,9 @@
 # Synthetic Data Exploration: Variational Autoencoders
-[![Python v3.8](https://img.shields.io/badge/python-v3.8-blue.svg)](https://www.python.org/downloads/release/python-380/)
+## NHSX Analytics Unit - PhD Internship Project
 
-## About the Project
+### About the Project
 
-This repository holds code for the PhD internship project (previously known as Synthetic Data Generation - VAE) contextualising and investigating the potential use of Variational AutoEncoders (VAEs) for synthetic health data generation undertaken by Dominic Danks.
+This repository holds code for the NHSX Analytics Unit PhD internship project (previously known as Synthetic Data Generation - VAE) contextualising and investigating the potential use of Variational AutoEncoders (VAEs) for synthetic health data generation undertaken by Dominic Danks.
 
 [Project Description - Synthetic Data Exploration: Variational Autoencoders](https://nhsx.github.io/nhsx-internship-projects/synthetic-data-exploration-vae/)
 
@@ -13,18 +13,20 @@ _**Note:** No data, public or private are shared in this repository._
 
 - The main code is found in the root of the repository (see Usage below for more information)
 - The accompanying [report](./reports/report.pdf) is also available in the `reports` folder
+- More information about the VAE with Differnetial Privacy can be found in the [model card](./model_card.md)
 
-**N.B.** A copy of [Opacus](https://github.com/pytorch/opacus) (v0.14.0), a library for training PyTorch models with differential privacy, is contained within the repository - some additional features were added to make this version of the library compatible with the VAE setup and may be removed in the future.
+**N.B.** A copy of [Opacus](https://github.com/pytorch/opacus) (v0.14.0), a library for training PyTorch models with differential privacy, is contained within the repository - some additional features were added to make this version of the library compatible with the VAE setup, and will be removed in the future.
 
 ### Built With
 
+[![Python v3.8](https://img.shields.io/badge/python-v3.8-blue.svg)](https://www.python.org/downloads/release/python-380/)
 - [PyTorch](https://github.com/pytorch)
 - [SDV](https://github.com/sdv-dev/SDV)
 - [Opacus](https://github.com/pytorch/opacus)
 
-## Getting Started
+### Getting Started
 
-### Installation
+#### Installation
 
 To get a local copy up and running follow these simple steps.
 
@@ -37,9 +39,9 @@ To create a suitable environment:
 - `source synth_env/bin/activate`
 - `pip install -r requirements.txt`
 
-## Usage
+### Usage
 
-### SDV Baselines
+#### SDV Baselines
 
 To reproduce the experiments contained in the report involving the [SDV](https://github.com/sdv-dev/SDV) baseline models (e.g. CopulaGAN, CTGAN, GaussianCopula and TVAE), the parameters can be found using the `--help` flag:
 
@@ -55,7 +57,7 @@ optional arguments:
                         set model for baseline experiment
 ```
 
-### Scratch VAE + Differential Privacy
+#### Scratch VAE + Differential Privacy
 
 To reproduce the experiments contained in the report involving the VAE with/without differential privacy, the parameters can be found using the `--help` flag:
 
@@ -71,15 +73,15 @@ optional arguments:
                         run VAE with differential privacy
 ```
 
-### Dataset
+#### Dataset
 
 Experiments are run against the [Study to Understand Prognoses Preferences Outcomes and Risks of Treatment (SUPPORT) dataset](https://biostat.app.vumc.org/wiki/Main/SupportDesc) accessed via the [pycox](https://github.com/havakv/pycox) python library.
 
-## Roadmap
+### Roadmap
 
 See the [open issues](https://github.com/nhsx/SynthVAE/issues) for a list of proposed features (and known issues).
 
-## Contributing
+### Contributing
 
 Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
 
@@ -91,14 +93,14 @@ Contributions are what make the open source community such an amazing place to l
 
 _See [CONTRIBUTING.md](./CONTRIBUTING.md) for detailed guidance._
 
-## License
+### License
 
 Distributed under the MIT License. _See [LICENSE](./LICENSE) for more information._
 
-## Contact
+### Contact
 
-To find out more about the [Analytics Unit](https://www.nhsx.nhs.uk/key-tools-and-info/nhsx-analytics-unit/) visit our [project website](https://nhsx.github.io/AnalyticsUnit/projects.html) or get in touch at [analytics-unit@nhsx.nhs.uk](mailto:analytics-unit@nhsx.nhs.uk)
+To find out more about the [Analytics Unit](https://www.nhsx.nhs.uk/key-tools-and-info/nhsx-analytics-unit/) visit our [project website](https://nhsx.github.io/AnalyticsUnit/projects.html) or get in touch at [analytics-unit@nhsx.nhs.uk](mailto:analytics-unit@nhsx.nhs.uk).
 
-## Acknowledgements
+### Acknowledgements
 
 
