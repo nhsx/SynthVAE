@@ -43,7 +43,7 @@ To create a suitable environment:
 
 #### SDV Baselines
 
-To reproduce the experiments contained in the report involving the [SDV](https://github.com/sdv-dev/SDV) baseline models (e.g. CopulaGAN, CTGAN, GaussianCopula and TVAE), the parameters can be found using the `--help` flag:
+To reproduce the experiments contained in the report involving the [SDV](https://github.com/sdv-dev/SDV) baseline models (e.g. CopulaGAN, CTGAN, GaussianCopula and TVAE), run `sdv_baselines.py`. The parameters can be found using the `--help` flag:
 
 ```
 python sdv_baselines.py --help
@@ -59,18 +59,32 @@ optional arguments:
 
 #### Scratch VAE + Differential Privacy
 
-To reproduce the experiments contained in the report involving the VAE with/without differential privacy, the parameters can be found using the `--help` flag:
+To reproduce the experiments contained in the report involving the VAE with/without differential privacy, run `scratch_vae_expts.py`. The parameters can be found using the `--help` flag:
 
 ```
 python scratch_vae_expts.py --help
 
-usage: scratch_vae_expts.py [-h] [--n_runs N_RUNS] [--diff_priv DIFF_PRIV]
+usage: scratch_vae_expts.py [-h] [--n_runs N_RUNS] [--diff_priv DIFF_PRIV] [--savefile SAVEFILE]
 
 optional arguments:
   -h, --help            show this help message and exit
   --n_runs N_RUNS       set number of runs/seeds
   --diff_priv DIFF_PRIV
                         run VAE with differential privacy
+  --savefile SAVEFILE   save trained model's state_dict to file
+```
+
+Code to load a saved model and generate correlation heatmaps is contained within `plot.py`.
+The file containing the save model's state_dict should be provided via a command line argument:
+
+```
+python plot.py --help
+
+usage: plot.py [-h] --savefile SAVEFILE
+
+optional arguments:
+  -h, --help           show this help message and exit
+  --savefile SAVEFILE  load trained model's state_dict from file
 ```
 
 #### Dataset

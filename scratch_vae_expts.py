@@ -51,6 +51,12 @@ parser.add_argument(
     type=bool,
     help="run VAE with differential privacy",
 )
+parser.add_argument(
+    "--savefile",
+    default=None,
+    type=str,
+    help="save trained model's state_dict to file",
+)
 
 args = parser.parse_args()
 
@@ -238,6 +244,9 @@ for i in range(n_seeds):
         sensitive_fields=["x14"],
     )
     svr_privs.append(svr_priv)
+
+if args.savefile is not None:
+    vae.save(args.savefile)
 
 bns = np.array(bns)
 lrs = np.array(lrs)
