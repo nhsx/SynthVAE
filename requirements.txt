@@ -32,7 +32,7 @@ numpy==1.21.1
 packaging==21.0
 pandas==1.1.4
 patsy==0.5.1
-Pillow==8.3.2
+Pillow==9.0.0
 pomegranate==0.14.1
 psutil==5.8.0
 py7zr==0.16.1
