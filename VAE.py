@@ -180,7 +180,7 @@ class VAE(nn.Module):
 
         reconstruct_loss = -(categoric_loglik + gauss_loglik)
 
-        return encoder_loss + reconstruct_loss
+        return ((encoder_loss + reconstruct_loss), reconstruct_loss, encoder_loss)
 
     def train(self, x_dataloader, n_epochs, logging_freq=1):
         # mean_norm = 0
@@ -190,11 +190,11 @@ class VAE(nn.Module):
 
             for batch_idx, (Y_subset,) in enumerate(tqdm(x_dataloader)):
                 self.optimizer.zero_grad()
-                loss = self.loss(Y_subset.to(self.encoder.device))
-                loss.backward()
+                elbo, reconstruct_loss, divergence_loss = self.loss(Y_subset.to(self.encoder.device))
+                elbo.backward()
                 self.optimizer.step()
 
-                train_loss += loss.item()
+                train_loss += elbo.item()
 
                 # counter += 1
                 # l2_norm = 0
@@ -206,7 +206,7 @@ class VAE(nn.Module):
                 # mean_norm = (mean_norm * (counter - 1) + l2_norm) / counter
 
             if epoch % logging_freq == 0:
-                print(f"\tEpoch: {epoch:2}. Total loss: {train_loss:11.2f}")
+                print(f"\tEpoch: {epoch:2}. Elbo: {train_loss:11.2f}. Reconstruction Loss: {reconstruct_loss:11.2f}. KL Divergence: {divergence_loss:11.2f}")
                 # print(f"\tMean norm: {mean_norm}")
         # self.mean_norm = mean_norm
 
