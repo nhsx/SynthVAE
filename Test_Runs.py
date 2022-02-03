@@ -30,6 +30,10 @@ from sdv.evaluation import evaluate
 
 from sdv.metrics.tabular import NumericalLR, NumericalMLP, NumericalSVR
 
+#torch.cuda.is_available()
+#torch.cuda.current_device()
+#torch.cuda.get_device_name(0)
+
 # Load in the support data
 data_supp = support.read_df()
 
@@ -85,30 +89,6 @@ data_loader = DataLoader(
     generator=generator,
 )
 
-# shuffle = True
-# data_loader = DataLoader(
-#     dataset, batch_size=batch_size, pin_memory=True, shuffle=shuffle
-# )
-
-# Define lists to contain the metrics achieved on the
-# train/generate/evaluate runs
-bns = []
-lrs = []
-svcs = []
-gmlls = []
-cs = []
-ks = []
-kses = []
-contkls = []
-disckls = []
-lr_privs = []
-mlp_privs = []
-svr_privs = []
-gowers = []
-
-target_delta = 1e-3
-target_eps = 10.0
-
 # Create VAE
 latent_dim = 2
 encoder = Encoder(x_train.shape[1], latent_dim)
@@ -117,4 +97,55 @@ decoder = Decoder(
 )
 vae = VAE(encoder, decoder)
 
-vae.train(data_loader, n_epochs=5)
+n_epochs = 200
+
+log_elbo, log_reconstruction, log_divergence, log_categorical, log_numerical = vae.train(data_loader, n_epochs=n_epochs)
+
+import matplotlib.pyplot as plt
+
+# Plot and save the breakdown of ELBO
+
+x1 = np.arange(n_epochs)
+y1 = log_elbo
+# plotting the elbo
+plt.plot(x1, y1, label = "ELBO")
+# line 2 points
+y2 = log_reconstruction
+# plotting the reconstruction term
+plt.plot(x1, y2, label = "Reconstruction Term")
+# plotting the divergence term
+plt.plot(x1, log_divergence, label = "Divergence Term")
+plt.xlabel('Number of Epochs')
+# Set the y axis label of the current axis.
+plt.ylabel('Loss Value')
+# Set a title of the current axes.
+plt.title('Breakdown of the ELBO - 2 Latent Dim')
+# show a legend on the plot
+plt.legend()
+plt.savefig("Elbo Breakdown at 2 Latent Dim.png")
+# Display a figure.
+plt.show()
+
+# Plot and save the breakdown of the reconstruction term
+
+# Clear plot after saving
+plt.clf()
+
+x1 = np.arange(n_epochs)
+y1 = log_categorical
+# plotting the elbo
+plt.plot(x1, y1, label = "Categorical Reconstruction")
+# line 2 points
+y2 = log_numerical
+# plotting the reconstruction term
+plt.plot(x1, y2, label = "Numerical Reconstruction")
+plt.xlabel('Number of Epochs')
+# Set the y axis label of the current axis.
+plt.ylabel('Loss Value')
+# Set a title of the current axes.
+plt.title('Breakdown of the Reconstruction Term - 2 Latent Dim')
+# show a legend on the plot
+plt.legend()
+plt.savefig("Reconstruction Breakdown at 2 Latent Dim.png")
+# Display a figure.
+plt.show()

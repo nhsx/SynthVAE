@@ -1,3 +1,5 @@
+from random import gauss
+from pandas import Categorical
 import torch
 import torch.nn as nn
 
@@ -148,7 +150,7 @@ class VAE(nn.Module):
         p = Normal(torch.zeros_like(mu_z), torch.ones_like(mu_z))
         q = Normal(mu_z, torch.exp(logsigma_z))
 
-        encoder_loss = torch.sum(torch.distributions.kl_divergence(q, p))
+        divergence_loss = torch.sum(torch.distributions.kl_divergence(q, p))
 
         s = torch.randn_like(mu_z)
         z_samples = mu_z + s * torch.exp(logsigma_z)
@@ -180,21 +182,37 @@ class VAE(nn.Module):
 
         reconstruct_loss = -(categoric_loglik + gauss_loglik)
 
-        return ((encoder_loss + reconstruct_loss), reconstruct_loss, encoder_loss)
+        elbo = divergence_loss + reconstruct_loss
+
+        return (elbo, reconstruct_loss, divergence_loss, categoric_loglik, gauss_loglik)
 
     def train(self, x_dataloader, n_epochs, logging_freq=1):
         # mean_norm = 0
         # counter = 0
+        log_elbo = []
+        log_reconstruct = []
+        log_divergence = []
+        log_cat_loss = []
+        log_num_loss = []
+
         for epoch in range(n_epochs):
             train_loss = 0.0
+            divergence_epoch_loss = 0.0
+            reconstruction_epoch_loss = 0.0
+            categorical_epoch_reconstruct = 0.0
+            numerical_epoch_reconstruct =0.0
 
             for batch_idx, (Y_subset,) in enumerate(tqdm(x_dataloader)):
                 self.optimizer.zero_grad()
-                elbo, reconstruct_loss, divergence_loss = self.loss(Y_subset.to(self.encoder.device))
+                elbo, reconstruct_loss, divergence_loss, categorical_reconstruc, numerical_reconstruct = self.loss(Y_subset.to(self.encoder.device))
                 elbo.backward()
                 self.optimizer.step()
 
                 train_loss += elbo.item()
+                divergence_epoch_loss += divergence_loss.item()
+                reconstruction_epoch_loss += reconstruct_loss.item()
+                categorical_epoch_reconstruct += categorical_reconstruc.item()
+                numerical_epoch_reconstruct += numerical_reconstruct.item()
 
                 # counter += 1
                 # l2_norm = 0
@@ -205,10 +223,19 @@ class VAE(nn.Module):
                 # l2_norm = l2_norm ** 0.5  # / Y_subset.shape[0]
                 # mean_norm = (mean_norm * (counter - 1) + l2_norm) / counter
 
+            log_elbo.append(train_loss)
+            log_reconstruct.append(reconstruction_epoch_loss)
+            log_divergence.append(divergence_epoch_loss)
+            log_cat_loss.append(categorical_epoch_reconstruct)
+            log_num_loss.append(numerical_epoch_reconstruct)
+
+
             if epoch % logging_freq == 0:
-                print(f"\tEpoch: {epoch:2}. Elbo: {train_loss:11.2f}. Reconstruction Loss: {reconstruct_loss:11.2f}. KL Divergence: {divergence_loss:11.2f}")
+                print(f"\tEpoch: {epoch:2}. Elbo: {train_loss:11.2f}. Reconstruction Loss: {reconstruction_epoch_loss:11.2f}. KL Divergence: {divergence_epoch_loss:11.2f}. Categorical Loss: {categorical_epoch_reconstruct:11.2f}. Numerical Loss: {numerical_epoch_reconstruct:11.2f}")
                 # print(f"\tMean norm: {mean_norm}")
         # self.mean_norm = mean_norm
+
+        return (log_elbo, log_reconstruct, log_divergence, log_cat_loss, log_num_loss)
 
     def diff_priv_train(
         self,
