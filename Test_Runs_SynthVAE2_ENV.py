@@ -13,7 +13,7 @@ import gower
 
 # For data preprocessing
 from rdt import HyperTransformer
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn_pandas import DataFrameMapper
 
 from opacus.utils.uniform_sampler import UniformWithReplacementSampler
@@ -51,15 +51,10 @@ data_supp[["x1", "x2", "x3", "x4", "x5", "x6", "event"]] = data_supp[
     ["x1", "x2", "x3", "x4", "x5", "x6", "event"]
 ].astype(int)
 
-from rdt.transformers import categorical, numerical
+# As of coding this, new version of RDT adds in GMM transformer which is what we require, however hyper transformers do not work as individual
+# transformers take a 'columns' argument that can only allow for fitting of one column - so you need to loop over and create one for each column
+# in order to fit the dataset - https://github.com/sdv-dev/RDT/issues/376
 
-# Change the default types of transformer
-default_data_type_transformers = {
-    "categorical": categorical.OneHotEncodingTransformer(),
-    "numerical": numerical.BayesGMMTransformer()
-}
-ht = HyperTransformer(default_data_type_transformers=default_data_type_transformers)
-ht.fit(data_supp)
 transformed = ht.transform(data_supp)
 cat_cols = [f"x{i}" for i in range(1, 7)] + ["event"]
 cont_cols = [f"x{i}" for i in range(7, 15)] + ["duration"]
