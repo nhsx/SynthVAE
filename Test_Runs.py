@@ -90,7 +90,7 @@ data_loader = DataLoader(
 )
 
 # Create VAE
-latent_dim = 2
+latent_dim = 256
 encoder = Encoder(x_train.shape[1], latent_dim)
 decoder = Decoder(
     latent_dim, num_continuous, num_categories=num_categories
@@ -119,10 +119,10 @@ plt.xlabel('Number of Epochs')
 # Set the y axis label of the current axis.
 plt.ylabel('Loss Value')
 # Set a title of the current axes.
-plt.title('Breakdown of the ELBO - 2 Latent Dim')
+plt.title('Breakdown of the ELBO - 256 Latent Dim')
 # show a legend on the plot
 plt.legend()
-plt.savefig("Elbo Breakdown at 2 Latent Dim.png")
+plt.savefig("Elbo Breakdown at 256 Latent Dim.png")
 # Display a figure.
 plt.show()
 
@@ -134,18 +134,21 @@ plt.clf()
 x1 = np.arange(n_epochs)
 y1 = log_categorical
 # plotting the elbo
+plt.subplot(1,2,1)
 plt.plot(x1, y1, label = "Categorical Reconstruction")
 # line 2 points
 y2 = log_numerical
 # plotting the reconstruction term
+plt.subplot(1,2,2)
 plt.plot(x1, y2, label = "Numerical Reconstruction")
 plt.xlabel('Number of Epochs')
 # Set the y axis label of the current axis.
 plt.ylabel('Loss Value')
 # Set a title of the current axes.
-plt.title('Breakdown of the Reconstruction Term - 2 Latent Dim')
+plt.title('Breakdown of the Reconstruction Term - 256 Latent Dim')
 # show a legend on the plot
 plt.legend()
-plt.savefig("Reconstruction Breakdown at 2 Latent Dim.png")
+plt.tight_layout()
+plt.savefig("Reconstruction Breakdown at 256 Latent Dim.png")
 # Display a figure.
 plt.show()
