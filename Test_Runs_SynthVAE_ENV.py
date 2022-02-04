@@ -1,3 +1,4 @@
+#%%
 import argparse
 import warnings
 
@@ -90,8 +91,9 @@ data_loader = DataLoader(
 )
 
 # Create VAE
-latent_dim = 256
-encoder = Encoder(x_train.shape[1], latent_dim)
+latent_dim = 2
+hidden_dim = 256
+encoder = Encoder(x_train.shape[1], latent_dim, hidden_dim=hidden_dim)
 decoder = Decoder(
     latent_dim, num_continuous, num_categories=num_categories
 )
@@ -100,6 +102,8 @@ vae = VAE(encoder, decoder)
 n_epochs = 200
 
 log_elbo, log_reconstruction, log_divergence, log_categorical, log_numerical = vae.train(data_loader, n_epochs=n_epochs)
+
+#%% -------- Plotting features for loss -------- #
 
 import matplotlib.pyplot as plt
 
@@ -122,7 +126,7 @@ plt.ylabel('Loss Value')
 plt.title('Breakdown of the ELBO - 256 Latent Dim')
 # show a legend on the plot
 plt.legend()
-plt.savefig("Elbo Breakdown at 256 Latent Dim.png")
+#plt.savefig("Elbo Breakdown at 256 Latent Dim.png")
 # Display a figure.
 plt.show()
 
@@ -149,6 +153,50 @@ plt.title('Breakdown of the Reconstruction Term - 256 Latent Dim')
 # show a legend on the plot
 plt.legend()
 plt.tight_layout()
-plt.savefig("Reconstruction Breakdown at 256 Latent Dim.png")
+#plt.savefig("Reconstruction Breakdown at 256 Latent Dim.png")
 # Display a figure.
 plt.show()
+#%% -------- Plotting features for synthetic data distribution -------- #
+
+# Generate a synthetic set using trained vae
+
+synthetic_trial = vae.generate(8873) # 8873 is size of support
+
+#%%
+
+print(synthetic_trial[:,1].detach().numpy())
+#%%
+# Now choose columns you want to do histograms for (for sake of brevity) and compare to support visually
+
+cat_columns = [1, 4]
+cont_columns = [28, 31]
+
+for column in cat_columns:
+    # Plot these cat_columns against the original columns in x_train
+    plt.subplot(1,2,1)
+    plt.hist(synthetic_trial[:,column].detach().numpy())
+    plt.xlabel("Value")
+    plt.ylabel("Counts")
+    plt.title("Synthetic Arm - Categorical {}".format(str(column)))
+    plt.subplot(1,2,2)
+    plt.hist(x_train[:,column])
+    plt.xlabel("Value")
+    plt.ylabel("Counts")
+    plt.title("Original Arm - Categorical {}".format(str(column)))
+    plt.tight_layout()
+    plt.show()
+
+for column in cont_columns:
+    # Plot these cont_columns against the original columns in x_train
+    plt.subplot(1,2,1)
+    plt.hist(synthetic_trial[:,column].detach().numpy())
+    plt.xlabel("Value")
+    plt.ylabel("Counts")
+    plt.title("Synthetic Arm - Continuous {}".format(str(column)))
+    plt.subplot(1,2,2)
+    plt.hist(x_train[:,column])
+    plt.xlabel("Value")
+    plt.ylabel("Counts")
+    plt.title("Original Arm - Continuous {}".format(str(column)))
+    plt.tight_layout()
+    plt.show() 
