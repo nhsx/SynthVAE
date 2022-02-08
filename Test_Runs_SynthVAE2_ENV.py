@@ -85,6 +85,19 @@ for index, column in enumerate(continuous_columns):
     # This too needs to be one hot encoded
 
     categorical_columns += [str(column) + '.component']
+    normalised_column = str(column) + '.component'
+
+# Let's retrieve the new categorical and continuous column names
+
+continuous_columns = ['duration.normalized'] + [f"x{i}.normalized" for i in range(7,15)]
+
+# For each categorical column we want to know the number of categories
+
+num_categories = (
+    np.array([np.amax(transformed_dataset[col]) for col in categorical_columns]) + 1
+).astype(int)
+
+num_continuous = len(continuous_columns)
 
 for index, column in enumerate(categorical_columns):
 
@@ -94,22 +107,18 @@ for index, column in enumerate(categorical_columns):
 
     transformed_dataset = temp_categorical.transform(transformed_dataset)
 
-# Now we need to remove any duplicate columns within the dataset post-processing
+# We need the dataframe in the correct format i.e. categorical variables first and in the order of
+# num_categories with continuous variables placed after
+#%%
+reordered_dataframe = pd.DataFrame()
 
-transformed = ht.transform(data_supp)
-cat_cols = [f"x{i}" for i in range(1, 7)] + ["event"]
-cont_cols = [f"x{i}" for i in range(7, 15)] + ["duration"]
-num_categories = (
-    np.array([np.amax(data_supp[col]) for col in cat_cols]) + 1
-).astype(int)
-num_continuous = len(cont_cols)
-cols_standardize = transformed.columns[:num_continuous]
-cols_leave = transformed.columns[num_continuous:]
-standardize = [([col], StandardScaler()) for col in cols_standardize]
-leave = [([col], None) for col in cols_leave]
-x_mapper = DataFrameMapper(leave + standardize)
-x_train_df = x_mapper.fit_transform(transformed)
-x_train_df = x_mapper.transform(transformed)
+reordered_dataframe = transformed_dataset.iloc[:, num_continuous:]
+
+reordered_dataframe = pd.concat([reordered_dataframe, transformed_dataset.iloc[:, :num_continuous]], axis=1)
+
+#%%
+
+x_train_df = reordered_dataframe.to_numpy()
 x_train = x_train_df.astype("float32")
 ###############################################################################
 # Prepare data for interaction with torch VAE
@@ -129,7 +138,7 @@ data_loader = DataLoader(
 )
 
 # Create VAE
-latent_dim = 2
+latent_dim = 256
 hidden_dim = 256
 encoder = Encoder(x_train.shape[1], latent_dim, hidden_dim=hidden_dim)
 decoder = Decoder(
@@ -164,7 +173,7 @@ plt.ylabel('Loss Value')
 plt.title('Breakdown of the ELBO - 256 Latent Dim')
 # show a legend on the plot
 plt.legend()
-#plt.savefig("Elbo Breakdown at 256 Latent Dim.png")
+plt.savefig("Elbo Breakdown at 256 Latent Dim.png")
 # Display a figure.
 plt.show()
 
@@ -191,7 +200,7 @@ plt.title('Breakdown of the Reconstruction Term - 256 Latent Dim')
 # show a legend on the plot
 plt.legend()
 plt.tight_layout()
-#plt.savefig("Reconstruction Breakdown at 256 Latent Dim.png")
+plt.savefig("Reconstruction Breakdown at 256 Latent Dim.png")
 # Display a figure.
 plt.show()
 #%% -------- Plotting features for synthetic data distribution -------- #
@@ -207,7 +216,7 @@ print(synthetic_trial[:,1].detach().numpy())
 # Now choose columns you want to do histograms for (for sake of brevity) and compare to support visually
 
 cat_columns = [1, 4]
-cont_columns = [28, 31]
+cont_columns = [110, 114]
 
 for column in cat_columns:
     # Plot these cat_columns against the original columns in x_train
@@ -222,6 +231,7 @@ for column in cat_columns:
     plt.ylabel("Counts")
     plt.title("Original Arm - Categorical {}".format(str(column)))
     plt.tight_layout()
+    plt.savefig("Categorical Histogram Comparison.png")
     plt.show()
 
 for column in cont_columns:
@@ -237,4 +247,67 @@ for column in cont_columns:
     plt.ylabel("Counts")
     plt.title("Original Arm - Continuous {}".format(str(column)))
     plt.tight_layout()
-    plt.show() 
+    plt.savefig("Continuous Histogram Comparison.png")
+    plt.show()
+
+#%%
+
+# - Now we want to view how these continuous variables look once reverse
+# transformed using the gmm transformer
+
+# First add the old columns to the synthetic set to see what corresponds to what
+
+synthetic_dataframe = pd.DataFrame(synthetic_trial.detach().numpy(),  columns=reordered_dataframe.columns)
+
+# Now all of the transformations from the dictionary - first loop over the categorical columns
+
+synthetic_transformed_set = synthetic_dataframe
+
+for transformer_name in categorical_transformers:
+
+    transformer = categorical_transformers[transformer_name]
+    synthetic_transformed_set = transformer.reverse_transform(synthetic_transformed_set)
+
+for transformer_name in continuous_transformers:
+
+    transformer = continuous_transformers[transformer_name]
+    synthetic_transformed_set = transformer.reverse_transform(synthetic_transformed_set)
+
+#%%
+
+# Plot some examples
+
+cat_columns = ['x1', 'x4']
+cont_columns = ['duration', 'x10']
+
+for column in cat_columns:
+    # Plot these cat_columns against the original columns in x_train
+    plt.subplot(1,2,1)
+    plt.hist(synthetic_transformed_set[column])
+    plt.xlabel("Value")
+    plt.ylabel("Counts")
+    plt.title("Synthetic Arm - {}".format(column))
+    plt.subplot(1,2,2)
+    plt.hist(data_supp[column])
+    plt.xlabel("Value")
+    plt.ylabel("Counts")
+    plt.title("Original Arm - {}".format(column))
+    plt.tight_layout()
+    plt.savefig("Categorical Histogram Comparison Transformed.png")
+    plt.show()
+
+for column in cont_columns:
+    # Plot these cont_columns against the original columns in x_train
+    plt.subplot(1,2,1)
+    plt.hist(synthetic_transformed_set[column])
+    plt.xlabel("Value")
+    plt.ylabel("Counts")
+    plt.title("Synthetic Arm - {}".format(column))
+    plt.subplot(1,2,2)
+    plt.hist(data_supp[column])
+    plt.xlabel("Value")
+    plt.ylabel("Counts")
+    plt.title("Original Arm - {}".format(column))
+    plt.tight_layout()
+    plt.savefig("Continuous Histogram Comparison Transformed.png")
+    plt.show()
