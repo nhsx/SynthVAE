@@ -168,6 +168,8 @@ print(synthetic_trial[:,1].detach().numpy())
 #%%
 # Now choose columns you want to do histograms for (for sake of brevity) and compare to support visually
 
+import matplotlib.pyplot as plt
+
 cat_columns = [1, 4]
 cont_columns = [28, 31]
 
@@ -184,6 +186,7 @@ for column in cat_columns:
     plt.ylabel("Counts")
     plt.title("Original Arm - Categorical {}".format(str(column)))
     plt.tight_layout()
+    plt.savefig("Categorical Histogram Comparison.png")
     plt.show()
 
 for column in cont_columns:
@@ -199,4 +202,5 @@ for column in cont_columns:
     plt.ylabel("Counts")
     plt.title("Original Arm - Continuous {}".format(str(column)))
     plt.tight_layout()
+    plt.savefig("Continuous Histogram Comparison.png")
     plt.show() 
