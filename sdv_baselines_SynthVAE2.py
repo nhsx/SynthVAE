@@ -104,14 +104,17 @@ if preprocess:
 
 #%% -------- SDV Baseline Tests -------- #
 
-chosen_model = 
+chosen_model = CTGAN
+
+transformer_dtypes = {
+    "i": "one_hot_encoding",
+    "f": "numerical",
+    "O": "one_hot_encoding",
+    "b": "one_hot_encoding",
+    "M": "datetime",
+}
 
 model = chosen_model(field_transformers=transformer_dtypes)
-
-print(
-    f"Train + Generate + Evaluate {args.model_type}"
-    f" - Run {i+1}/{n_seeds}"
-)
 
 model.fit(data)
 
@@ -121,6 +124,7 @@ new_data = model.sample(data.shape[0])
 
 data_ = data.copy()
 
+# Inverse transformations???
 if preprocess:
     for feature in x_mapper.features:
         if feature[0][0] in cont_cols:
