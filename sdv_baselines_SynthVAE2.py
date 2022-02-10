@@ -1,3 +1,4 @@
+#%%
 import argparse
 import warnings
 
@@ -27,10 +28,15 @@ from sdv.metrics.tabular import NumericalLR, NumericalMLP, NumericalSVR
 
 data_supp = support.read_df()
 
-# Explicitly type the categorical variables of the SUPPORT dataset
-support_cols = ["x1", "x2", "x3", "x4", "x5", "x6", "event"]
+data_supp["x14"] = data_supp["x0"]
+# data_supp = data_supp.astype('float32')
+data_supp = data_supp[
+    ["duration"] + [f"x{i}" for i in range(1, 15)] + ["event"]
+]
+data_supp[["x1", "x2", "x3", "x4", "x5", "x6", "event"]] = data_supp[
+    ["x1", "x2", "x3", "x4", "x5", "x6", "event"]
+].astype(int)
 
-data_supp[support_cols] = data_supp[support_cols].astype(object)
 data = data_supp
 
 # Define categorical and continuous column labels
@@ -118,7 +124,9 @@ model = chosen_model(field_transformers=transformer_dtypes)
 
 model.fit(data)
 
-new_data = model.sample(data.shape[0])
+new_data = model.sample(reordered_dataframe.shape[0])
+
+synthetic_dataframe = pd.DataFrame(new_data.detach().numpy(),  columns=reordered_dataframe.columns)
 
 # new_data = Independent._fit_sample(data, None)
 
@@ -126,13 +134,20 @@ data_ = data.copy()
 
 # Inverse transformations???
 if preprocess:
-    for feature in x_mapper.features:
-        if feature[0][0] in cont_cols:
-            f = feature[0][0]
-            new_data[f] = feature[1].inverse_transform(new_data[f])
-            data_[f] = feature[1].inverse_transform(data_[f])
 
-evals = evaluate(new_data, data_, aggregate=False)
+    synthetic_transformed_set = synthetic_dataframe
+
+    for transformer_name in categorical_transformers:
+
+        transformer = categorical_transformers[transformer_name]
+        synthetic_transformed_set = transformer.reverse_transform(synthetic_transformed_set)
+
+    for transformer_name in continuous_transformers:
+
+        transformer = continuous_transformers[transformer_name]
+        synthetic_transformed_set = transformer.reverse_transform(synthetic_transformed_set)
+
+evals = evaluate(synthetic_transformed_set, data_, aggregate=False)
 
 # Define lists to contain the metrics achieved on the
 # train/generate/evaluate runs
