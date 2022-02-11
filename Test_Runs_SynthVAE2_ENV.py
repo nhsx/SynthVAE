@@ -38,7 +38,7 @@ from sdv.metrics.tabular import NumericalLR, NumericalMLP, NumericalSVR
 
 # Load in the support data
 data_supp = support.read_df()
-
+#%%
 ###############################################################################
 # DATA PREPROCESSING #
 # We one-hot the categorical cols and standardise the continuous cols
@@ -146,7 +146,7 @@ decoder = Decoder(
 )
 vae = VAE(encoder, decoder)
 
-n_epochs = 200
+n_epochs = 10
 
 log_elbo, log_reconstruction, log_divergence, log_categorical, log_numerical = vae.train(data_loader, n_epochs=n_epochs)
 
@@ -173,7 +173,7 @@ plt.ylabel('Loss Value')
 plt.title('Breakdown of the ELBO - 256 Latent Dim')
 # show a legend on the plot
 plt.legend()
-plt.savefig("Elbo Breakdown at 256 Latent Dim.png")
+#plt.savefig("Elbo Breakdown at 256 Latent Dim.png")
 # Display a figure.
 plt.show()
 
@@ -200,14 +200,14 @@ plt.title('Breakdown of the Reconstruction Term - 256 Latent Dim')
 # show a legend on the plot
 plt.legend()
 plt.tight_layout()
-plt.savefig("Reconstruction Breakdown at 256 Latent Dim.png")
+#plt.savefig("Reconstruction Breakdown at 256 Latent Dim.png")
 # Display a figure.
 plt.show()
 #%% -------- Plotting features for synthetic data distribution -------- #
 
 # Generate a synthetic set using trained vae
 
-synthetic_trial = vae.generate(8873) # 8873 is size of support
+synthetic_trial = vae.generate(data_supp.shape[0]) # 8873 is size of support
 
 #%%
 
@@ -231,7 +231,7 @@ for column in cat_columns:
     plt.ylabel("Counts")
     plt.title("Original Arm - Categorical {}".format(str(column)))
     plt.tight_layout()
-    plt.savefig("Categorical Histogram Comparison.png")
+    #plt.savefig("Categorical Histogram Comparison.png")
     plt.show()
 
 for column in cont_columns:
@@ -247,7 +247,7 @@ for column in cont_columns:
     plt.ylabel("Counts")
     plt.title("Original Arm - Continuous {}".format(str(column)))
     plt.tight_layout()
-    plt.savefig("Continuous Histogram Comparison.png")
+    #plt.savefig("Continuous Histogram Comparison.png")
     plt.show()
 
 #%%
@@ -293,7 +293,7 @@ for column in cat_columns:
     plt.ylabel("Counts")
     plt.title("Original Arm - {}".format(column))
     plt.tight_layout()
-    plt.savefig("Categorical Histogram Comparison Transformed.png")
+    #plt.savefig("Categorical Histogram Comparison Transformed.png")
     plt.show()
 
 for column in cont_columns:
@@ -309,5 +309,110 @@ for column in cont_columns:
     plt.ylabel("Counts")
     plt.title("Original Arm - {}".format(column))
     plt.tight_layout()
-    plt.savefig("Continuous Histogram Comparison Transformed.png")
+    #plt.savefig("Continuous Histogram Comparison Transformed.png")
     plt.show()
+
+#%% -------- SDV Metrics -------- #
+# Calculate the sdv metrics for SynthVAE
+
+# Define lists to contain the metrics achieved on the
+# train/generate/evaluate runs
+bns = []
+lrs = []
+svcs = []
+gmlls = []
+cs = []
+ks = []
+kses = []
+contkls = []
+disckls = []
+lr_privs = []
+mlp_privs = []
+svr_privs = []
+gowers = []
+
+samples = synthetic_transformed_set
+
+# Need these in same column order
+
+samples = samples[data_supp.columns]
+
+evals = evaluate(samples, data_supp, aggregate=False)
+
+bns.append(np.array(evals["raw_score"])[0])
+lrs.append(np.array(evals["raw_score"])[1])
+svcs.append(np.array(evals["raw_score"])[2])
+gmlls.append(np.array(evals["raw_score"])[3])
+cs.append(np.array(evals["raw_score"])[4])
+ks.append(np.array(evals["raw_score"])[5])
+kses.append(np.array(evals["raw_score"])[6])
+contkls.append(np.array(evals["raw_score"])[7])
+disckls.append(np.array(evals["raw_score"])[8])
+gowers.append(np.mean(gower.gower_matrix(data_supp, samples)))
+
+lr_priv = NumericalLR.compute(
+    data_supp.fillna(0),
+    samples.fillna(0),
+    key_fields=(
+        [f"x{i}" for i in range(1, data_supp.shape[1] - 2)]
+        + ["event"]
+        + ["duration"]
+    ),
+    sensitive_fields=["x14"],
+)
+lr_privs.append(lr_priv)
+
+mlp_priv = NumericalMLP.compute(
+    data_supp.fillna(0),
+    samples.fillna(0),
+    key_fields=(
+        [f"x{i}" for i in range(1, data_supp.shape[1] - 2)]
+        + ["event"]
+        + ["duration"]
+    ),
+    sensitive_fields=["x14"],
+)
+mlp_privs.append(mlp_priv)
+
+svr_priv = NumericalSVR.compute(
+    data_supp.fillna(0),
+    samples.fillna(0),
+    key_fields=(
+        [f"x{i}" for i in range(1, data_supp.shape[1] - 2)]
+        + ["event"]
+        + ["duration"]
+    ),
+    sensitive_fields=["x14"],
+)
+svr_privs.append(svr_priv)
+
+bns = np.array(bns)
+lrs = np.array(lrs)
+svcs = np.array(svcs)
+gmlls = np.array(gmlls)
+cs = np.array(cs)
+ks = np.array(ks)
+kses = np.array(kses)
+contkls = np.array(contkls)
+disckls = np.array(disckls)
+gowers = np.array(gowers)
+
+#%%
+
+print(f"BN: {bns}")
+print(f"LR: {lrs}")
+print(f"SVC: {svcs}")
+print(f"GMLL: {gmlls}")
+print(f"CS: {cs}")
+print(f"KS: {ks}")
+print(f"KSE: {kses}")
+print(f"ContKL: {contkls}")
+print(f"DiscKL: {disckls}")
+print(f"Gower: {gowers}")
+
+lr_privs = np.array(lr_privs)
+print(f"LR privs: {lr_privs}")
+mlp_privs = np.array(mlp_privs)
+print(f"MLP privs: {mlp_privs}")
+svr_privs = np.array(svr_privs)
+print(f"SVR privs: {svr_privs}")
