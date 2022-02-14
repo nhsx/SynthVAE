@@ -1,4 +1,4 @@
-#%%
+#%% -------- Import Libraries -------- #
 import argparse
 from email.policy import default
 import warnings
@@ -29,6 +29,7 @@ from VAE import Decoder, Encoder, VAE
 
 # SDV aspects
 from sdv.evaluation import evaluate
+from sdmetrics import single_table
 
 from sdv.metrics.tabular import NumericalLR, NumericalMLP, NumericalSVR
 
@@ -38,9 +39,8 @@ from sdv.metrics.tabular import NumericalLR, NumericalMLP, NumericalSVR
 
 # Load in the support data
 data_supp = support.read_df()
-#%%
-###############################################################################
-# DATA PREPROCESSING #
+#%% -------- Data Pre-Processing -------- #
+
 # We one-hot the categorical cols and standardise the continuous cols
 data_supp["x14"] = data_supp["x0"]
 # data_supp = data_supp.astype('float32')
@@ -61,6 +61,9 @@ continuous_transformers = {}
 categorical_transformers = {}
 boolean_transformers = {}
 datetime_transformers = {}
+
+original_continuous_columns = ['duration'] + [f"x{i}" for i in range(7,15)]
+original_categorical_columns = ['event'] + [f"x{i}" for i in range(1,7)] 
 
 continuous_columns = ['duration'] + [f"x{i}" for i in range(7,15)]
 categorical_columns = ['event'] + [f"x{i}" for i in range(1,7)] 
@@ -109,18 +112,18 @@ for index, column in enumerate(categorical_columns):
 
 # We need the dataframe in the correct format i.e. categorical variables first and in the order of
 # num_categories with continuous variables placed after
-#%%
+
 reordered_dataframe = pd.DataFrame()
 
 reordered_dataframe = transformed_dataset.iloc[:, num_continuous:]
 
 reordered_dataframe = pd.concat([reordered_dataframe, transformed_dataset.iloc[:, :num_continuous]], axis=1)
 
-#%%
-
 x_train_df = reordered_dataframe.to_numpy()
 x_train = x_train_df.astype("float32")
-###############################################################################
+
+#%% -------- Create & Train VAE -------- #
+
 # Prepare data for interaction with torch VAE
 Y = torch.Tensor(x_train)
 dataset = TensorDataset(Y)
@@ -146,114 +149,69 @@ decoder = Decoder(
 )
 vae = VAE(encoder, decoder)
 
-n_epochs = 10
+n_epochs = 50
 
 log_elbo, log_reconstruction, log_divergence, log_categorical, log_numerical = vae.train(data_loader, n_epochs=n_epochs)
 
-#%% -------- Plotting features for loss -------- #
+#%% -------- Plot Loss Features ELBO Breakdown -------- #
 
-import matplotlib.pyplot as plt
+from plotly.subplots import make_subplots
+import plotly.graph_objects as go
 
-# Plot and save the breakdown of ELBO
+fig = go.Figure()
 
-x1 = np.arange(n_epochs)
-y1 = log_elbo
-# plotting the elbo
-plt.plot(x1, y1, label = "ELBO")
-# line 2 points
-y2 = log_reconstruction
-# plotting the reconstruction term
-plt.plot(x1, y2, label = "Reconstruction Term")
-# plotting the divergence term
-plt.plot(x1, log_divergence, label = "Divergence Term")
-plt.xlabel('Number of Epochs')
-# Set the y axis label of the current axis.
-plt.ylabel('Loss Value')
-# Set a title of the current axes.
-plt.title('Breakdown of the ELBO - 256 Latent Dim')
-# show a legend on the plot
-plt.legend()
-#plt.savefig("Elbo Breakdown at 256 Latent Dim.png")
-# Display a figure.
-plt.show()
+x = np.arange(n_epochs)
 
-# Plot and save the breakdown of the reconstruction term
+fig.add_trace(go.Scatter(x=x, y=log_elbo, mode = "lines+markers", name = "ELBO"))
 
-# Clear plot after saving
-plt.clf()
+fig.add_trace(go.Scatter(x=x, y=log_reconstruction, mode = "lines+markers", name = "Reconstruction"))
 
-x1 = np.arange(n_epochs)
-y1 = log_categorical
-# plotting the elbo
-plt.subplot(1,2,1)
-plt.plot(x1, y1, label = "Categorical Reconstruction")
-# line 2 points
-y2 = log_numerical
-# plotting the reconstruction term
-plt.subplot(1,2,2)
-plt.plot(x1, y2, label = "Numerical Reconstruction")
-plt.xlabel('Number of Epochs')
-# Set the y axis label of the current axis.
-plt.ylabel('Loss Value')
-# Set a title of the current axes.
-plt.title('Breakdown of the Reconstruction Term - 256 Latent Dim')
-# show a legend on the plot
-plt.legend()
-plt.tight_layout()
-#plt.savefig("Reconstruction Breakdown at 256 Latent Dim.png")
-# Display a figure.
-plt.show()
-#%% -------- Plotting features for synthetic data distribution -------- #
+fig.add_trace(go.Scatter(x=x, y=log_divergence, mode = "lines+markers", name = "Divergence"))
+
+fig.update_layout(title="ELBO Breakdown",
+    xaxis_title="Epochs",
+    yaxis_title="Loss Value",
+    legend_title="Loss",)
+
+fig.show()
+
+# Save static image
+fig.write_image("Plots/OLD V NEW 14-02-2022/ELBO Breakdown NEW.png")
+# Save interactive image
+fig.write_html("Plots/OLD V NEW 14-02-2022/ELBO Breakdown NEW.html")
+#%% -------- Plot Loss Features Reconstruction Breakdown -------- #
+
+# Initialize figure with subplots
+fig = make_subplots(
+    rows=1, cols=2, subplot_titles=("Categorical Likelihood", "Gaussian Likelihood")
+)
+
+# Add traces
+fig.add_trace(go.Scatter(x=x, y=log_categorical, mode = "lines", name = "Categorical"), row=1, col=1)
+fig.add_trace(go.Scatter(x=x, y=log_numerical, mode = "lines", name = "Numerical"), row=1, col=2)
+
+# Update xaxis properties
+fig.update_xaxes(title_text="Epochs", row=1, col=1)
+fig.update_xaxes(title_text="Epochs", row=1, col=2)
+
+# Update yaxis properties
+fig.update_yaxes(title_text="Loss Value", row=1, col=1)
+
+# Update title and height
+fig.update_layout(title_text="Reconstruction Breakdown")
+
+fig.show()
+
+# Save static image
+fig.write_image("Plots/OLD V NEW 14-02-2022/Reconstruction Breakdown NEW.png")
+# Save interactive image
+fig.write_html("Plots/OLD V NEW 14-02-2022/Reconstruction Breakdown NEW.html")
+#%% -------- Generate Synthetic Data -------- #
 
 # Generate a synthetic set using trained vae
 
 synthetic_trial = vae.generate(data_supp.shape[0]) # 8873 is size of support
-
-#%%
-
-print(synthetic_trial[:,1].detach().numpy())
-#%%
-# Now choose columns you want to do histograms for (for sake of brevity) and compare to support visually
-
-cat_columns = [1, 4]
-cont_columns = [110, 114]
-
-for column in cat_columns:
-    # Plot these cat_columns against the original columns in x_train
-    plt.subplot(1,2,1)
-    plt.hist(synthetic_trial[:,column].detach().numpy())
-    plt.xlabel("Value")
-    plt.ylabel("Counts")
-    plt.title("Synthetic Arm - Categorical {}".format(str(column)))
-    plt.subplot(1,2,2)
-    plt.hist(x_train[:,column])
-    plt.xlabel("Value")
-    plt.ylabel("Counts")
-    plt.title("Original Arm - Categorical {}".format(str(column)))
-    plt.tight_layout()
-    #plt.savefig("Categorical Histogram Comparison.png")
-    plt.show()
-
-for column in cont_columns:
-    # Plot these cont_columns against the original columns in x_train
-    plt.subplot(1,2,1)
-    plt.hist(synthetic_trial[:,column].detach().numpy())
-    plt.xlabel("Value")
-    plt.ylabel("Counts")
-    plt.title("Synthetic Arm - Continuous {}".format(str(column)))
-    plt.subplot(1,2,2)
-    plt.hist(x_train[:,column])
-    plt.xlabel("Value")
-    plt.ylabel("Counts")
-    plt.title("Original Arm - Continuous {}".format(str(column)))
-    plt.tight_layout()
-    #plt.savefig("Continuous Histogram Comparison.png")
-    plt.show()
-
-#%%
-
-# - Now we want to view how these continuous variables look once reverse
-# transformed using the gmm transformer
+#%% -------- Inverse Transformation On Synthetic Trial -------- #
 
 # First add the old columns to the synthetic set to see what corresponds to what
 
@@ -273,44 +231,63 @@ for transformer_name in continuous_transformers:
     transformer = continuous_transformers[transformer_name]
     synthetic_transformed_set = transformer.reverse_transform(synthetic_transformed_set)
 
-#%%
+#%% -------- Plot Histograms For All The Variable Distributions -------- #
 
-# Plot some examples
+# Plot some examples using plotly
 
-cat_columns = ['x1', 'x4']
-cont_columns = ['duration', 'x10']
+for column in original_categorical_columns:
 
-for column in cat_columns:
-    # Plot these cat_columns against the original columns in x_train
-    plt.subplot(1,2,1)
-    plt.hist(synthetic_transformed_set[column])
-    plt.xlabel("Value")
-    plt.ylabel("Counts")
-    plt.title("Synthetic Arm - {}".format(column))
-    plt.subplot(1,2,2)
-    plt.hist(data_supp[column])
-    plt.xlabel("Value")
-    plt.ylabel("Counts")
-    plt.title("Original Arm - {}".format(column))
-    plt.tight_layout()
-    #plt.savefig("Categorical Histogram Comparison Transformed.png")
-    plt.show()
+    # Initialize figure with subplots
+    fig = make_subplots(
+        rows=1, cols=2, subplot_titles=("Synthetic {}".format(column), "Original {}".format(column))
+    )
 
-for column in cont_columns:
-    # Plot these cont_columns against the original columns in x_train
-    plt.subplot(1,2,1)
-    plt.hist(synthetic_transformed_set[column])
-    plt.xlabel("Value")
-    plt.ylabel("Counts")
-    plt.title("Synthetic Arm - {}".format(column))
-    plt.subplot(1,2,2)
-    plt.hist(data_supp[column])
-    plt.xlabel("Value")
-    plt.ylabel("Counts")
-    plt.title("Original Arm - {}".format(column))
-    plt.tight_layout()
-    #plt.savefig("Continuous Histogram Comparison Transformed.png")
-    plt.show()
+    # Add traces
+    fig.add_trace(go.Histogram(x=synthetic_transformed_set[column], name = "Synthetic"), row=1, col=1)
+    fig.add_trace(go.Histogram(x=data_supp[column], name = "Original"), row=1, col=2)
+
+    # Update xaxis properties
+    fig.update_xaxes(title_text="Value", row=1, col=1)
+    fig.update_xaxes(title_text="Value", row=1, col=2)
+    # Update yaxis properties
+    fig.update_yaxes(title_text="Counts", row=1, col=1)
+
+    # Update title and height
+    fig.update_layout(title_text="Variable {}".format(column))
+
+    fig.show()
+
+    # Save static image
+    fig.write_image("Plots/OLD V NEW 14-02-2022/Variable {} NEW.png".format(column))
+    # Save interactive image
+    fig.write_html("Plots/OLD V NEW 14-02-2022/Variable {} NEW.html".format(column))
+
+for column in original_continuous_columns:
+    
+    # Initialize figure with subplots
+    fig = make_subplots(
+        rows=1, cols=2, subplot_titles=("Synthetic {}".format(column), "Original {}".format(column))
+    )
+
+    # Add traces
+    fig.add_trace(go.Histogram(x=synthetic_transformed_set[column], name = "Synthetic"), row=1, col=1)
+    fig.add_trace(go.Histogram(x=data_supp[column], name = "Original"), row=1, col=2)
+
+    # Update xaxis properties
+    fig.update_xaxes(title_text="Value", row=1, col=1)
+    fig.update_xaxes(title_text="Value", row=1, col=2)
+    # Update yaxis properties
+    fig.update_yaxes(title_text="Counts", row=1, col=1)
+
+    # Update title and height
+    fig.update_layout(title_text="Variable {}".format(column))
+
+    fig.show()
+
+    # Save static image
+    fig.write_image("Plots/OLD V NEW 14-02-2022/Variable {} NEW.png".format(column))
+    # Save interactive image
+    fig.write_html("Plots/OLD V NEW 14-02-2022/Variable {} NEW.html".format(column))
 
 #%% -------- SDV Metrics -------- #
 # Calculate the sdv metrics for SynthVAE
@@ -337,17 +314,27 @@ samples = synthetic_transformed_set
 
 samples = samples[data_supp.columns]
 
+# Now categorical columns need to be converted to objects as SDV infers data
+# types from the fields and integers/floats are treated as numerical not categorical
+
+original_continuous_columns = ['duration'] + [f"x{i}" for i in range(7,15)]
+original_categorical_columns = ['event'] + [f"x{i}" for i in range(1,7)] 
+
+samples[original_categorical_columns] = samples[original_categorical_columns].astype(object)
+data_supp[original_categorical_columns] = data_supp[original_categorical_columns].astype(object)
+
 evals = evaluate(samples, data_supp, aggregate=False)
 
+# New version has added a lot more evaluation metrics
 bns.append(np.array(evals["raw_score"])[0])
 lrs.append(np.array(evals["raw_score"])[1])
 svcs.append(np.array(evals["raw_score"])[2])
-gmlls.append(np.array(evals["raw_score"])[3])
-cs.append(np.array(evals["raw_score"])[4])
-ks.append(np.array(evals["raw_score"])[5])
-kses.append(np.array(evals["raw_score"])[6])
-contkls.append(np.array(evals["raw_score"])[7])
-disckls.append(np.array(evals["raw_score"])[8])
+gmlls.append(np.array(evals["raw_score"])[11])
+cs.append(np.array(evals["raw_score"])[12])
+ks.append(np.array(evals["raw_score"])[13])
+kses.append(np.array(evals["raw_score"])[14])
+contkls.append(np.array(evals["raw_score"])[27])
+disckls.append(np.array(evals["raw_score"])[28])
 gowers.append(np.mean(gower.gower_matrix(data_supp, samples)))
 
 lr_priv = NumericalLR.compute(
@@ -397,22 +384,12 @@ contkls = np.array(contkls)
 disckls = np.array(disckls)
 gowers = np.array(gowers)
 
-#%%
+#%% --------Save These Metrics -------- #
 
-print(f"BN: {bns}")
-print(f"LR: {lrs}")
-print(f"SVC: {svcs}")
-print(f"GMLL: {gmlls}")
-print(f"CS: {cs}")
-print(f"KS: {ks}")
-print(f"KSE: {kses}")
-print(f"ContKL: {contkls}")
-print(f"DiscKL: {disckls}")
-print(f"Gower: {gowers}")
+# Save these metrics into a pandas dataframe
 
-lr_privs = np.array(lr_privs)
-print(f"LR privs: {lr_privs}")
-mlp_privs = np.array(mlp_privs)
-print(f"MLP privs: {mlp_privs}")
-svr_privs = np.array(svr_privs)
-print(f"SVR privs: {svr_privs}")
+metrics = pd.DataFrame(data = [[bns,lrs,svcs,gmlls,cs,ks,kses,contkls,disckls,gowers]],
+columns = ["BNLogLikelihood", "LogisticDetection", "SVCDetection", "GMLogLikelihood",
+"CSTest", "KSTest", "KSTestExtended", "ContinuousKLDivergence", "DiscreteKLDivergence", "Gower"])
+
+metrics.to_csv("Plots/OLD V NEW 14-02-2022/Metrics.csv")

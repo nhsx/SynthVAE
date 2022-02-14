@@ -99,134 +99,68 @@ decoder = Decoder(
 )
 vae = VAE(encoder, decoder)
 
-n_epochs = 10
+n_epochs = 50
 
 log_elbo, log_reconstruction, log_divergence, log_categorical, log_numerical = vae.train(data_loader, n_epochs=n_epochs)
 
-#%% -------- Plotting features for loss -------- #
+#%% -------- Plot Loss Features ELBO Breakdown -------- #
 
-import matplotlib.pyplot as plt
+from plotly.subplots import make_subplots
+import plotly.graph_objects as go
 
-# Plot and save the breakdown of ELBO
+fig = go.Figure()
 
-x1 = np.arange(n_epochs)
-y1 = log_elbo
-# plotting the elbo
-plt.plot(x1, y1, label = "ELBO")
-# line 2 points
-y2 = log_reconstruction
-# plotting the reconstruction term
-plt.plot(x1, y2, label = "Reconstruction Term")
-# plotting the divergence term
-plt.plot(x1, log_divergence, label = "Divergence Term")
-plt.xlabel('Number of Epochs')
-# Set the y axis label of the current axis.
-plt.ylabel('Loss Value')
-# Set a title of the current axes.
-plt.title('Breakdown of the ELBO - 256 Latent Dim')
-# show a legend on the plot
-plt.legend()
-#plt.savefig("Elbo Breakdown at 256 Latent Dim.png")
-# Display a figure.
-plt.show()
+x = np.arange(n_epochs)
 
-# Plot and save the breakdown of the reconstruction term
+fig.add_trace(go.Scatter(x=x, y=log_elbo, mode = "lines+markers", name = "ELBO"))
 
-# Clear plot after saving
-plt.clf()
+fig.add_trace(go.Scatter(x=x, y=log_reconstruction, mode = "lines+markers", name = "Reconstruction"))
 
-x1 = np.arange(n_epochs)
-y1 = log_categorical
-# plotting the elbo
-plt.subplot(1,2,1)
-plt.plot(x1, y1, label = "Categorical Reconstruction")
-# line 2 points
-y2 = log_numerical
-# plotting the reconstruction term
-plt.subplot(1,2,2)
-plt.plot(x1, y2, label = "Numerical Reconstruction")
-plt.xlabel('Number of Epochs')
-# Set the y axis label of the current axis.
-plt.ylabel('Loss Value')
-# Set a title of the current axes.
-plt.title('Breakdown of the Reconstruction Term - 256 Latent Dim')
-# show a legend on the plot
-plt.legend()
-plt.tight_layout()
-#plt.savefig("Reconstruction Breakdown at 256 Latent Dim.png")
-# Display a figure.
-plt.show()
-#%% -------- Plotting features for synthetic data distribution -------- #
+fig.add_trace(go.Scatter(x=x, y=log_divergence, mode = "lines+markers", name = "Divergence"))
 
-# Generate a synthetic set using trained vae
+fig.update_layout(title="ELBO Breakdown",
+    xaxis_title="Epochs",
+    yaxis_title="Loss Value",
+    legend_title="Loss",)
 
-synthetic_trial = vae.generate(8873) # 8873 is size of support
+fig.show()
 
-#%%
+# Save static image
+fig.write_image("Plots/OLD V NEW 14-02-2022/ELBO Breakdown OLD.png")
+# Save interactive image
+fig.write_html("Plots/OLD V NEW 14-02-2022/ELBO Breakdown OLD.html")
 
-print(synthetic_trial[:,1].detach().numpy())
-#%%
-# Now choose columns you want to do histograms for (for sake of brevity) and compare to support visually
+#%% -------- Plot Loss Features Reconstruction Breakdown -------- #
 
-import matplotlib.pyplot as plt
+# Initialize figure with subplots
+fig = make_subplots(
+    rows=1, cols=2, subplot_titles=("Categorical Likelihood", "Gaussian Likelihood")
+)
 
-cat_columns = [1, 4]
-cont_columns = [28, 31]
+# Add traces
+fig.add_trace(go.Scatter(x=x, y=log_categorical, mode = "lines", name = "Categorical"), row=1, col=1)
+fig.add_trace(go.Scatter(x=x, y=log_numerical, mode = "lines", name = "Numerical"), row=1, col=2)
 
-for column in cat_columns:
-    # Plot these cat_columns against the original columns in x_train
-    plt.subplot(1,2,1)
-    plt.hist(synthetic_trial[:,column].detach().numpy())
-    plt.xlabel("Value")
-    plt.ylabel("Counts")
-    plt.title("Synthetic Arm - Categorical {}".format(str(column)))
-    plt.subplot(1,2,2)
-    plt.hist(x_train[:,column])
-    plt.xlabel("Value")
-    plt.ylabel("Counts")
-    plt.title("Original Arm - Categorical {}".format(str(column)))
-    plt.tight_layout()
-    #plt.savefig("Categorical Histogram Comparison.png")
-    plt.show()
+# Update xaxis properties
+fig.update_xaxes(title_text="Epochs", row=1, col=1)
+fig.update_xaxes(title_text="Epochs", row=1, col=2)
 
-for column in cont_columns:
-    # Plot these cont_columns against the original columns in x_train
-    plt.subplot(1,2,1)
-    plt.hist(synthetic_trial[:,column].detach().numpy())
-    plt.xlabel("Value")
-    plt.ylabel("Counts")
-    plt.title("Synthetic Arm - Continuous {}".format(str(column)))
-    plt.subplot(1,2,2)
-    plt.hist(x_train[:,column])
-    plt.xlabel("Value")
-    plt.ylabel("Counts")
-    plt.title("Original Arm - Continuous {}".format(str(column)))
-    plt.tight_layout()
-    #plt.savefig("Continuous Histogram Comparison.png")
-    plt.show()
+# Update yaxis properties
+fig.update_yaxes(title_text="Loss Value", row=1, col=1)
 
-#%% -------- SDV Metrics -------- #
+# Update title and height
+fig.update_layout(title_text="Reconstruction Breakdown")
 
-# Here we apply all of the SDV metrics to the SynthVAE updated model
+fig.show()
 
-# Define lists to contain the metrics achieved on the
-# train/generate/evaluate runs
-bns = []
-lrs = []
-svcs = []
-gmlls = []
-cs = []
-ks = []
-kses = []
-contkls = []
-disckls = []
-lr_privs = []
-mlp_privs = []
-svr_privs = []
-gowers = []
+# Save static image
+fig.write_image("Plots/OLD V NEW 14-02-2022/Reconstruction Breakdown OLD.png")
+# Save interactive image
+fig.write_html("Plots/OLD V NEW 14-02-2022/Reconstruction Breakdown OLD.html")
+#%% -------- Generate Synthetic Data -------- #
 
 #  Collect samples and transform them out of one-hot, standardised form
-samples_ = synthetic_trial.detach().numpy()
+samples_ = vae.generate(data_supp.shape[0]).detach().numpy()
 samples = np.ones_like(samples_)
 samples[:, :num_continuous] = samples_[:, -num_continuous:]
 samples[:, num_continuous:] = samples_[:, :-num_continuous]
@@ -247,6 +181,84 @@ for feature in x_mapper.features:
         f = feature[0][0]
         samples[f] = feature[1].inverse_transform(samples[f])
         t_[f] = feature[1].inverse_transform(t_[f])
+
+#%% -------- Plot Histograms For All The Variable Distributions -------- #
+
+# Plot some examples using plotly
+
+for column in cat_cols:
+
+    # Initialize figure with subplots
+    fig = make_subplots(
+        rows=1, cols=2, subplot_titles=("Synthetic {}".format(column), "Original {}".format(column))
+    )
+
+    # Add traces
+    fig.add_trace(go.Histogram(x=samples[column], name = "Synthetic"), row=1, col=1)
+    fig.add_trace(go.Histogram(x=t_[column], name = "Original"), row=1, col=2)
+
+    # Update xaxis properties
+    fig.update_xaxes(title_text="Value", row=1, col=1)
+    fig.update_xaxes(title_text="Value", row=1, col=2)
+    # Update yaxis properties
+    fig.update_yaxes(title_text="Counts", row=1, col=1)
+
+    # Update title and height
+    fig.update_layout(title_text="Variable {}".format(column))
+
+    fig.show()
+
+    # Save static image
+    fig.write_image("Plots/OLD V NEW 14-02-2022/Variable {} OLD.png".format(column))
+    # Save interactive image
+    fig.write_html("Plots/OLD V NEW 14-02-2022/Variable {} OLD.html".format(column))
+
+for column in cont_cols:
+    
+    # Initialize figure with subplots
+    fig = make_subplots(
+        rows=1, cols=2, subplot_titles=("Synthetic {}".format(column), "Original {}".format(column))
+    )
+
+    # Add traces
+    fig.add_trace(go.Histogram(x=samples[column], name = "Synthetic"), row=1, col=1)
+    fig.add_trace(go.Histogram(x=t_[column], name = "Original"), row=1, col=2)
+
+    # Update xaxis properties
+    fig.update_xaxes(title_text="Value", row=1, col=1)
+    fig.update_xaxes(title_text="Value", row=1, col=2)
+    # Update yaxis properties
+    fig.update_yaxes(title_text="Counts", row=1, col=1)
+
+    # Update title and height
+    fig.update_layout(title_text="Variable {}".format(column))
+
+    fig.show()
+
+    # Save static image
+    fig.write_image("Plots/OLD V NEW 14-02-2022/Variable {} OLD.png".format(column))
+    # Save interactive image
+    fig.write_html("Plots/OLD V NEW 14-02-2022/Variable {} OLD.html".format(column))
+
+#%% -------- SDV Metrics -------- #
+
+# Here we apply all of the SDV metrics to the SynthVAE updated model
+
+# Define lists to contain the metrics achieved on the
+# train/generate/evaluate runs
+bns = []
+lrs = []
+svcs = []
+gmlls = []
+cs = []
+ks = []
+kses = []
+contkls = []
+disckls = []
+lr_privs = []
+mlp_privs = []
+svr_privs = []
+gowers = []
 
 evals = evaluate(samples, t_, aggregate=False)
 
@@ -308,20 +320,12 @@ contkls = np.array(contkls)
 disckls = np.array(disckls)
 gowers = np.array(gowers)
 
-print(f"BN: {np.mean(bns)} +/- {np.std(bns)}")
-print(f"LR: {np.mean(lrs)} +/- {np.std(lrs)}")
-print(f"SVC: {np.mean(svcs)} +/- {np.std(svcs)}")
-print(f"GMLL: {np.mean(gmlls)} +/- {np.std(gmlls)}")
-print(f"CS: {np.mean(cs)} +/- {np.std(cs)}")
-print(f"KS: {np.mean(ks)} +/- {np.std(ks)}")
-print(f"KSE: {np.mean(kses)} +/- {np.std(kses)}")
-print(f"ContKL: {np.mean(contkls)} +/- {np.std(contkls)}")
-print(f"DiscKL: {np.mean(disckls)} +/- {np.std(disckls)}")
-print(f"Gower: {np.mean(gowers)} +/- {np.std(gowers)}")
+#%% --------Save These Metrics -------- #
 
-lr_privs = np.array(lr_privs)
-print(f"LR privs: {np.mean(lr_privs)} +/- {np.std(lr_privs)}")
-mlp_privs = np.array(mlp_privs)
-print(f"MLP privs: {np.mean(mlp_privs)} +/- {np.std(mlp_privs)}")
-svr_privs = np.array(svr_privs)
-print(f"SVR privs: {np.mean(svr_privs)} +/- {np.std(svr_privs)}")
+# Save these metrics into a pandas dataframe
+
+metrics = pd.DataFrame(data = [[bns,lrs,svcs,gmlls,cs,ks,kses,contkls,disckls,gowers]],
+columns = ["BNLogLikelihood", "LogisticDetection", "SVCDetection", "GMLogLikelihood",
+"CSTest", "KSTest", "KSTestExtended", "ContinuousKLDivergence", "DiscreteKLDivergence", "Gower"])
+
+metrics.to_csv("Plots/OLD V NEW 14-02-2022/Metrics OLD.csv")
