@@ -56,6 +56,7 @@ data_supp[["x1", "x2", "x3", "x4", "x5", "x6", "event"]] = data_supp[
 # in order to fit the dataset - https://github.com/sdv-dev/RDT/issues/376
 
 from rdt.transformers import categorical, numerical, boolean, datetime
+from sklearn.preprocessing import QuantileTransformer
 
 continuous_transformers = {}
 categorical_transformers = {}
@@ -70,37 +71,51 @@ categorical_columns = ['event'] + [f"x{i}" for i in range(1,7)]
 num_categories = (
     np.array([np.amax(data_supp[col]) for col in categorical_columns]) + 1
 ).astype(int)
+num_continuous = len(continuous_columns)
 
 transformed_dataset = data_supp
 
 # Define columns based on datatype and then loop over creating and fitting transformers
 
-# Do continuous first via GMM as it gives a mixture column that then needs to be encoded OHE
+# Do continuous first via either GMM/Quantile transform
+transform = 'Quant' # Quant or GMM
 for index, column in enumerate(continuous_columns):
+    # Fit quantile transformer
+    if(transform == 'Quant'):
+        # Pick number of quantiles - defaults to n_samples if number large enough
+        temp_continuous = QuantileTransformer(n_quantiles = 100000, output_distribution='normal') # Takes a 2D array not 1D pandas column
+        temp_column = transformed_dataset[column].values.reshape(-1, 1)
+        temp_continuous.fit(temp_column)
+        continuous_transformers['continuous_{}'.format(column)] = temp_continuous
 
-    temp_continuous = numerical.BayesGMMTransformer()
-    temp_continuous.fit(transformed_dataset, columns = column)
-    continuous_transformers['continuous_{}'.format(index)] = temp_continuous
+        transformed_dataset[column] = (temp_continuous.transform(temp_column)).flatten()
 
-    transformed_dataset = temp_continuous.transform(transformed_dataset)
+    # Fit GMM
+    elif(transform == 'GMM'):
 
-    # Each numerical one gets a .normalized column + a .component column giving the mixture info
-    # This too needs to be one hot encoded
+        temp_continuous = numerical.BayesGMMTransformer()
+        temp_continuous.fit(transformed_dataset, columns = column)
+        continuous_transformers['continuous_{}'.format(column)] = temp_continuous
 
-    categorical_columns += [str(column) + '.component']
-    normalised_column = str(column) + '.component'
+        transformed_dataset = temp_continuous.transform(transformed_dataset)
 
-# Let's retrieve the new categorical and continuous column names
+        # Each numerical one gets a .normalized column + a .component column giving the mixture info
+        # This too needs to be one hot encoded
 
-continuous_columns = ['duration.normalized'] + [f"x{i}.normalized" for i in range(7,15)]
+        categorical_columns += [str(column) + '.component']
+        normalised_column = str(column) + '.component'
 
-# For each categorical column we want to know the number of categories
+        # Let's retrieve the new categorical and continuous column names
 
-num_categories = (
-    np.array([np.amax(transformed_dataset[col]) for col in categorical_columns]) + 1
-).astype(int)
+        continuous_columns = ['duration.normalized'] + [f"x{i}.normalized" for i in range(7,15)]
 
-num_continuous = len(continuous_columns)
+        # For each categorical column we want to know the number of categories
+
+        num_categories = (
+        np.array([np.amax(transformed_dataset[col]) for col in categorical_columns]) + 1
+        ).astype(int)
+
+        num_continuous = len(continuous_columns)
 
 for index, column in enumerate(categorical_columns):
 
@@ -121,6 +136,12 @@ reordered_dataframe = pd.concat([reordered_dataframe, transformed_dataset.iloc[:
 
 x_train_df = reordered_dataframe.to_numpy()
 x_train = x_train_df.astype("float32")
+
+#%%
+
+import matplotlib.pyplot as plt
+
+plt.hist(transformed_dataset['x9'])
 
 #%% -------- Create & Train VAE -------- #
 
@@ -176,9 +197,9 @@ fig.update_layout(title="ELBO Breakdown",
 fig.show()
 
 # Save static image
-fig.write_image("Plots/OLD V NEW 14-02-2022/ELBO Breakdown NEW.png")
+#fig.write_image("Plots/OLD V NEW 14-02-2022/ELBO Breakdown NEW.png")
 # Save interactive image
-fig.write_html("Plots/OLD V NEW 14-02-2022/ELBO Breakdown NEW.html")
+#fig.write_html("Plots/OLD V NEW 14-02-2022/ELBO Breakdown NEW.html")
 #%% -------- Plot Loss Features Reconstruction Breakdown -------- #
 
 # Initialize figure with subplots
@@ -203,9 +224,9 @@ fig.update_layout(title_text="Reconstruction Breakdown")
 fig.show()
 
 # Save static image
-fig.write_image("Plots/OLD V NEW 14-02-2022/Reconstruction Breakdown NEW.png")
+#fig.write_image("Plots/OLD V NEW 14-02-2022/Reconstruction Breakdown NEW.png")
 # Save interactive image
-fig.write_html("Plots/OLD V NEW 14-02-2022/Reconstruction Breakdown NEW.html")
+#fig.write_html("Plots/OLD V NEW 14-02-2022/Reconstruction Breakdown NEW.html")
 #%% -------- Generate Synthetic Data -------- #
 
 # Generate a synthetic set using trained vae
@@ -224,12 +245,22 @@ synthetic_transformed_set = synthetic_dataframe
 for transformer_name in categorical_transformers:
 
     transformer = categorical_transformers[transformer_name]
+    column_name = transformer_name[12:]
+
     synthetic_transformed_set = transformer.reverse_transform(synthetic_transformed_set)
 
 for transformer_name in continuous_transformers:
 
     transformer = continuous_transformers[transformer_name]
-    synthetic_transformed_set = transformer.reverse_transform(synthetic_transformed_set)
+    column_name = transformer_name[11:]
+
+    if(transform == 'Quant'):
+    
+        synthetic_transformed_set[column_name] = transformer.inverse_transform(synthetic_transformed_set[column_name].values.reshape(-1, 1)).flatten()
+
+    elif(transform == 'GMM'):
+
+        synthetic_transformed_set = transformer.reverse_transform(synthetic_transformed_set)
 
 #%% -------- Plot Histograms For All The Variable Distributions -------- #
 
@@ -258,9 +289,9 @@ for column in original_categorical_columns:
     fig.show()
 
     # Save static image
-    fig.write_image("Plots/OLD V NEW 14-02-2022/Variable {} NEW.png".format(column))
+    #fig.write_image("Plots/OLD V NEW 14-02-2022/Variable {} NEW.png".format(column))
     # Save interactive image
-    fig.write_html("Plots/OLD V NEW 14-02-2022/Variable {} NEW.html".format(column))
+    #fig.write_html("Plots/OLD V NEW 14-02-2022/Variable {} NEW.html".format(column))
 
 for column in original_continuous_columns:
     
@@ -285,9 +316,9 @@ for column in original_continuous_columns:
     fig.show()
 
     # Save static image
-    fig.write_image("Plots/OLD V NEW 14-02-2022/Variable {} NEW.png".format(column))
+    #fig.write_image("Plots/OLD V NEW 14-02-2022/Variable {} NEW.png".format(column))
     # Save interactive image
-    fig.write_html("Plots/OLD V NEW 14-02-2022/Variable {} NEW.html".format(column))
+    #fig.write_html("Plots/OLD V NEW 14-02-2022/Variable {} NEW.html".format(column))
 
 #%% -------- SDV Metrics -------- #
 # Calculate the sdv metrics for SynthVAE
