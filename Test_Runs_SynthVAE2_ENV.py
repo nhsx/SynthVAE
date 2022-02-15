@@ -1,6 +1,6 @@
 #%% -------- Import Libraries -------- #
 import argparse
-from email.policy import default
+from os import abort
 import warnings
 
 # Standard imports
@@ -23,6 +23,8 @@ from pycox.datasets import support
 
 # For VAE dataset formatting
 from torch.utils.data import TensorDataset, DataLoader
+
+import category_encoders as ce
 
 # VAE functions
 from VAE import Decoder, Encoder, VAE
@@ -78,7 +80,7 @@ transformed_dataset = data_supp
 # Define columns based on datatype and then loop over creating and fitting transformers
 
 # Do continuous first via either GMM/Quantile transform
-transform = 'Quant' # Quant or GMM
+transform = 'GMM' # Quant or GMM
 for index, column in enumerate(continuous_columns):
     # Fit quantile transformer
     if(transform == 'Quant'):
@@ -117,13 +119,39 @@ for index, column in enumerate(continuous_columns):
 
         num_continuous = len(continuous_columns)
 
-for index, column in enumerate(categorical_columns):
+# Different categorical encoding methods can be used to reduce dimensionality e.g. binary encoding rather than OHE
+cat_transform = "Binary" # Either Binary encoding, OHE Encoding
 
-    temp_categorical = categorical.OneHotEncodingTransformer()
-    temp_categorical.fit(transformed_dataset, columns = column)
-    categorical_transformers['categorical_{}'.format(index)] = temp_categorical
+if(cat_transform == "Binary"):
 
-    transformed_dataset = temp_categorical.transform(transformed_dataset)
+    label_lengths = []
+
+    for index, column in enumerate(categorical_columns):
+
+        temp_categorical = ce.BinaryEncoder(cols = column)
+        temp_column = transformed_dataset[column]
+        temp_categorical.fit(temp_column)
+        categorical_transformers['categorical_{}'.format(column)] = temp_categorical
+
+        # Need to know the lengths of the binary labels created in order to pass these to VAE loss function for indexing
+        temp_transformed = temp_categorical.transform(temp_column)
+        # Expands columns by this amount
+        label_lengths.append(temp_transformed.shape[1])
+
+        # Remove original column from the dataset and then append the new ones to back of transformed set
+        transformed_dataset = transformed_dataset.drop([column], 1)
+
+        transformed_dataset[temp_transformed.columns] = temp_transformed
+
+elif(cat_transform == "OHE"):
+
+    for index, column in enumerate(categorical_columns):
+
+        temp_categorical = categorical.OneHotEncodingTransformer()
+        temp_categorical.fit(transformed_dataset, columns = column)
+        categorical_transformers['categorical_{}'.format(index)] = temp_categorical
+
+        transformed_dataset = temp_categorical.transform(transformed_dataset)
 
 # We need the dataframe in the correct format i.e. categorical variables first and in the order of
 # num_categories with continuous variables placed after
@@ -136,12 +164,6 @@ reordered_dataframe = pd.concat([reordered_dataframe, transformed_dataset.iloc[:
 
 x_train_df = reordered_dataframe.to_numpy()
 x_train = x_train_df.astype("float32")
-
-#%%
-
-import matplotlib.pyplot as plt
-
-plt.hist(transformed_dataset['x9'])
 
 #%% -------- Create & Train VAE -------- #
 
@@ -168,7 +190,13 @@ encoder = Encoder(x_train.shape[1], latent_dim, hidden_dim=hidden_dim)
 decoder = Decoder(
     latent_dim, num_continuous, num_categories=num_categories
 )
-vae = VAE(encoder, decoder)
+
+
+if(cat_transform =='OHE'):
+
+    label_lengths = None
+
+vae = VAE(encoder, decoder, label_lengths=label_lengths)
 
 n_epochs = 50
 
@@ -197,9 +225,9 @@ fig.update_layout(title="ELBO Breakdown",
 fig.show()
 
 # Save static image
-#fig.write_image("Plots/OLD V NEW 14-02-2022/ELBO Breakdown NEW.png")
+#fig.write_image("Plots/OLD V NEW 14-02-2022/ELBO Breakdown QUANT.png")
 # Save interactive image
-#fig.write_html("Plots/OLD V NEW 14-02-2022/ELBO Breakdown NEW.html")
+#fig.write_html("Plots/OLD V NEW 14-02-2022/ELBO Breakdown QUANT.html")
 #%% -------- Plot Loss Features Reconstruction Breakdown -------- #
 
 # Initialize figure with subplots
@@ -224,9 +252,9 @@ fig.update_layout(title_text="Reconstruction Breakdown")
 fig.show()
 
 # Save static image
-#fig.write_image("Plots/OLD V NEW 14-02-2022/Reconstruction Breakdown NEW.png")
+#fig.write_image("Plots/OLD V NEW 14-02-2022/Reconstruction Breakdown QUANT.png")
 # Save interactive image
-#fig.write_html("Plots/OLD V NEW 14-02-2022/Reconstruction Breakdown NEW.html")
+#fig.write_html("Plots/OLD V NEW 14-02-2022/Reconstruction Breakdown QUANT.html")
 #%% -------- Generate Synthetic Data -------- #
 
 # Generate a synthetic set using trained vae
@@ -289,9 +317,9 @@ for column in original_categorical_columns:
     fig.show()
 
     # Save static image
-    #fig.write_image("Plots/OLD V NEW 14-02-2022/Variable {} NEW.png".format(column))
+    #fig.write_image("Plots/OLD V NEW 14-02-2022/Variable {} QUANT.png".format(column))
     # Save interactive image
-    #fig.write_html("Plots/OLD V NEW 14-02-2022/Variable {} NEW.html".format(column))
+    #fig.write_html("Plots/OLD V NEW 14-02-2022/Variable {} QUANT.html".format(column))
 
 for column in original_continuous_columns:
     
@@ -316,9 +344,9 @@ for column in original_continuous_columns:
     fig.show()
 
     # Save static image
-    #fig.write_image("Plots/OLD V NEW 14-02-2022/Variable {} NEW.png".format(column))
+    #fig.write_image("Plots/OLD V NEW 14-02-2022/Variable {} QUANT.png".format(column))
     # Save interactive image
-    #fig.write_html("Plots/OLD V NEW 14-02-2022/Variable {} NEW.html".format(column))
+    #fig.write_html("Plots/OLD V NEW 14-02-2022/Variable {} QUANT.html".format(column))
 
 #%% -------- SDV Metrics -------- #
 # Calculate the sdv metrics for SynthVAE
@@ -423,4 +451,4 @@ metrics = pd.DataFrame(data = [[bns,lrs,svcs,gmlls,cs,ks,kses,contkls,disckls,go
 columns = ["BNLogLikelihood", "LogisticDetection", "SVCDetection", "GMLogLikelihood",
 "CSTest", "KSTest", "KSTestExtended", "ContinuousKLDivergence", "DiscreteKLDivergence", "Gower"])
 
-metrics.to_csv("Plots/OLD V NEW 14-02-2022/Metrics.csv")
+#metrics.to_csv("Plots/OLD V NEW 14-02-2022/Metrics QUANT.csv")

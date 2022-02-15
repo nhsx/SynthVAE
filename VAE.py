@@ -107,10 +107,11 @@ class Noiser(nn.Module):
 class VAE(nn.Module):
     """Combines encoder and decoder into full VAE model"""
 
-    def __init__(self, encoder, decoder, lr=1e-3):
+    def __init__(self, encoder, decoder, label_lengths = None, lr=1e-3):
         super().__init__()
         self.encoder = encoder.to(encoder.device)
         self.decoder = decoder.to(decoder.device)
+        self.label_lengths = label_lengths
         self.num_categories = self.decoder.num_categories
         self.num_continuous = self.decoder.num_continuous
         self.noiser = Noiser(self.num_continuous).to(decoder.device)
@@ -161,11 +162,19 @@ class VAE(nn.Module):
         if sum(self.num_categories) != 0:
             i = 0
             for v in range(len(self.num_categories)):
-                categoric_loglik += -torch.nn.functional.cross_entropy(
-                    x_recon[:, i : (i + self.num_categories[v])],
-                    torch.max(X[:, i : (i + self.num_categories[v])], 1)[1],
-                ).sum()
-                i = i + self.decoder.num_categories[v]
+
+                if(self.label_lengths != None):
+                    categoric_loglik += -torch.functional.binary_cross_entropy_with_logits(x_recon[:, i : (i + self.label_lengths[v])],
+                        torch.max(X[:, i : (i + self.label_lengths[v])], 1)[1]).sum()
+                    i = i + self.label_lengths[v]
+
+                elif(self.label_lengths == None):
+
+                    categoric_loglik += -torch.nn.functional.cross_entropy(
+                        x_recon[:, i : (i + self.num_categories[v])],
+                        torch.max(X[:, i : (i + self.num_categories[v])], 1)[1],
+                    ).sum()
+                    i = i + self.decoder.num_categories[v]
 
         gauss_loglik = 0
         if self.decoder.num_continuous != 0:
