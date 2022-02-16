@@ -1,7 +1,4 @@
 #%% -------- Import Libraries -------- #
-import argparse
-from os import abort
-import warnings
 
 # Standard imports
 import numpy as np
@@ -10,11 +7,6 @@ import torch
 
 # For Gower distance
 import gower
-
-# For data preprocessing
-from rdt import HyperTransformer
-from sklearn.preprocessing import OneHotEncoder, StandardScaler
-from sklearn_pandas import DataFrameMapper
 
 from opacus.utils.uniform_sampler import UniformWithReplacementSampler
 
@@ -29,13 +21,11 @@ from VAE import Decoder, Encoder, VAE
 
 # SDV aspects
 from sdv.evaluation import evaluate
-from sdmetrics import single_table
 
 from sdv.metrics.tabular import NumericalLR, NumericalMLP, NumericalSVR
 
-#torch.cuda.is_available()
-#torch.cuda.current_device()
-#torch.cuda.get_device_name(0)
+from rdt.transformers import categorical, numerical
+from sklearn.preprocessing import QuantileTransformer
 
 # Load in the support data
 data_supp = support.read_df()
@@ -55,13 +45,8 @@ data_supp[["x1", "x2", "x3", "x4", "x5", "x6", "event"]] = data_supp[
 # transformers take a 'columns' argument that can only allow for fitting of one column - so you need to loop over and create one for each column
 # in order to fit the dataset - https://github.com/sdv-dev/RDT/issues/376
 
-from rdt.transformers import categorical, numerical, boolean, datetime
-from sklearn.preprocessing import QuantileTransformer
-
 continuous_transformers = {}
 categorical_transformers = {}
-boolean_transformers = {}
-datetime_transformers = {}
 
 original_continuous_columns = ['duration'] + [f"x{i}" for i in range(7,15)]
 original_categorical_columns = ['event'] + [f"x{i}" for i in range(1,7)] 
@@ -75,19 +60,21 @@ num_continuous = len(continuous_columns)
 
 transformed_dataset = data_supp
 
-# Define columns based on datatype and then loop over creating and fitting transformers
+# Define columns based on datatype and then loop over creating and fitting 
+# transformers
 
 # Do continuous first via either GMM/Quantile transform
-transform = 'GMM' # Quant or GMM
+transform = 'GMM'  # Quant or GMM
 for index, column in enumerate(continuous_columns):
+
     # Fit quantile transformer
     if(transform == 'Quant'):
-        # Pick number of quantiles - defaults to n_samples if number large enough
-        temp_continuous = QuantileTransformer(n_quantiles = 100000, output_distribution='normal') # Takes a 2D array not 1D pandas column
+
+        # Pick number of quantiles - defaults to n_samples if number larger
+        temp_continuous = QuantileTransformer(n_quantiles=100000, output_distribution='normal') 
         temp_column = transformed_dataset[column].values.reshape(-1, 1)
         temp_continuous.fit(temp_column)
         continuous_transformers['continuous_{}'.format(column)] = temp_continuous
-
         transformed_dataset[column] = (temp_continuous.transform(temp_column)).flatten()
 
     # Fit GMM
