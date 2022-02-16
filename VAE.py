@@ -161,14 +161,20 @@ class VAE(nn.Module):
         categoric_loglik = 0
         if sum(self.num_categories) != 0:
             i = 0
-            for v in range(len(self.num_categories)):
 
-                if(self.label_lengths != None):
-                    categoric_loglik += -torch.functional.binary_cross_entropy_with_logits(x_recon[:, i : (i + self.label_lengths[v])],
-                        torch.max(X[:, i : (i + self.label_lengths[v])], 1)[1]).sum()
+            if(self.label_lengths != None):
+
+                for v in range(len(self.num_categories)):
+                    
+                    categoric_loglik += -torch.nn.functional.binary_cross_entropy_with_logits(
+                        x_recon[:, i : (i + self.label_lengths[v])],
+                        torch.max(X[:, i : (i + self.label_lengths[v])], 1)[1],
+                        ).sum()
                     i = i + self.label_lengths[v]
 
-                elif(self.label_lengths == None):
+            elif(self.label_lengths == None):
+
+                for v in range(len(self.num_categories)):
 
                     categoric_loglik += -torch.nn.functional.cross_entropy(
                         x_recon[:, i : (i + self.num_categories[v])],
