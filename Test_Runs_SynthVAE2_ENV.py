@@ -24,8 +24,6 @@ from pycox.datasets import support
 # For VAE dataset formatting
 from torch.utils.data import TensorDataset, DataLoader
 
-import category_encoders as ce
-
 # VAE functions
 from VAE import Decoder, Encoder, VAE
 
@@ -119,32 +117,6 @@ for index, column in enumerate(continuous_columns):
 
         num_continuous = len(continuous_columns)
 
-# Different categorical encoding methods can be used to reduce dimensionality e.g. binary encoding rather than OHE
-cat_transform = "Binary" # Either Binary encoding, OHE Encoding
-
-if(cat_transform == "Binary"):
-
-    label_lengths = []
-
-    for index, column in enumerate(categorical_columns):
-
-        temp_categorical = ce.BinaryEncoder(cols = column)
-        temp_column = transformed_dataset[column]
-        temp_categorical.fit(temp_column)
-        categorical_transformers['categorical_{}'.format(column)] = temp_categorical
-
-        # Need to know the lengths of the binary labels created in order to pass these to VAE loss function for indexing
-        temp_transformed = temp_categorical.transform(temp_column)
-        # Expands columns by this amount
-        label_lengths.append(temp_transformed.shape[1])
-
-        # Remove original column from the dataset and then append the new ones to back of transformed set
-        transformed_dataset = transformed_dataset.drop([column], 1)
-
-        transformed_dataset[temp_transformed.columns] = temp_transformed
-
-elif(cat_transform == "OHE"):
-
     for index, column in enumerate(categorical_columns):
 
         temp_categorical = categorical.OneHotEncodingTransformer()
@@ -191,12 +163,7 @@ decoder = Decoder(
     latent_dim, num_continuous, num_categories=num_categories
 )
 
-
-if(cat_transform =='OHE'):
-
-    label_lengths = None
-
-vae = VAE(encoder, decoder, label_lengths=label_lengths)
+vae = VAE(encoder, decoder)
 
 n_epochs = 50
 
