@@ -233,7 +233,6 @@ class VAE(nn.Module):
             log_cat_loss.append(categorical_epoch_reconstruct)
             log_num_loss.append(numerical_epoch_reconstruct)
 
-
             if epoch % logging_freq == 0:
                 print(f"\tEpoch: {epoch:2}. Elbo: {train_loss:11.2f}. Reconstruction Loss: {reconstruction_epoch_loss:11.2f}. KL Divergence: {divergence_epoch_loss:11.2f}. Categorical Loss: {categorical_epoch_reconstruct:11.2f}. Numerical Loss: {numerical_epoch_reconstruct:11.2f}")
                 # print(f"\tMean norm: {mean_norm}")
@@ -274,21 +273,46 @@ class VAE(nn.Module):
             )
         self.privacy_engine.attach(self.optimizer)
 
+        log_elbo = []
+        log_reconstruct = []
+        log_divergence = []
+        log_cat_loss = []
+        log_num_loss = []
+
         for epoch in range(n_epochs):
             train_loss = 0.0
+            divergence_epoch_loss = 0.0
+            reconstruction_epoch_loss = 0.0
+            categorical_epoch_reconstruct = 0.0
+            numerical_epoch_reconstruct =0.0
             # print(self.get_privacy_spent(target_delta))
 
             for batch_idx, (Y_subset,) in enumerate(tqdm(x_dataloader)):
                 self.optimizer.zero_grad()
-                loss = self.loss(Y_subset.to(self.encoder.device))
-                loss.backward()
+                elbo, reconstruct_loss, divergence_loss, categorical_reconstruct, numerical_reconstruct = self.loss(Y_subset.to(self.encoder.device))
+                elbo.backward()
                 self.optimizer.step()
-                train_loss += loss.item()
+
+                train_loss += elbo.item()
+                divergence_epoch_loss += divergence_loss.item()
+                reconstruction_epoch_loss += reconstruct_loss.item()
+                categorical_epoch_reconstruct += categorical_reconstruct.item()
+                numerical_epoch_reconstruct += numerical_reconstruct.item()
+
                 # print(self.get_privacy_spent(target_delta))
                 # print(loss.item())
 
-            if epoch % logging_freq == 0:
-                print(f"\tEpoch: {epoch:2}. Total loss: {train_loss:11.2f}")
+            log_elbo.append(train_loss)
+            log_reconstruct.append(reconstruction_epoch_loss)
+            log_divergence.append(divergence_epoch_loss)
+            log_cat_loss.append(categorical_epoch_reconstruct)
+            log_num_loss.append(numerical_epoch_reconstruct)
+
+            if (epoch % logging_freq == 0):
+                print(f"\tEpoch: {epoch:2}. Elbo: {train_loss:11.2f}. Reconstruction Loss: {reconstruction_epoch_loss:11.2f}. KL Divergence: {divergence_epoch_loss:11.2f}. Categorical Loss: {categorical_epoch_reconstruct:11.2f}. Numerical Loss: {numerical_epoch_reconstruct:11.2f}")
+                # print(f"\tMean norm: {mean_norm}")
+
+        return (log_elbo, log_reconstruct, log_divergence, log_cat_loss, log_num_loss)
 
     def get_privacy_spent(self, delta):
         if hasattr(self, "privacy_engine"):
