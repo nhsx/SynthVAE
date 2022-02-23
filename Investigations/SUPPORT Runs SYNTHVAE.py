@@ -10,6 +10,10 @@ import torch
 # For Gower distance
 import gower
 
+# VAE is in other folder
+import sys
+sys.path.append('../')
+
 # For data preprocessing
 from rdt import HyperTransformer
 from sklearn.preprocessing import StandardScaler

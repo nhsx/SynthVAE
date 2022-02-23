@@ -32,6 +32,8 @@ from sklearn.preprocessing import QuantileTransformer
 
 from utils import support_pre_proc
 
+import optuna
+
 # Load in the support data
 data_supp = support.read_df()
 
@@ -39,9 +41,11 @@ data_supp = support.read_df()
 
 original_continuous_columns = ['duration'] + [f"x{i}" for i in range(7,15)]
 original_categorical_columns = ['event'] + [f"x{i}" for i in range(1,7)] 
+
+original_columns = original_categorical_columns + original_continuous_columns
 #%% -------- Data Pre-Processing -------- #
 
-x_train, reordered_dataframe_columns, continuous_transformers, categorical_transformers, num_categories, num_continuous = support_pre_proc(data_supp=data_supp)
+x_train, data_supp, reordered_dataframe_columns, continuous_transformers, categorical_transformers, num_categories, num_continuous = support_pre_proc(data_supp=data_supp)
 
 #%% -------- Create & Train VAE -------- #
 
@@ -65,21 +69,25 @@ data_loader = DataLoader(
 
 differential_privacy = False
 
-latent_dim = 256 # Hyperparam
-hidden_dim = 256 # Hyperparam
-encoder = Encoder(x_train.shape[1], latent_dim, hidden_dim=hidden_dim)
-decoder = Decoder(
-    latent_dim, num_continuous, num_categories=num_categories
-)
+# -------- Define our Optuna trial -------- #
 
-vae = VAE(encoder, decoder, lr=1e-3) # lr hyperparam
+def objective(trial, differential_privacy=False. target_delta=1e-3, target_eps=10.0, n_epochs=50):
 
-target_delta = 1e-3
-target_eps = 10.0
+    latent_dim = 256 # Hyperparam
+    hidden_dim = 256 # Hyperparam
+    encoder = Encoder(x_train.shape[1], latent_dim, hidden_dim=hidden_dim)
+    decoder = Decoder(
+        latent_dim, num_continuous, num_categories=num_categories
+    )
 
-n_epochs = 50
+    vae = VAE(encoder, decoder, lr=1e-3) # lr hyperparam
 
-if differential_privacy == True:
+    target_delta = target_delta
+    target_eps = target_eps
+
+    n_epochs = n_epochs
+
+    if differential_privacy == True:
         log_elbo, log_reconstruction, log_divergence, log_categorical, log_numerical = vae.diff_priv_train(
             data_loader,
             n_epochs=n_epochs,
@@ -90,85 +98,71 @@ if differential_privacy == True:
         )
         print(f"(epsilon, delta): {vae.get_privacy_spent(target_delta)}")
 
-else:
+    else:
 
-    log_elbo, log_reconstruction, log_divergence, log_categorical, log_numerical = vae.train(data_loader, n_epochs=n_epochs)
-#%% -------- Generate Synthetic Data -------- #
+        log_elbo, log_reconstruction, log_divergence, log_categorical, log_numerical = vae.train(data_loader, n_epochs=n_epochs)
 
-# Generate a synthetic set using trained vae
+    # -------- Generate Synthetic Data -------- #
 
-synthetic_trial = vae.generate(data_supp.shape[0]) # 8873 is size of support
-#%% -------- Inverse Transformation On Synthetic Trial -------- #
+    # Generate a synthetic set using trained vae
 
-# First add the old columns to the synthetic set to see what corresponds to what
+    synthetic_trial = vae.generate(data_supp.shape[0]) # 8873 is size of support
 
-synthetic_dataframe = pd.DataFrame(synthetic_trial.detach().numpy(),  columns=reordered_dataframe_columns)
+    # -------- Inverse Transformation On Synthetic Trial -------- #
 
-# Now all of the transformations from the dictionary - first loop over the categorical columns
+    # First add the old columns to the synthetic set to see what corresponds to what
 
-synthetic_transformed_set = synthetic_dataframe
+    synthetic_dataframe = pd.DataFrame(synthetic_trial.detach().numpy(),  columns=reordered_dataframe_columns)
 
-for transformer_name in categorical_transformers:
+    # Now all of the transformations from the dictionary - first loop over the categorical columns
 
-    transformer = categorical_transformers[transformer_name]
-    column_name = transformer_name[12:]
+    synthetic_transformed_set = synthetic_dataframe
 
-    synthetic_transformed_set = transformer.reverse_transform(synthetic_transformed_set)
+    for transformer_name in categorical_transformers:
 
-for transformer_name in continuous_transformers:
+        transformer = categorical_transformers[transformer_name]
+        column_name = transformer_name[12:]
 
-    transformer = continuous_transformers[transformer_name]
-    column_name = transformer_name[11:]
+        synthetic_transformed_set = transformer.reverse_transform(synthetic_transformed_set)
 
-    synthetic_transformed_set = transformer.reverse_transform(synthetic_transformed_set)
+    for transformer_name in continuous_transformers:
 
-#%% -------- SDV Metrics -------- #
-# Calculate the sdv metrics for SynthVAE
+        transformer = continuous_transformers[transformer_name]
+        column_name = transformer_name[11:]
 
-# Define lists to contain the metrics achieved on the
-# train/generate/evaluate runs
-bns = []
-lrs = []
-svcs = []
-gmlls = []
-cs = []
-ks = []
-kses = []
-contkls = []
-disckls = []
-lr_privs = []
-mlp_privs = []
-svr_privs = []
-gowers = []
+        synthetic_transformed_set = transformer.reverse_transform(synthetic_transformed_set)
 
-samples = synthetic_transformed_set
+    # -------- SDV Metrics -------- #
+    # Calculate the sdv metrics for SynthVAE
 
-# Need these in same column order
+    # Define lists to contain the metrics achieved on the
+    # train/generate/evaluate runs
 
-samples = samples[data_supp.columns]
+    samples = synthetic_transformed_set
 
-# Now categorical columns need to be converted to objects as SDV infers data
-# types from the fields and integers/floats are treated as numerical not categorical
+    # Need these in same column order
 
-samples[original_categorical_columns] = samples[original_categorical_columns].astype(object)
-data_supp[original_categorical_columns] = data_supp[original_categorical_columns].astype(object)
+    samples = samples[data_supp.columns]
 
-evals = evaluate(samples, data_supp, metrics=['BNLogLikelihood','LogisticDetection','SVCDetection','GMLogLikelihood','CSTest','KSTest','KSTestExtended','ContinuousKLDivergence'
-                                                , 'DiscreteKLDivergence'], aggregate=False)
+    # Now categorical columns need to be converted to objects as SDV infers data
+    # types from the fields and integers/floats are treated as numerical not categorical
 
-# New version has added a lot more evaluation metrics
-bns = (np.array(evals["raw_score"])[0])
-gmlls = (np.array(evals["raw_score"])[11])
-cs = (np.array(evals["raw_score"])[12])
-ks = (np.array(evals["raw_score"])[13])
-kses = (np.array(evals["raw_score"])[14])
-contkls = (np.array(evals["raw_score"])[27])
-disckls = (np.array(evals["raw_score"])[28])
-gowers = (np.mean(gower.gower_matrix(data_supp, samples)))
-#%% --------Save These Metrics -------- #
+    samples[original_categorical_columns] = samples[original_categorical_columns].astype(object)
+    data_supp[original_categorical_columns] = data_supp[original_categorical_columns].astype(object)
 
-# Save these metrics into a pandas dataframe
+    evals = evaluate(samples, data_supp, metrics=['ContinuousKLDivergence', 'DiscreteKLDivergence'], aggregate=False)
 
-metrics = pd.DataFrame(data = [[bns,lrs,svcs,gmlls,cs,ks,kses,contkls,disckls,gowers]],
-columns = ["BNLogLikelihood", "LogisticDetection", "SVCDetection", "GMLogLikelihood",
-"CSTest", "KSTest", "KSTestExtended", "ContinuousKLDivergence", "DiscreteKLDivergence", "Gower"])
+    # New version has added a lot more evaluation metrics
+    #bns = (np.array(evals["raw_score"])[0])
+    #gmlls = (np.array(evals["raw_score"])[1])
+    #cs = (np.array(evals["raw_score"])[2])
+    #ks = (np.array(evals["raw_score"])[3])
+    #kses = (np.array(evals["raw_score"])[4])
+    contkls = (np.array(evals["raw_score"])[5])
+    disckls = (np.array(evals["raw_score"])[6])
+    gowers = (np.mean(gower.gower_matrix(data_supp, samples)))
+
+    return [contkls, disckls, gowers]
+
+study = optuna.create_study(directions=['maximize', 'maximize', 'maximize'])
+study.optimize(objective, n_trials=30, timeout=300)

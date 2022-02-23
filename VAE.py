@@ -190,7 +190,7 @@ class VAE(nn.Module):
 
         return (elbo, reconstruct_loss, divergence_loss, categoric_loglik, gauss_loglik)
 
-    def train(self, x_dataloader, n_epochs, logging_freq=1):
+    def train(self, x_dataloader, n_epochs, logging_freq=1, patience=5, filepath=None):
         # mean_norm = 0
         # counter = 0
         log_elbo = []
@@ -199,7 +199,14 @@ class VAE(nn.Module):
         log_cat_loss = []
         log_num_loss = []
 
+        # EARLY STOPPING #
+        min_elbo = 0.0 # For early stopping workflow
+        patience = patience # How many epochs patience we give for early stopping
+        stop_counter = 0 # Counter for stops
+        delta = 10 # Difference in elbo value
+
         for epoch in range(n_epochs):
+
             train_loss = 0.0
             divergence_epoch_loss = 0.0
             reconstruction_epoch_loss = 0.0
@@ -233,10 +240,29 @@ class VAE(nn.Module):
             log_cat_loss.append(categorical_epoch_reconstruct)
             log_num_loss.append(numerical_epoch_reconstruct)
 
+            if(epoch==0):
+
+                min_elbo = train_loss
+
+            if(train_loss < min_elbo):
+
+                min_elbo = train_loss
+                stop_counter = 0  # Set counter to zero
+                if(filepath!=None):
+                    self.save(filepath) # Save best model if we want to
+
+            else: # elbo has not improved
+                
+                stop_counter+=1
+
             if epoch % logging_freq == 0:
                 print(f"\tEpoch: {epoch:2}. Elbo: {train_loss:11.2f}. Reconstruction Loss: {reconstruction_epoch_loss:11.2f}. KL Divergence: {divergence_epoch_loss:11.2f}. Categorical Loss: {categorical_epoch_reconstruct:11.2f}. Numerical Loss: {numerical_epoch_reconstruct:11.2f}")
                 # print(f"\tMean norm: {mean_norm}")
         # self.mean_norm = mean_norm
+
+            if(stop_counter==patience):
+
+                break
 
         return (log_elbo, log_reconstruct, log_divergence, log_cat_loss, log_num_loss)
 
