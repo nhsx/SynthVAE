@@ -178,10 +178,12 @@ fig.update_layout(title="ELBO Breakdown",
 
 fig.show()
 
+filepath_save = ''
+
 # Save static image
-#fig.write_image("Plots/OLD V NEW 14-02-2022/ELBO Breakdown QUANT.png")
+#fig.write_image("{}/ELBO Breakdown QUANT.png".format(filepath_save))
 # Save interactive image
-#fig.write_html("Plots/OLD V NEW 14-02-2022/ELBO Breakdown QUANT.html")
+#fig.write_html("{}/ELBO Breakdown QUANT.html".format(filepath_save))
 #%% -------- Plot Loss Features Reconstruction Breakdown -------- #
 
 # Initialize figure with subplots
@@ -206,9 +208,9 @@ fig.update_layout(title_text="Reconstruction Breakdown")
 fig.show()
 
 # Save static image
-#fig.write_image("Plots/OLD V NEW 14-02-2022/Reconstruction Breakdown QUANT.png")
+#fig.write_image("{}/Reconstruction Breakdown QUANT.png".format(filepath_save))
 # Save interactive image
-#fig.write_html("Plots/OLD V NEW 14-02-2022/Reconstruction Breakdown QUANT.html")
+#fig.write_html("{}/Reconstruction Breakdown QUANT.html".format(filepath_save))
 #%% -------- Generate Synthetic Data -------- #
 
 # Generate a synthetic set using trained vae
@@ -271,9 +273,9 @@ for column in original_categorical_columns:
     fig.show()
 
     # Save static image
-    #fig.write_image("Plots/OLD V NEW 14-02-2022/Variable {} QUANT.png".format(column))
+    #fig.write_image("{}/Variable {} QUANT.png".format(filepath_save, column))
     # Save interactive image
-    #fig.write_html("Plots/OLD V NEW 14-02-2022/Variable {} QUANT.html".format(column))
+    #fig.write_html("{}/Variable {} QUANT.html".format(filepath_save, column))
 
 for column in original_continuous_columns:
     
@@ -298,9 +300,9 @@ for column in original_continuous_columns:
     fig.show()
 
     # Save static image
-    #fig.write_image("Plots/OLD V NEW 14-02-2022/Variable {} QUANT.png".format(column))
+    #fig.write_image("{}/Variable {} QUANT.png".format(filepath_save, column))
     # Save interactive image
-    #fig.write_html("Plots/OLD V NEW 14-02-2022/Variable {} QUANT.html".format(column))
+    #fig.write_html("{}/Variable {} QUANT.html".format(filepath_save, column))
 
 #%% -------- SDV Metrics -------- #
 # Calculate the sdv metrics for SynthVAE
@@ -405,4 +407,4 @@ metrics = pd.DataFrame(data = [[bns,lrs,svcs,gmlls,cs,ks,kses,contkls,disckls,go
 columns = ["BNLogLikelihood", "LogisticDetection", "SVCDetection", "GMLogLikelihood",
 "CSTest", "KSTest", "KSTestExtended", "ContinuousKLDivergence", "DiscreteKLDivergence", "Gower"])
 
-#metrics.to_csv("Plots/OLD V NEW 14-02-2022/Metrics QUANT.csv")
+#metrics.to_csv("{}/Metrics QUANT.csv".format(filepath_save))
