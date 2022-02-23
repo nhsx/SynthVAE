@@ -208,10 +208,12 @@ fig.update_layout(title="ELBO Breakdown",
 
 fig.show()
 
+filepath_save = ''
+
 # Save static image
-fig.write_image("/Users/David Brind/Documents/NHSX Internship Work/SynthVAE Results/MIMIC Investigations/table_one_large_imbalanced_215k/ELBO Breakdown SynthVAE.png")
+fig.write_image("{}/ELBO Breakdown SynthVAE.png".format(filepath_save)
 # Save interactive image
-fig.write_html("/Users/David Brind/Documents/NHSX Internship Work/SynthVAE Results/MIMIC Investigations/table_one_large_imbalanced_215k/ELBO Breakdown SynthVAE.html")
+fig.write_html("{}/ELBO Breakdown SynthVAE.html".format(filepath_save)
 #%% -------- Plot Loss Features Reconstruction Breakdown -------- #
 
 # Initialize figure with subplots
@@ -236,9 +238,9 @@ fig.update_layout(title_text="Reconstruction Breakdown")
 fig.show()
 
 # Save static image
-fig.write_image("/Users/David Brind/Documents/NHSX Internship Work/SynthVAE Results/MIMIC Investigations/table_one_large_imbalanced_215k/Reconstruction Breakdown SYNTHVAE.png")
+fig.write_image("{}/Reconstruction Breakdown SYNTHVAE.png".format(filepath_save)
 # Save interactive image
-fig.write_html("/Users/David Brind/Documents/NHSX Internship Work/SynthVAE Results/MIMIC Investigations/table_one_large_imbalanced_215k/Reconstruction Breakdown SYNTHVAE.html")
+fig.write_html("{}/Reconstruction Breakdown SYNTHVAE.html".format(filepath_save)
 #%% -------- Generate Synthetic Data -------- #
 
 # Generate a synthetic set using trained vae
@@ -305,9 +307,9 @@ for column in original_categorical_columns:
     fig.show()
 
     # Save static image
-    fig.write_image("/Users/David Brind/Documents/NHSX Internship Work/SynthVAE Results/MIMIC Investigations/table_one_large_imbalanced_215k/Variable {} SYNTHVAE.png".format(column))
+    fig.write_image("{}/Variable {} SYNTHVAE.png".format(filepath_save, column))
     # Save interactive image
-    fig.write_html("/Users/David Brind/Documents/NHSX Internship Work/SynthVAE Results/MIMIC Investigations/table_one_large_imbalanced_215k/Variable {} SYNTHVAE.html".format(column))
+    fig.write_html("{}/Variable {} SYNTHVAE.html".format(filepath_save, column))
 
 for column in original_continuous_columns:
     
@@ -332,9 +334,9 @@ for column in original_continuous_columns:
     fig.show()
 
     # Save static image
-    fig.write_image("/Users/David Brind/Documents/NHSX Internship Work/SynthVAE Results/MIMIC Investigations/table_one_large_imbalanced_215k/Variable {} SYNTHVAE.png".format(column))
+    fig.write_image({}/Variable {} SYNTHVAE.png".format(filepath_save, column))
     # Save interactive image
-    fig.write_html("/Users/David Brind/Documents/NHSX Internship Work/SynthVAE Results/MIMIC Investigations/table_one_large_imbalanced_215k/Variable {} SYNTHVAE.html".format(column))
+    fig.write_html("{}/Variable {} SYNTHVAE.html".format(filepath_save, column))
 
 #%% -------- SDV Metrics -------- #
 # Calculate the sdv metrics for SynthVAE
@@ -405,4 +407,4 @@ metrics = pd.DataFrame(data = [[bns,lrs,svcs,gmlls,cs,ks,kses,contkls,disckls,go
 columns = ["BNLogLikelihood", "LogisticDetection", "SVCDetection", "GMLogLikelihood",
 "CSTest", "KSTest", "KSTestExtended", "ContinuousKLDivergence", "DiscreteKLDivergence", "Gower"])
 
-metrics.to_csv("/Users/David Brind/Documents/NHSX Internship Work/SynthVAE Results/MIMIC Investigations/table_one_large_imbalanced_215k/Metrics SYNTHVAE.csv")
+metrics.to_csv("{}/Metrics SYNTHVAE.csv".format(filepath_save)
