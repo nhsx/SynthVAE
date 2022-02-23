@@ -125,10 +125,12 @@ fig.update_layout(title="ELBO Breakdown",
 
 fig.show()
 
+filepath_save = ''
+
 # Save static image
-fig.write_image("Plots/OLD V NEW 14-02-2022/ELBO Breakdown OLD.png")
+fig.write_image("{}/ELBO Breakdown OLD.png".format(filepath_save))
 # Save interactive image
-fig.write_html("Plots/OLD V NEW 14-02-2022/ELBO Breakdown OLD.html")
+fig.write_html("{}/ELBO Breakdown OLD.html".format(filepath_save))
 
 #%% -------- Plot Loss Features Reconstruction Breakdown -------- #
 
@@ -154,9 +156,9 @@ fig.update_layout(title_text="Reconstruction Breakdown")
 fig.show()
 
 # Save static image
-fig.write_image("Plots/OLD V NEW 14-02-2022/Reconstruction Breakdown OLD.png")
+fig.write_image("{}/Reconstruction Breakdown OLD.png".format(filepath_save))
 # Save interactive image
-fig.write_html("Plots/OLD V NEW 14-02-2022/Reconstruction Breakdown OLD.html")
+fig.write_html("{}/Reconstruction Breakdown OLD.html".format(filepath_save))
 #%% -------- Generate Synthetic Data -------- #
 
 #  Collect samples and transform them out of one-hot, standardised form
@@ -209,9 +211,9 @@ for column in cat_cols:
     fig.show()
 
     # Save static image
-    fig.write_image("Plots/OLD V NEW 14-02-2022/Variable {} OLD.png".format(column))
+    fig.write_image("{}/Variable {} OLD.png".format(filepath_save, column))
     # Save interactive image
-    fig.write_html("Plots/OLD V NEW 14-02-2022/Variable {} OLD.html".format(column))
+    fig.write_html("{}/Variable {} OLD.html".format(filepath_save, column))
 
 for column in cont_cols:
     
@@ -236,9 +238,9 @@ for column in cont_cols:
     fig.show()
 
     # Save static image
-    fig.write_image("Plots/OLD V NEW 14-02-2022/Variable {} OLD.png".format(column))
+    fig.write_image("{}/Variable {} OLD.png".format(filepath_save, column))
     # Save interactive image
-    fig.write_html("Plots/OLD V NEW 14-02-2022/Variable {} OLD.html".format(column))
+    fig.write_html("{}/Variable {} OLD.html".format(filepath_save, column))
 
 #%% -------- SDV Metrics -------- #
 
@@ -328,4 +330,4 @@ metrics = pd.DataFrame(data = [[bns,lrs,svcs,gmlls,cs,ks,kses,contkls,disckls,go
 columns = ["BNLogLikelihood", "LogisticDetection", "SVCDetection", "GMLogLikelihood",
 "CSTest", "KSTest", "KSTestExtended", "ContinuousKLDivergence", "DiscreteKLDivergence", "Gower"])
 
-metrics.to_csv("Plots/OLD V NEW 14-02-2022/Metrics OLD.csv")
+metrics.to_csv("{}/Metrics OLD.csv".format(filepath_save)
