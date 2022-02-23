@@ -10,9 +10,7 @@ import torch
 import gower
 
 # For data preprocessing
-from rdt import HyperTransformer
-from sklearn.preprocessing import StandardScaler
-from sklearn_pandas import DataFrameMapper
+from rdt.transformers import categorical, numerical
 
 from opacus.utils.uniform_sampler import UniformWithReplacementSampler
 
@@ -29,6 +27,10 @@ from VAE import Decoder, Encoder, VAE
 from sdv.evaluation import evaluate
 
 from sdv.metrics.tabular import NumericalLR, NumericalMLP, NumericalSVR
+
+# Graph Visualisation
+from plotly.subplots import make_subplots
+import plotly.graph_objects as go
 
 # Other
 from utils import set_seed
@@ -52,22 +54,41 @@ parser.add_argument(
     help="run VAE with differential privacy",
 )
 parser.add_argument(
+    "--n_epochs",
+    default=100,
+    type=int,
+    help="number of epochs to train for"
+)
+parser.add_argument(
     "--savefile",
     default=None,
     type=str,
     help="save trained model's state_dict to file",
+)
+parser.add_argument(
+    "--savevisualisation",
+    default=None,
+    type=str,
+    help="save model visualisations for ELBO & variable generations at the following filepath - only applicable for final run"
+)
+parser.add_argument(
+    "--metrics",
+    default=None,
+    type=str,
+    help="save metrics to the following filepath - averaged over all runs"
 )
 
 args = parser.parse_args()
 
 n_seeds = args.n_runs
 my_seeds = np.random.randint(1e6, size=n_seeds)
+n_epochs = args.n_epochs
 
-# Load in the support data
+# Load in SUPPORT
 data_supp = support.read_df()
 
-###############################################################################
-# DATA PREPROCESSING #
+#%% -------- Data Pre-Processing -------- #
+
 # We one-hot the categorical cols and standardise the continuous cols
 data_supp["x14"] = data_supp["x0"]
 # data_supp = data_supp.astype('float32')
@@ -77,31 +98,77 @@ data_supp = data_supp[
 data_supp[["x1", "x2", "x3", "x4", "x5", "x6", "event"]] = data_supp[
     ["x1", "x2", "x3", "x4", "x5", "x6", "event"]
 ].astype(int)
-transformer_dtypes = {
-    "i": "one_hot_encoding",
-    "f": "numerical",
-    "O": "one_hot_encoding",
-    "b": "one_hot_encoding",
-    "M": "datetime",
-}
-ht = HyperTransformer(dtype_transformers=transformer_dtypes)
-ht.fit(data_supp)
-transformed = ht.transform(data_supp)
-cat_cols = [f"x{i}" for i in range(1, 7)] + ["event"]
-cont_cols = [f"x{i}" for i in range(7, 15)] + ["duration"]
+
+# As of coding this, new version of RDT adds in GMM transformer which is what we require, however hyper transformers do not work as individual
+# transformers take a 'columns' argument that can only allow for fitting of one column - so you need to loop over and create one for each column
+# in order to fit the dataset - https://github.com/sdv-dev/RDT/issues/376
+
+continuous_transformers = {}
+categorical_transformers = {}
+
+original_continuous_columns = ['duration'] + [f"x{i}" for i in range(7,15)]
+original_categorical_columns = ['event'] + [f"x{i}" for i in range(1,7)] 
+
+continuous_columns = ['duration'] + [f"x{i}" for i in range(7,15)]
+categorical_columns = ['event'] + [f"x{i}" for i in range(1,7)] 
 num_categories = (
-    np.array([np.amax(data_supp[col]) for col in cat_cols]) + 1
+    np.array([np.amax(data_supp[col]) for col in categorical_columns]) + 1
 ).astype(int)
-num_continuous = len(cont_cols)
-cols_standardize = transformed.columns[:num_continuous]
-cols_leave = transformed.columns[num_continuous:]
-standardize = [([col], StandardScaler()) for col in cols_standardize]
-leave = [([col], None) for col in cols_leave]
-x_mapper = DataFrameMapper(leave + standardize)
-x_train_df = x_mapper.fit_transform(transformed)
-x_train_df = x_mapper.transform(transformed)
+num_continuous = len(continuous_columns)
+
+transformed_dataset = data_supp
+
+# Define columns based on datatype and then loop over creating and fitting 
+# transformers
+
+for index, column in enumerate(continuous_columns):
+
+    temp_continuous = numerical.BayesGMMTransformer()
+    temp_continuous.fit(transformed_dataset, columns = column)
+    continuous_transformers['continuous_{}'.format(column)] = temp_continuous
+
+    transformed_dataset = temp_continuous.transform(transformed_dataset)
+
+    # Each numerical one gets a .normalized column + a .component column giving the mixture info
+    # This too needs to be one hot encoded
+
+    categorical_columns += [str(column) + '.component']
+    normalised_column = str(column) + '.component'
+
+    # Let's retrieve the new categorical and continuous column names
+
+    continuous_columns = ['duration.normalized'] + [f"x{i}.normalized" for i in range(7,15)]
+
+    # For each categorical column we want to know the number of categories
+
+    num_categories = (
+    np.array([np.amax(transformed_dataset[col]) for col in categorical_columns]) + 1
+    ).astype(int)
+
+    num_continuous = len(continuous_columns)
+
+for index, column in enumerate(categorical_columns):
+
+    temp_categorical = categorical.OneHotEncodingTransformer()
+    temp_categorical.fit(transformed_dataset, columns = column)
+    categorical_transformers['categorical_{}'.format(index)] = temp_categorical
+
+    transformed_dataset = temp_categorical.transform(transformed_dataset)
+
+# We need the dataframe in the correct format i.e. categorical variables first and in the order of
+# num_categories with continuous variables placed after
+
+reordered_dataframe = pd.DataFrame()
+
+reordered_dataframe = transformed_dataset.iloc[:, num_continuous:]
+
+reordered_dataframe = pd.concat([reordered_dataframe, transformed_dataset.iloc[:, :num_continuous]], axis=1)
+
+x_train_df = reordered_dataframe.to_numpy()
 x_train = x_train_df.astype("float32")
-###############################################################################
+
+#%% Model Creation & Training
+
 # Prepare data for interaction with torch VAE
 Y = torch.Tensor(x_train)
 dataset = TensorDataset(Y)
@@ -123,8 +190,7 @@ data_loader = DataLoader(
 #     dataset, batch_size=batch_size, pin_memory=True, shuffle=shuffle
 # )
 
-# Define lists to contain the metrics achieved on the
-# train/generate/evaluate runs
+# For metric saving
 bns = []
 lrs = []
 svcs = []
@@ -154,16 +220,17 @@ for i in range(n_seeds):
 
     # Create VAE
     latent_dim = 2
-    encoder = Encoder(x_train.shape[1], latent_dim)
+    hidden_dim = 256
+    encoder = Encoder(x_train.shape[1], latent_dim, hidden_dim=hidden_dim)
     decoder = Decoder(
         latent_dim, num_continuous, num_categories=num_categories
     )
     vae = VAE(encoder, decoder)
 
     if args.diff_priv:
-        vae.diff_priv_train(
+        log_elbo, log_reconstruction, log_divergence, log_categorical, log_numerical = vae.diff_priv_train(
             data_loader,
-            n_epochs=60,
+            n_epochs=n_epochs,
             C=10,
             target_eps=target_eps,
             target_delta=target_delta,
@@ -171,108 +238,215 @@ for i in range(n_seeds):
         )
         print(f"(epsilon, delta): {vae.get_privacy_spent(target_delta)}")
     else:
-        vae.train(data_loader, n_epochs=60)
+        log_elbo, log_reconstruction, log_divergence, log_categorical, log_numerical = vae.train(data_loader, n_epochs=n_epochs)
 
-    #  Collect samples and transform them out of one-hot, standardised form
-    samples_ = vae.generate(data_supp.shape[0]).detach().numpy()
-    samples = np.ones_like(samples_)
-    samples[:, :num_continuous] = samples_[:, -num_continuous:]
-    samples[:, num_continuous:] = samples_[:, :-num_continuous]
-    samples = pd.DataFrame(samples)
-    samples.columns = transformed.columns
-    samples = ht.reverse_transform(samples)
-    t = x_mapper.transform(transformed)
-    t_ = np.ones_like(t)
-    t_[:, :num_continuous] = t[:, -num_continuous:]
-    t_[:, num_continuous:] = t[:, :-num_continuous]
-    t_ = pd.DataFrame(t_)
-    t_.columns = transformed.columns
-    t_ = ht.reverse_transform(t_)
-    samples[cat_cols] = samples[cat_cols].astype(object)
-    t_[cat_cols] = t_[cat_cols].astype(object)
-    for feature in x_mapper.features:
-        if feature[0][0] in cont_cols:
-            f = feature[0][0]
-            samples[f] = feature[1].inverse_transform(samples[f])
-            t_[f] = feature[1].inverse_transform(t_[f])
+    #%% -------- Generate Synthetic Data -------- #
 
-    evals = evaluate(samples, t_, aggregate=False)
+    # Generate a synthetic set using trained vae
 
-    bns.append(np.array(evals["raw_score"])[0])
-    lrs.append(np.array(evals["raw_score"])[1])
-    svcs.append(np.array(evals["raw_score"])[2])
-    gmlls.append(np.array(evals["raw_score"])[3])
-    cs.append(np.array(evals["raw_score"])[4])
-    ks.append(np.array(evals["raw_score"])[5])
-    kses.append(np.array(evals["raw_score"])[6])
-    contkls.append(np.array(evals["raw_score"])[7])
-    disckls.append(np.array(evals["raw_score"])[8])
-    gowers.append(np.mean(gower.gower_matrix(t_, samples)))
+    synthetic_trial = vae.generate(data_supp.shape[0]) # 8873 is size of support
+    #%% -------- Inverse Transformation On Synthetic Trial -------- #
 
-    lr_priv = NumericalLR.compute(
-        t_.fillna(0),
-        samples.fillna(0),
-        key_fields=(
-            [f"x{i}" for i in range(1, data_supp.shape[1] - 2)]
-            + ["event"]
-            + ["duration"]
-        ),
-        sensitive_fields=["x14"],
+    # First add the old columns to the synthetic set to see what corresponds to what
+
+    synthetic_dataframe = pd.DataFrame(synthetic_trial.detach().numpy(),  columns=reordered_dataframe.columns)
+
+    # Now all of the transformations from the dictionary - first loop over the categorical columns
+
+    synthetic_transformed_set = synthetic_dataframe
+
+    for transformer_name in categorical_transformers:
+
+        transformer = categorical_transformers[transformer_name]
+        column_name = transformer_name[12:]
+
+        synthetic_transformed_set = transformer.reverse_transform(synthetic_transformed_set)
+
+    for transformer_name in continuous_transformers:
+
+        transformer = continuous_transformers[transformer_name]
+        column_name = transformer_name[11:]
+
+        synthetic_transformed_set = transformer.reverse_transform(synthetic_transformed_set)
+
+    if args.savefile is not None:
+        vae.save(args.savefile)
+
+    if args.metrics is not None:
+        samples = synthetic_transformed_set
+
+        # Need these in same column order
+
+        samples = samples[data_supp.columns]
+
+        # Now categorical columns need to be converted to objects as SDV infers data
+        # types from the fields and integers/floats are treated as numerical not categorical
+
+        original_continuous_columns = ['duration'] + [f"x{i}" for i in range(7,15)]
+        original_categorical_columns = ['event'] + [f"x{i}" for i in range(1,7)] 
+
+        samples[original_categorical_columns] = samples[original_categorical_columns].astype(object)
+        data_supp[original_categorical_columns] = data_supp[original_categorical_columns].astype(object)
+
+        evals = evaluate(samples, data_supp, metrics=['BNLogLikelihood','LogisticDetection','SVCDetection','GMLogLikelihood','CSTest','KSTest','KSTestExtended','ContinuousKLDivergence'
+                                                , 'DiscreteKLDivergence'],aggregate=False)
+
+        # New version has added a lot more evaluation metrics - only use fidelity metrics for now
+        bns.append(np.array(evals["raw_score"])[0])
+        lrs.append(np.array(evals["raw_score"])[1])
+        svcs.append(np.array(evals["raw_score"])[2])
+        gmlls.append(np.array(evals["raw_score"])[3])
+        cs.append(np.array(evals["raw_score"])[4])
+        ks.append(np.array(evals["raw_score"])[5])
+        kses.append(np.array(evals["raw_score"])[6])
+        contkls.append(np.array(evals["raw_score"])[7])
+        disckls.append(np.array(evals["raw_score"])[8])
+        gowers.append(np.mean(gower.gower_matrix(data_supp, samples)))
+
+if(args.metrics is not None):    
+
+    bns = np.array(bns)
+    lrs = np.array(lrs)
+    svcs = np.array(svcs)
+    gmlls = np.array(gmlls)
+    cs = np.array(cs)
+    ks = np.array(ks)
+    kses = np.array(kses)
+    contkls = np.array(contkls)
+    disckls = np.array(disckls)
+    gowers = np.array(gowers)
+
+    print(f"BN: {np.mean(bns)} +/- {np.std(bns)}")
+    print(f"LR: {np.mean(lrs)} +/- {np.std(lrs)}")
+    print(f"SVC: {np.mean(svcs)} +/- {np.std(svcs)}")
+    print(f"GMLL: {np.mean(gmlls)} +/- {np.std(gmlls)}")
+    print(f"CS: {np.mean(cs)} +/- {np.std(cs)}")
+    print(f"KS: {np.mean(ks)} +/- {np.std(ks)}")
+    print(f"KSE: {np.mean(kses)} +/- {np.std(kses)}")
+    print(f"ContKL: {np.mean(contkls)} +/- {np.std(contkls)}")
+    print(f"DiscKL: {np.mean(disckls)} +/- {np.std(disckls)}")
+    print(f"Gower: {np.mean(gowers)} +/- {np.std(gowers)}")
+
+    # Save these metrics into a pandas dataframe
+
+    metrics = pd.DataFrame(data = [[bns,lrs,svcs,gmlls,cs,ks,kses,contkls,disckls,gowers]],
+    columns = ["BNLogLikelihood", "LogisticDetection", "SVCDetection", "GMLogLikelihood",
+    "CSTest", "KSTest", "KSTestExtended", "ContinuousKLDivergence", "DiscreteKLDivergence", "Gower"])
+
+    filepath = args.metrics
+    metrics.to_csv("{}/Metric Breakdown.csv".format(filepath))
+#%% -------- Visualisation Figures -------- ##
+if(args.savevisualisation is not None):
+
+    filepath = args.savevisualisation
+
+    # -------- Plot ELBO Breakdowns -------- #
+
+    fig = go.Figure()
+
+    x = np.arange(n_epochs)
+
+    fig.add_trace(go.Scatter(x=x, y=log_elbo, mode = "lines+markers", name = "ELBO"))
+
+    fig.add_trace(go.Scatter(x=x, y=log_reconstruction, mode = "lines+markers", name = "Reconstruction"))
+
+    fig.add_trace(go.Scatter(x=x, y=log_divergence, mode = "lines+markers", name = "Divergence"))
+
+    fig.update_layout(title="ELBO Breakdown",
+        xaxis_title="Epochs",
+        yaxis_title="Loss Value",
+        legend_title="Loss",)
+
+    fig.show()
+
+    # Save static image
+    fig.write_image("{}/ELBO Breakdown.png".format(filepath))
+    # Save interactive image
+    fig.write_html("{}/ELBO Breakdown.html".format(filepath))
+
+    # -------- Plot Reconstruction Breakdowns -------- #
+
+    # Initialize figure with subplots
+    fig = make_subplots(
+        rows=1, cols=2, subplot_titles=("Categorical Likelihood", "Gaussian Likelihood")
     )
-    lr_privs.append(lr_priv)
 
-    mlp_priv = NumericalMLP.compute(
-        t_.fillna(0),
-        samples.fillna(0),
-        key_fields=(
-            [f"x{i}" for i in range(1, data_supp.shape[1] - 2)]
-            + ["event"]
-            + ["duration"]
-        ),
-        sensitive_fields=["x14"],
-    )
-    mlp_privs.append(mlp_priv)
+    # Add traces
+    fig.add_trace(go.Scatter(x=x, y=log_categorical, mode = "lines", name = "Categorical"), row=1, col=1)
+    fig.add_trace(go.Scatter(x=x, y=log_numerical, mode = "lines", name = "Numerical"), row=1, col=2)
 
-    svr_priv = NumericalSVR.compute(
-        t_.fillna(0),
-        samples.fillna(0),
-        key_fields=(
-            [f"x{i}" for i in range(1, data_supp.shape[1] - 2)]
-            + ["event"]
-            + ["duration"]
-        ),
-        sensitive_fields=["x14"],
-    )
-    svr_privs.append(svr_priv)
+    # Update xaxis properties
+    fig.update_xaxes(title_text="Epochs", row=1, col=1)
+    fig.update_xaxes(title_text="Epochs", row=1, col=2)
 
-if args.savefile is not None:
-    vae.save(args.savefile)
+    # Update yaxis properties
+    fig.update_yaxes(title_text="Loss Value", row=1, col=1)
 
-bns = np.array(bns)
-lrs = np.array(lrs)
-svcs = np.array(svcs)
-gmlls = np.array(gmlls)
-cs = np.array(cs)
-ks = np.array(ks)
-kses = np.array(kses)
-contkls = np.array(contkls)
-disckls = np.array(disckls)
-gowers = np.array(gowers)
+    # Update title and height
+    fig.update_layout(title_text="Reconstruction Breakdown")
 
-print(f"BN: {np.mean(bns)} +/- {np.std(bns)}")
-print(f"LR: {np.mean(lrs)} +/- {np.std(lrs)}")
-print(f"SVC: {np.mean(svcs)} +/- {np.std(svcs)}")
-print(f"GMLL: {np.mean(gmlls)} +/- {np.std(gmlls)}")
-print(f"CS: {np.mean(cs)} +/- {np.std(cs)}")
-print(f"KS: {np.mean(ks)} +/- {np.std(ks)}")
-print(f"KSE: {np.mean(kses)} +/- {np.std(kses)}")
-print(f"ContKL: {np.mean(contkls)} +/- {np.std(contkls)}")
-print(f"DiscKL: {np.mean(disckls)} +/- {np.std(disckls)}")
-print(f"Gower: {np.mean(gowers)} +/- {np.std(gowers)}")
+    fig.show()
 
-lr_privs = np.array(lr_privs)
-print(f"LR privs: {np.mean(lr_privs)} +/- {np.std(lr_privs)}")
-mlp_privs = np.array(mlp_privs)
-print(f"MLP privs: {np.mean(mlp_privs)} +/- {np.std(mlp_privs)}")
-svr_privs = np.array(svr_privs)
-print(f"SVR privs: {np.mean(svr_privs)} +/- {np.std(svr_privs)}")
+    # Save static image
+    fig.write_image("{}/Reconstruction Breakdown.png".format(filepath))
+    # Save interactive image
+    fig.write_html("{}/Reconstruction Breakdown.html".format(filepath))
+
+    
+    #%% -------- Plot Histograms For All The Variable Distributions -------- #
+
+    # Plot some examples using plotly
+
+    for column in original_categorical_columns:
+
+        # Initialize figure with subplots
+        fig = make_subplots(
+            rows=1, cols=2, subplot_titles=("Synthetic {}".format(column), "Original {}".format(column))
+        )
+
+        # Add traces
+        fig.add_trace(go.Histogram(x=synthetic_transformed_set[column], name = "Synthetic"), row=1, col=1)
+        fig.add_trace(go.Histogram(x=data_supp[column], name = "Original"), row=1, col=2)
+
+        # Update xaxis properties
+        fig.update_xaxes(title_text="Value", row=1, col=1)
+        fig.update_xaxes(title_text="Value", row=1, col=2)
+        # Update yaxis properties
+        fig.update_yaxes(title_text="Counts", row=1, col=1)
+
+        # Update title and height
+        fig.update_layout(title_text="Variable {}".format(column))
+
+        fig.show()
+
+        # Save static image
+        fig.write_image("{}/Variable {}.png".format(filepath, column))
+        # Save interactive image
+        fig.write_html("{}/Variable {}.html".format(filepath, column))
+
+    for column in original_continuous_columns:
+    
+        # Initialize figure with subplots
+        fig = make_subplots(
+            rows=1, cols=2, subplot_titles=("Synthetic {}".format(column), "Original {}".format(column))
+        )
+
+        # Add traces
+        fig.add_trace(go.Histogram(x=synthetic_transformed_set[column], name = "Synthetic"), row=1, col=1)
+        fig.add_trace(go.Histogram(x=data_supp[column], name = "Original"), row=1, col=2)
+
+        # Update xaxis properties
+        fig.update_xaxes(title_text="Value", row=1, col=1)
+        fig.update_xaxes(title_text="Value", row=1, col=2)
+        # Update yaxis properties
+        fig.update_yaxes(title_text="Counts", row=1, col=1)
+
+        # Update title and height
+        fig.update_layout(title_text="Variable {}".format(column))
+
+        fig.show()
+
+        # Save static image
+        fig.write_image("{}/Variable {}.png".format(filepath, column))
+        # Save interactive image
+        fig.write_html("{}/Variable {}.html".format(filepath, column))
