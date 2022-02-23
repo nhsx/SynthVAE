@@ -34,7 +34,9 @@ import plotly.graph_objects as go
 
 # Load in the mimic single table data
 
-data_supp = pd.read_csv('/Users/David Brind/Documents/NHSX Internship Work/Private Data/table_one_synthvae.csv')
+filepath = ''
+
+data_supp = pd.read_csv(filepath)
 #%% -------- Data Pre-Processing -------- #
 
 # Specify column configurations
@@ -213,10 +215,12 @@ fig.update_layout(title="ELBO Breakdown",
 
 fig.show()
 
+filepath_save = ''
+
 # Save static image
-fig.write_image("/Users/David Brind/Documents/NHSX Internship Work/SynthVAE Results/MIMIC Investigations/table_one_synthvae/ELBO Breakdown SynthVAE2.png")
+fig.write_image("{}/ELBO Breakdown SynthVAE2.png".format(filepath_save))
 # Save interactive image
-fig.write_html("/Users/David Brind/Documents/NHSX Internship Work/SynthVAE Results/MIMIC Investigations/table_one_synthvae/ELBO Breakdown SynthVAE2.html")
+fig.write_html("{}/ELBO Breakdown SynthVAE2.html".format(filepath_save))
 #%% -------- Plot Loss Features Reconstruction Breakdown -------- #
 
 # Initialize figure with subplots
@@ -241,9 +245,9 @@ fig.update_layout(title_text="Reconstruction Breakdown")
 fig.show()
 
 # Save static image
-fig.write_image("/Users/David Brind/Documents/NHSX Internship Work/SynthVAE Results/MIMIC Investigations/table_one_synthvae/Reconstruction Breakdown SYNTHVAE2.png")
+fig.write_image("{}/Reconstruction Breakdown SYNTHVAE2.png".format(filepath_save))
 # Save interactive image
-fig.write_html("/Users/David Brind/Documents/NHSX Internship Work/SynthVAE Results/MIMIC Investigations/table_one_synthvae/Reconstruction Breakdown SYNTHVAE2.html")
+fig.write_html("{}/Reconstruction Breakdown SYNTHVAE2.html".format(filepath_save))
 
 #%% -------- Constraint Sampling -------- #
 def reverse_transformers(synthetic_set, data_supp_columns, cont_transformers, cat_transformers, date_transformers):
@@ -395,9 +399,9 @@ for column in original_categorical_columns:
     fig.show()
 
     # Save static image
-    fig.write_image("/Users/David Brind/Documents/NHSX Internship Work/SynthVAE Results/MIMIC Investigations/table_one_synthvae/Variable {} CONSTRAINT.png".format(column))
+    fig.write_image("{}/Variable {} CONSTRAINT.png".format(filepath_save, column))
     # Save interactive image
-    fig.write_html("/Users/David Brind/Documents/NHSX Internship Work/SynthVAE Results/MIMIC Investigations/table_one_synthvae/Variable {} CONSTRAINT.html".format(column))
+    fig.write_html("{}/Variable {} CONSTRAINT.html".format(filepath_save, column))
 
 for column in original_continuous_columns:
     
@@ -422,9 +426,9 @@ for column in original_continuous_columns:
     fig.show()
 
     # Save static image
-    fig.write_image("/Users/David Brind/Documents/NHSX Internship Work/SynthVAE Results/MIMIC Investigations/table_one_synthvae/Variable {} CONSTRAINT.png".format(column))
+    fig.write_image("{}/Variable {} CONSTRAINT.png".format(filepath_save, column))
     # Save interactive image
-    fig.write_html("/Users/David Brind/Documents/NHSX Internship Work/SynthVAE Results/MIMIC Investigations/table_one_synthvae/Variable {} CONSTRAINT.html".format(column))
+    fig.write_html("{}/Variable {} CONSTRAINT.html".format(filepath_save, column))
 
 #%% -------- SDV Metrics -------- #
 # Calculate the sdv metrics for SynthVAE
@@ -498,4 +502,4 @@ metrics = pd.DataFrame(data = [[bns,lrs,svcs,gmlls,cs,ks,kses,contkls,disckls,go
 columns = ["BNLogLikelihood", "LogisticDetection", "SVCDetection", "GMLogLikelihood",
 "CSTest", "KSTest", "KSTestExtended", "ContinuousKLDivergence", "DiscreteKLDivergence", "Gower"])
 
-metrics.to_csv("/Users/David Brind/Documents/NHSX Internship Work/SynthVAE Results/MIMIC Investigations/table_one_synthvae/Metrics CONSTRAINT.csv")
+metrics.to_csv("{}/Metrics CONSTRAINT.csv".format(filepath_save))
