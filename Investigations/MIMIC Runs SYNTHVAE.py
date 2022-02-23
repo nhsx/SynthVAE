@@ -42,9 +42,9 @@ torch.cuda.is_available()
 
 # Specify column configurations
 
-original_categorical_columns = ['ETHNICITY', 'DISCHARGE_LOCATION', 'GENDER', 'FIRST_CAREUNIT', 'VALUEUOM', 'LABEL']
-original_continuous_columns = ['Unnamed: 0', 'ROW_ID', 'SUBJECT_ID', 'VALUE', 'age']
-original_datetime_columns = ['ADMITTIME', 'DISCHTIME', 'DOB', 'DOD', 'CHARTTIME']
+original_categorical_columns = ['...', '...', '...',] # Categorical column names from the MIMIC Set
+original_continuous_columns = ['...', '...', '...',] # Continuous column names from the MIMIC Set
+original_datetime_columns = ['...', '...', '...',] # Datetime column names from the MIMIC Set
 
 categorical_columns = original_categorical_columns.copy()
 continuous_columns = original_continuous_columns.copy()
