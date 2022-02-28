@@ -82,7 +82,7 @@ def objective(trial, differential_privacy=False, target_delta=1e-3, target_eps=1
         latent_dim, num_continuous, num_categories=num_categories
     )
 
-    lr = trial.suggest_int('Learning Rate', 1e-5, 1e-1, step=1e-5)
+    lr = trial.suggest_float('Learning Rate', 1e-5, 1e-1, step=1e-5)
     vae = VAE(encoder, decoder, lr=1e-3) # lr hyperparam
 
     target_delta = target_delta
@@ -174,22 +174,40 @@ def objective(trial, differential_privacy=False, target_delta=1e-3, target_eps=1
 # If there is no study object in your folder then run and save the study so
 # It can be resumed if needed
 
-first_run=True  # First run indicates if we are creating a new hyperparam study
+first_run=False  # First run indicates if we are creating a new hyperparam study
 
 if(first_run==True):
 
     study = optuna.create_study(directions=['maximize', 'maximize', 'maximize'])
-    with open("no_dp_SUPPORT.pkl", 'wb') as f:
-        pickle.dump(study, f)
 
 else:
 
-    with open("no_dp_SUPPORT.pkl") as f:
+    with open('no_dp_SUPPORT.pkl', 'rb') as f:
         study = pickle.load(f)
-    print("Best trial until now:")
-    print(" Value: ", study.best_trial.value)
-    print(" Params: ")
-    for key, value in study.best_trial.params.items():
-        print(f"    {key}: {value}")
 
-study.optimize(objective, n_trials=30, gc_after_trial=True) # GC to avoid OOM
+#study.optimize(objective, n_trials=10, gc_after_trial=True) # GC to avoid OOM
+#%%
+
+study.best_trials
+#%% -------- Save The  Study -------- #
+
+# For a multi objective study we need to find the best trials and basically
+# average between the 3 metrics to get the best trial
+
+with open("no_dp_SUPPORT.pkl", 'wb') as f:
+        pickle.dump(study, f)
+
+trial_averages = []
+
+for trials in study.best_trials:
+
+    metrics = trials.values
+    trial_averages.append(np.mean(metrics))
+
+# Now find best trial
+
+best_trial = np.amax(np.asarray(trial_averages))
+
+#%% -------- Find params -------- #
+
+study.best_trials[-1].params['Learning Rate']
