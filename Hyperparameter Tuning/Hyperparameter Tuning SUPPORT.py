@@ -11,6 +11,8 @@ sys.path.append('../')
 # For Gower distance
 import gower
 
+import pickle
+
 from opacus.utils.uniform_sampler import UniformWithReplacementSampler
 
 # For the SUPPORT dataset
@@ -71,15 +73,16 @@ differential_privacy = False
 
 # -------- Define our Optuna trial -------- #
 
-def objective(trial, differential_privacy=False. target_delta=1e-3, target_eps=10.0, n_epochs=50):
+def objective(trial, differential_privacy=False, target_delta=1e-3, target_eps=10.0, n_epochs=50):
 
-    latent_dim = 256 # Hyperparam
-    hidden_dim = 256 # Hyperparam
+    latent_dim = trial.suggest_int('Latent Dimension', 2, 128, step=2) # Hyperparam
+    hidden_dim = trial.suggest_int('Hidden Dimension', 32, 1024, step=32) # Hyperparam
     encoder = Encoder(x_train.shape[1], latent_dim, hidden_dim=hidden_dim)
     decoder = Decoder(
         latent_dim, num_continuous, num_categories=num_categories
     )
 
+    lr = trial.suggest_int('Learning Rate', 1e-5, 1e-1, step=1e-5)
     vae = VAE(encoder, decoder, lr=1e-3) # lr hyperparam
 
     target_delta = target_delta
@@ -87,14 +90,16 @@ def objective(trial, differential_privacy=False. target_delta=1e-3, target_eps=1
 
     n_epochs = n_epochs
 
+    C = trial.suggest_int('C', 10, 1e4, step=50)
+
     if differential_privacy == True:
         log_elbo, log_reconstruction, log_divergence, log_categorical, log_numerical = vae.diff_priv_train(
             data_loader,
             n_epochs=n_epochs,
-            C=10, # Hyperparam
+            C=C, # Hyperparam
             target_eps=target_eps,
             target_delta=target_delta, 
-            sample_rate=sample_rate, # Hyperparam
+            sample_rate=sample_rate,
         )
         print(f"(epsilon, delta): {vae.get_privacy_spent(target_delta)}")
 
@@ -158,11 +163,33 @@ def objective(trial, differential_privacy=False. target_delta=1e-3, target_eps=1
     #cs = (np.array(evals["raw_score"])[2])
     #ks = (np.array(evals["raw_score"])[3])
     #kses = (np.array(evals["raw_score"])[4])
-    contkls = (np.array(evals["raw_score"])[5])
-    disckls = (np.array(evals["raw_score"])[6])
+    contkls = (np.array(evals["raw_score"])[0])
+    disckls = (np.array(evals["raw_score"])[1])
     gowers = (np.mean(gower.gower_matrix(data_supp, samples)))
 
     return [contkls, disckls, gowers]
 
-study = optuna.create_study(directions=['maximize', 'maximize', 'maximize'])
-study.optimize(objective, n_trials=30, timeout=300)
+#%% -------- Run Hyperparam Optimisation -------- #
+
+# If there is no study object in your folder then run and save the study so
+# It can be resumed if needed
+
+first_run=True  # First run indicates if we are creating a new hyperparam study
+
+if(first_run==True):
+
+    study = optuna.create_study(directions=['maximize', 'maximize', 'maximize'])
+    with open("no_dp_SUPPORT.pkl", 'wb') as f:
+        pickle.dump(study, f)
+
+else:
+
+    with open("no_dp_SUPPORT.pkl") as f:
+        study = pickle.load(f)
+    print("Best trial until now:")
+    print(" Value: ", study.best_trial.value)
+    print(" Params: ")
+    for key, value in study.best_trial.params.items():
+        print(f"    {key}: {value}")
+
+study.optimize(objective, n_trials=30, gc_after_trial=True) # GC to avoid OOM
