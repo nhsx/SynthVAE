@@ -2,7 +2,7 @@ from datetime import datetime
 from lzma import CHECK_CRC32
 import numpy as np
 import torch
-from rdt.transformers import numerical, categorical
+from rdt.transformers import numerical, categorical, DatetimeTransformer
 import pandas as pd
 
 
@@ -103,7 +103,13 @@ def mimic_pre_proc(data_supp, version=1):
 
     original_categorical_columns = ['ETHNICITY', 'DISCHARGE_LOCATION', 'GENDER', 'FIRST_CAREUNIT', 'VALUEUOM', 'LABEL']
     original_continuous_columns = ['Unnamed: 0', 'ROW_ID', 'SUBJECT_ID', 'VALUE', 'age']
-    original_datetime_columns = ['ADMITTIME', 'DISCHTIME', 'DOB', 'CHARTTIME']
+    
+    if(version==1):
+        original_datetime_columns = ['ADMITTIME', 'DISCHTIME', 'DOB', 'CHARTTIME']
+    elif(version==2):
+        # DOD CONTAINS NANS SO NEED A WAY TO DEAL WITH THESE
+        original_datetime_columns = ['ADMITTIME', 'DISCHTIME', 'DOB', 'DOD', 'CHARTTIME']
+
 
     categorical_columns = original_categorical_columns.copy()
     continuous_columns = original_continuous_columns.copy()
@@ -152,7 +158,7 @@ def mimic_pre_proc(data_supp, version=1):
     for index, column in enumerate(original_datetime_columns):
 
         # Fit datetime transformer - converts to seconds
-        temp_datetime = datetime.DatetimeTransformer()
+        temp_datetime = DatetimeTransformer()
         temp_datetime.fit(transformed_dataset, columns = column)
         datetime_transformers['datetime_{}'.format(column)] = temp_datetime
 
@@ -221,11 +227,11 @@ def mimic_pre_proc(data_supp, version=1):
     x_train_df = reordered_dataframe.to_numpy()
     x_train = x_train_df.astype("float32")
 
-    return x_train, reordered_dataframe.columns, continuous_transformers, categorical_transformers, num_categories, num_continuous
+    return x_train, reordered_dataframe.columns, continuous_transformers, categorical_transformers, datetime_transformers, num_categories, num_continuous
 
 # -------- Constraint based sampling for MIMIC work -------- #
 
-def constraint_sampling_mimic(n_rows, vae, reordered_cols, data_supp_columns, cont_transformers, cat_transformers, date_transformers, reverse_transformers):
+def constraint_sampling_mimic(n_rows, vae, reordered_cols, data_supp_columns, cont_transformers, cat_transformers, date_transformers, reverse_transformers, version=1):
 
     # n_rows - the number of rows we require
 
@@ -237,25 +243,33 @@ def constraint_sampling_mimic(n_rows, vae, reordered_cols, data_supp_columns, co
 
     synthetic_dataframe = reverse_transformers(synthetic_dataframe, data_supp_columns, cont_transformers, cat_transformers, date_transformers)
 
-    def initial_check(synthetic_dataframe):
+    def initial_check(synthetic_dataframe, version=1):
 
         n_rows = synthetic_dataframe.shape[0]
 
         # First check which columns do not match the constraints and remove them
         for i in range(n_rows):
-        
-            # If there are any to drop
-            if(synthetic_dataframe['DISCHTIME'][i] < synthetic_dataframe['ADMITTIME'][i] or (synthetic_dataframe['CHARTTIME'][i] < synthetic_dataframe['ADMITTIME'][i])
-            or (synthetic_dataframe['age'][i] < 0)):
+            if(version==1):
+                # If there are any to drop
+                if(synthetic_dataframe['DISCHTIME'][i] < synthetic_dataframe['ADMITTIME'][i] or (synthetic_dataframe['CHARTTIME'][i] < synthetic_dataframe['ADMITTIME'][i])
+                or (synthetic_dataframe['age'][i] < 0) or (synthetic_dataframe['DOB'][i] < synthetic_dataframe['ADMITTIME'][i])):
             
-                # Drop the row inplace
-                synthetic_dataframe.drop([i], axis=0, inplace=True)
+                    # Drop the row inplace
+                    synthetic_dataframe.drop([i], axis=0, inplace=True)
+
+            elif(version==2):
+                # If there are any to drop
+                if(synthetic_dataframe['DISCHTIME'][i] < synthetic_dataframe['ADMITTIME'][i] or (synthetic_dataframe['CHARTTIME'][i] < synthetic_dataframe['ADMITTIME'][i])
+                or (synthetic_dataframe['age'][i] < 0) or (synthetic_dataframe['DOD'][i] < synthetic_dataframe['DISCHTIME'][i]) or (synthetic_dataframe['DOB'][i] < synthetic_dataframe['ADMITTIME'][i])):
+            
+                    # Drop the row inplace
+                    synthetic_dataframe.drop([i], axis=0, inplace=True)
 
         return None
 
     # Now we need to generate & perform this check over and over until all rows match
 
-    def generation_checks(new_rows, vae, reordered_cols, initial_check, data_supp_columns, cont_transformers, cat_transformers, date_transformers):
+    def generation_checks(new_rows, vae, reordered_cols, initial_check, data_supp_columns, cont_transformers, cat_transformers, date_transformers, version=1):
 
         # Generate the amount we need
         new_samples = vae.generate(new_rows)
@@ -263,17 +277,17 @@ def constraint_sampling_mimic(n_rows, vae, reordered_cols, data_supp_columns, co
         new_dataframe = pd.DataFrame(new_samples.detach().numpy(), columns = reordered_cols) 
 
         # Reverse transforms
-        synthetic_dataframe = reverse_transformers(new_dataframe, data_supp_columns, cont_transformers, cat_transformers, date_transformers)
+        synthetic_dataframe = reverse_transformers(new_dataframe, data_supp_columns, cont_transformers, cat_transformers, date_transformers, version=version)
 
         # Perform the first check
 
-        initial_check(synthetic_dataframe)
+        initial_check(synthetic_dataframe, version=version)
 
         return synthetic_dataframe
 
     # First pass the generated set through the initial check to see if we need to do constraint sampling
 
-    initial_check(synthetic_dataframe)
+    initial_check(synthetic_dataframe, version=version)
 
     # While synthetic_dataframe.shape[0] is not the amount we need (or we are racking up excessive attempts), we perform the loop
     n_tries = 0
@@ -294,7 +308,7 @@ def constraint_sampling_mimic(n_rows, vae, reordered_cols, data_supp_columns, co
         # We do not have enough rows so need to generate
         else:
 
-            checked_rows = generation_checks(rows_needed, vae, reordered_cols, initial_check, data_supp_columns, cont_transformers, cat_transformers, date_transformers)
+            checked_rows = generation_checks(rows_needed, vae, reordered_cols, initial_check, data_supp_columns, cont_transformers, cat_transformers, date_transformers, version=version)
 
             # Add the rows that do fit constraints to the synthetic_dataframe
             synthetic_dataframe = pd.concat([synthetic_dataframe, checked_rows])
