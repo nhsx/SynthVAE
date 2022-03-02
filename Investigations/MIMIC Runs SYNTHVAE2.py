@@ -34,7 +34,7 @@ import plotly.graph_objects as go
 
 # Load in the mimic single table data
 
-filepath = ""
+filepath = "C:/Users/frenc/Documents/Dave-NHSX Internship/Private Data/table_one_large_imbalanced_215k.csv"
 
 data_supp = pd.read_csv(filepath)
 #%% -------- Data Pre-Processing -------- #
@@ -44,6 +44,8 @@ data_supp = pd.read_csv(filepath)
 original_categorical_columns = ['ETHNICITY', 'DISCHARGE_LOCATION', 'GENDER', 'FIRST_CAREUNIT', 'VALUEUOM', 'LABEL']
 original_continuous_columns = ['Unnamed: 0', 'ROW_ID', 'SUBJECT_ID', 'VALUE', 'age']
 original_datetime_columns = ['ADMITTIME', 'DISCHTIME', 'DOB', 'CHARTTIME']
+
+data_supp = data_supp.drop('DOD', axis=1)
 
 categorical_columns = original_categorical_columns.copy()
 continuous_columns = original_continuous_columns.copy()

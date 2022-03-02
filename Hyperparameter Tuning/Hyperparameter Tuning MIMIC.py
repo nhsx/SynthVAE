@@ -45,7 +45,11 @@ data_supp = pd.read_csv(filepath)
 
 original_categorical_columns = ['ETHNICITY', 'DISCHARGE_LOCATION', 'GENDER', 'FIRST_CAREUNIT', 'VALUEUOM', 'LABEL']
 original_continuous_columns = ['Unnamed: 0', 'ROW_ID', 'SUBJECT_ID', 'VALUE', 'age']
-original_datetime_columns = ['ADMITTIME', 'DISCHTIME', 'DOB', 'DOD', 'CHARTTIME']
+original_datetime_columns = ['ADMITTIME', 'DISCHTIME', 'DOB', 'CHARTTIME']
+
+# Drop DOD column as it contains NANS - for now
+
+data_supp = data_supp.drop('DOD', axis = 1)
 
 original_columns = original_categorical_columns + original_continuous_columns + original_datetime_columns
 #%% -------- Data Pre-Processing -------- #
@@ -86,7 +90,7 @@ def objective(trial, differential_privacy=False, target_delta=1e-3, target_eps=1
     )
 
     lr = trial.suggest_float('Learning Rate', 1e-5, 1e-1, step=1e-5)
-    vae = VAE(encoder, decoder, lr=lr) # lr hyperparam
+    vae = VAE(encoder, decoder) # lr hyperparam
 
     target_delta = target_delta
     target_eps = target_eps

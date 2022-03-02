@@ -107,8 +107,7 @@ def mimic_pre_proc(data_supp, version=1):
     if(version==1):
         original_datetime_columns = ['ADMITTIME', 'DISCHTIME', 'DOB', 'CHARTTIME']
     elif(version==2):
-        # DOD CONTAINS NANS SO NEED A WAY TO DEAL WITH THESE
-        original_datetime_columns = ['ADMITTIME', 'DISCHTIME', 'DOB', 'DOD', 'CHARTTIME']
+        original_datetime_columns = ['ADMITTIME', 'DISCHTIME', 'DOB', 'CHARTTIME']
 
 
     categorical_columns = original_categorical_columns.copy()
@@ -174,13 +173,12 @@ def mimic_pre_proc(data_supp, version=1):
         temp_continuous.fit(transformed_dataset, columns = column)
         continuous_transformers['continuous_{}'.format(column)] = temp_continuous
 
-    transformed_dataset = temp_continuous.transform(transformed_dataset)
+        categorical_columns += [str(column) + '.component']
+
+        transformed_dataset = temp_continuous.transform(transformed_dataset)
 
     # Each numerical one gets a .normalized column + a .component column giving the mixture info
     # This too needs to be one hot encoded
-
-    categorical_columns += [str(column) + '.component']
-
 
     num_categories = []
 
