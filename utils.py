@@ -166,6 +166,11 @@ def mimic_pre_proc(data_supp, version=1):
         # And treated as a continuous variable
         continuous_columns += [str(column) +'.value']
 
+    # WE NEED TO RETAIN THIS SET AS METRICS DO NOT EVALUATE WITH DATETIMES BUT THEY WILL EVALUATE
+    # IF DATETIMES ARE IN A SECONDS FORMAT
+
+    original_metric_set = transformed_dataset.copy()
+
     for index, column in enumerate(continuous_columns):
 
         # Fit GMM
@@ -225,11 +230,44 @@ def mimic_pre_proc(data_supp, version=1):
     x_train_df = reordered_dataframe.to_numpy()
     x_train = x_train_df.astype("float32")
 
-    return x_train, reordered_dataframe.columns, continuous_transformers, categorical_transformers, datetime_transformers, num_categories, num_continuous
+    return x_train, original_metric_set, reordered_dataframe.columns, continuous_transformers, categorical_transformers, datetime_transformers, num_categories, num_continuous
+
+# -------- Reverse Transformations -------- #
+
+def reverse_transformers(synthetic_set, data_supp_columns, cont_transformers, cat_transformers, date_transformers):
+
+    # Now all of the transformations from the dictionary - first loop over the categorical columns
+
+    synthetic_transformed_set = synthetic_set
+
+    for transformer_name in cat_transformers:
+
+        transformer = cat_transformers[transformer_name]
+        column_name = transformer_name[12:]
+
+        synthetic_transformed_set = transformer.reverse_transform(synthetic_transformed_set)
+
+    for transformer_name in cont_transformers:
+
+        transformer = cont_transformers[transformer_name]
+        column_name = transformer_name[11:]
+
+        synthetic_transformed_set = transformer.reverse_transform(synthetic_transformed_set)
+
+    for transformer_name in date_transformers:
+
+        transformer = date_transformers[transformer_name]
+        column_name = transformer_name[9:]
+
+        synthetic_transformed_set = transformer.reverse_transform(synthetic_transformed_set)
+
+    synthetic_transformed_set = pd.DataFrame(synthetic_transformed_set, columns = data_supp_columns)
+
+    return synthetic_transformed_set
 
 # -------- Constraint based sampling for MIMIC work -------- #
 
-def constraint_sampling_mimic(n_rows, vae, reordered_cols, data_supp_columns, cont_transformers, cat_transformers, date_transformers, reverse_transformers, version=1):
+def constraint_sampling_mimic(n_rows, vae, reordered_cols, data_supp_columns, cont_transformers, cat_transformers, date_transformers, reverse_transformers=reverse_transformers, version=1):
 
     # n_rows - the number of rows we require
 
@@ -247,21 +285,12 @@ def constraint_sampling_mimic(n_rows, vae, reordered_cols, data_supp_columns, co
 
         # First check which columns do not match the constraints and remove them
         for i in range(n_rows):
-            if(version==1):
-                # If there are any to drop
-                if(synthetic_dataframe['DISCHTIME'][i] < synthetic_dataframe['ADMITTIME'][i] or (synthetic_dataframe['CHARTTIME'][i] < synthetic_dataframe['ADMITTIME'][i])
-                or (synthetic_dataframe['age'][i] < 0) or (synthetic_dataframe['DOB'][i] < synthetic_dataframe['ADMITTIME'][i])):
+            # If there are any to drop
+            if(synthetic_dataframe['DISCHTIME'][i] < synthetic_dataframe['ADMITTIME'][i] or (synthetic_dataframe['CHARTTIME'][i] < synthetic_dataframe['ADMITTIME'][i])
+            or (synthetic_dataframe['age'][i] < 0) or (synthetic_dataframe['DOB'][i] < synthetic_dataframe['ADMITTIME'][i])):
             
-                    # Drop the row inplace
-                    synthetic_dataframe.drop([i], axis=0, inplace=True)
-
-            elif(version==2):
-                # If there are any to drop
-                if(synthetic_dataframe['DISCHTIME'][i] < synthetic_dataframe['ADMITTIME'][i] or (synthetic_dataframe['CHARTTIME'][i] < synthetic_dataframe['ADMITTIME'][i])
-                or (synthetic_dataframe['age'][i] < 0) or (synthetic_dataframe['DOD'][i] < synthetic_dataframe['DISCHTIME'][i]) or (synthetic_dataframe['DOB'][i] < synthetic_dataframe['ADMITTIME'][i])):
-            
-                    # Drop the row inplace
-                    synthetic_dataframe.drop([i], axis=0, inplace=True)
+                # Drop the row inplace
+                synthetic_dataframe.drop([i], axis=0, inplace=True)
 
         return None
 
@@ -275,7 +304,7 @@ def constraint_sampling_mimic(n_rows, vae, reordered_cols, data_supp_columns, co
         new_dataframe = pd.DataFrame(new_samples.detach().numpy(), columns = reordered_cols) 
 
         # Reverse transforms
-        synthetic_dataframe = reverse_transformers(new_dataframe, data_supp_columns, cont_transformers, cat_transformers, date_transformers, version=version)
+        synthetic_dataframe = reverse_transformers(new_dataframe, data_supp_columns, cont_transformers, cat_transformers, date_transformers)
 
         # Perform the first check
 

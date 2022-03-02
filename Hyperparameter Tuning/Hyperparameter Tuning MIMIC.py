@@ -29,7 +29,7 @@ from sdv.evaluation import evaluate
 
 from sdv.metrics.tabular import NumericalLR, NumericalMLP, NumericalSVR
 
-from rdt.transformers import categorical, numerical
+from rdt.transformers import categorical, numerical, datetime
 from sklearn.preprocessing import QuantileTransformer
 
 from utils import mimic_pre_proc, constraint_sampling_mimic
@@ -54,7 +54,7 @@ data_supp = data_supp.drop('DOD', axis = 1)
 original_columns = original_categorical_columns + original_continuous_columns + original_datetime_columns
 #%% -------- Data Pre-Processing -------- #
 
-x_train, reordered_dataframe_columns, continuous_transformers, categorical_transformers, datetime_transformers, num_categories, num_continuous = mimic_pre_proc(data_supp=data_supp, version=2)
+x_train, original_metric_set, reordered_dataframe_columns, continuous_transformers, categorical_transformers, datetime_transformers, num_categories, num_continuous = mimic_pre_proc(data_supp=data_supp, version=2)
 
 #%% -------- Create & Train VAE -------- #
 
@@ -130,9 +130,17 @@ def objective(trial, differential_privacy=False, target_delta=1e-3, target_eps=1
 
     samples = synthetic_transformed_set
 
-    # Need these in same column order
+    # We now need to transform the datetime columns using datetime transformers
+    for col in original_datetime_columns:
 
-    samples = samples[data_supp.columns]
+        # Fit datetime transformer - converts to seconds
+        temp_datetime = datetime.DatetimeTransformer()
+        temp_datetime.fit(samples, columns = col)
+        samples = temp_datetime.transform(samples)
+
+    # Need these in same column order as the datetime transformed mimic set
+
+    samples = samples[original_metric_set.columns]
 
     # Now categorical columns need to be converted to objects as SDV infers data
     # types from the fields and integers/floats are treated as numerical not categorical
