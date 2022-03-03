@@ -34,7 +34,12 @@ import plotly.graph_objects as go
 
 # Load in the mimic single table data
 
-filepath = "C:/Users/frenc/Documents/Dave-NHSX Internship/Private Data/table_one_large_imbalanced_215k.csv"
+if torch.cuda.is_available():  
+  dev = "cuda:0" 
+else:  
+  dev = "cpu"  
+
+filepath = "C:/Users/David Brind/Documents/NHSX Internship Work/Private Data/table_one_large_imbalanced_215k.csv"
 
 data_supp = pd.read_csv(filepath)
 #%% -------- Data Pre-Processing -------- #
@@ -172,7 +177,7 @@ batch_size = 32
 
 generator = None
 sample_rate = batch_size / len(dataset)
-data_loader = DataLoader(
+data_loader = DataLoader(3
     dataset,
     batch_sampler=UniformWithReplacementSampler(
         num_samples=len(dataset), sample_rate=sample_rate, generator=generator
@@ -184,14 +189,14 @@ data_loader = DataLoader(
 # Create VAE
 latent_dim = 256
 hidden_dim = 256
-encoder = Encoder(x_train.shape[1], latent_dim, hidden_dim=hidden_dim)
+encoder = Encoder(x_train.shape[1], latent_dim, hidden_dim=hidden_dim, device=dev)
 decoder = Decoder(
-    latent_dim, num_continuous, num_categories=num_categories
+    latent_dim, num_continuous, num_categories=num_categories, device=dev
 )
 
 vae = VAE(encoder, decoder)
 
-n_epochs = 50
+n_epochs = 10
 
 log_elbo, log_reconstruction, log_divergence, log_categorical, log_numerical = vae.train(data_loader, n_epochs=n_epochs)
 

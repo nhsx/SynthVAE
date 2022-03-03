@@ -36,7 +36,7 @@ from utils import mimic_pre_proc, constraint_sampling_mimic
 
 import optuna
 
-filepath = "C:/Users/frenc/Documents/Dave-NHSX Internship/Private Data/table_one_large_imbalanced_215k.csv"
+filepath = "C:/Users/David Brind/Documents/NHSX Internship Work/Private Data/table_one_large_imbalanced_215k.csv"
 
 # Load in the MIMIC dataset
 data_supp = pd.read_csv(filepath)

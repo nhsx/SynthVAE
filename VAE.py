@@ -322,6 +322,7 @@ class VAE(nn.Module):
             # print(self.get_privacy_spent(target_delta))
 
             for batch_idx, (Y_subset,) in enumerate(tqdm(x_dataloader)):
+
                 self.optimizer.zero_grad()
                 elbo, reconstruct_loss, divergence_loss, categorical_reconstruct, numerical_reconstruct = self.loss(Y_subset.to(self.encoder.device))
                 elbo.backward()
