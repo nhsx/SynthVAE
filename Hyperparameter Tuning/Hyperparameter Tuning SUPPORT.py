@@ -83,7 +83,7 @@ def objective(trial, differential_privacy=False, target_delta=1e-3, target_eps=1
     )
 
     lr = trial.suggest_float('Learning Rate', 1e-5, 1e-1, step=1e-5)
-    vae = VAE(encoder, decoder, lr=1e-3) # lr hyperparam
+    vae = VAE(encoder, decoder, lr=lr) # lr hyperparam
 
     target_delta = target_delta
     target_eps = target_eps
@@ -117,7 +117,7 @@ def objective(trial, differential_privacy=False, target_delta=1e-3, target_eps=1
 
     # First add the old columns to the synthetic set to see what corresponds to what
 
-    synthetic_dataframe = pd.DataFrame(synthetic_trial.detach().numpy(),  columns=reordered_dataframe_columns)
+    synthetic_dataframe = pd.DataFrame(synthetic_trial.cpu().detach().numpy(),  columns=reordered_dataframe_columns)
 
     # Now all of the transformations from the dictionary - first loop over the categorical columns
 
@@ -174,7 +174,7 @@ def objective(trial, differential_privacy=False, target_delta=1e-3, target_eps=1
 # If there is no study object in your folder then run and save the study so
 # It can be resumed if needed
 
-first_run=False  # First run indicates if we are creating a new hyperparam study
+first_run=True  # First run indicates if we are creating a new hyperparam study
 
 if(first_run==True):
 
@@ -185,7 +185,7 @@ else:
     with open('no_dp_SUPPORT.pkl', 'rb') as f:
         study = pickle.load(f)
 
-#study.optimize(objective, n_trials=10, gc_after_trial=True) # GC to avoid OOM
+study.optimize(objective, n_trials=30, gc_after_trial=True) # GC to avoid OOM
 #%%
 
 study.best_trials

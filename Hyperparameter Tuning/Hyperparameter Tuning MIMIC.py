@@ -85,7 +85,7 @@ differential_privacy = False
 
 # -------- Define our Optuna trial -------- #
 
-def objective(trial, differential_privacy=False, target_delta=1e-3, target_eps=10.0, n_epochs=1):
+def objective(trial, differential_privacy=False, target_delta=1e-3, target_eps=10.0, n_epochs=50):
 
     latent_dim = trial.suggest_int('Latent Dimension', 2, 128, step=2) # Hyperparam
     hidden_dim = trial.suggest_int('Hidden Dimension', 32, 1024, step=32) # Hyperparam
@@ -149,7 +149,7 @@ def objective(trial, differential_privacy=False, target_delta=1e-3, target_eps=1
 
     # Need these in same column order as the datetime transformed mimic set
 
-    samples = samples[original_metric_set.columns]
+    samples = samples[metric_set.columns]
 
     # Now categorical columns need to be converted to objects as SDV infers data
     # types from the fields and integers/floats are treated as numerical not categorical
@@ -187,7 +187,7 @@ else:
     with open('no_dp_MIMIC.pkl', 'rb') as f:
         study = pickle.load(f)
 
-study.optimize(objective, n_trials=2, gc_after_trial=True) # GC to avoid OOM
+study.optimize(objective, n_trials=10, gc_after_trial=True) # GC to avoid OOM
 #%%
 
 study.best_trials
