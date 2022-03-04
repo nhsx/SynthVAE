@@ -23,7 +23,7 @@ class Encoder(nn.Module):
         latent_dim,
         hidden_dim=32,
         activation=nn.Tanh,
-        device="cpu",
+        device="gpu",
     ):
         super().__init__()
         if device == "gpu":
@@ -61,7 +61,7 @@ class Decoder(nn.Module):
         num_categories=[0],
         hidden_dim=32,
         activation=nn.Tanh,
-        device="cpu",
+        device="gpu",
     ):
         super().__init__()
 
@@ -111,6 +111,7 @@ class VAE(nn.Module):
         super().__init__()
         self.encoder = encoder.to(encoder.device)
         self.decoder = decoder.to(decoder.device)
+        self.device = encoder.device
         self.num_categories = self.decoder.num_categories
         self.num_continuous = self.decoder.num_continuous
         self.noiser = Noiser(self.num_continuous).to(decoder.device)
@@ -124,9 +125,9 @@ class VAE(nn.Module):
         return x_recon
 
     def generate(self, N):
-        z_samples = torch.randn_like(torch.ones((N, self.encoder.latent_dim)))
+        z_samples = torch.randn_like(torch.ones((N, self.encoder.latent_dim)), device=self.device)
         x_gen = self.decoder(z_samples)
-        x_gen_ = torch.ones_like(x_gen)
+        x_gen_ = torch.ones_like(x_gen, device=self.device)
         i = 0
 
         for v in range(len(self.num_categories)):

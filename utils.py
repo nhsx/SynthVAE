@@ -273,7 +273,7 @@ def constraint_sampling_mimic(n_rows, vae, reordered_cols, data_supp_columns, co
 
     synthetic_trial = vae.generate(n_rows) # Generate our big set
 
-    synthetic_dataframe = pd.DataFrame(synthetic_trial.detach().numpy(),  columns=reordered_cols)
+    synthetic_dataframe = pd.DataFrame(synthetic_trial.cpu().detach().numpy(),  columns=reordered_cols)
 
     # Reverse the transforms
 
@@ -301,7 +301,7 @@ def constraint_sampling_mimic(n_rows, vae, reordered_cols, data_supp_columns, co
         # Generate the amount we need
         new_samples = vae.generate(new_rows)
 
-        new_dataframe = pd.DataFrame(new_samples.detach().numpy(), columns = reordered_cols) 
+        new_dataframe = pd.DataFrame(new_samples.cpu().detach().numpy(), columns = reordered_cols) 
 
         # Reverse transforms
         synthetic_dataframe = reverse_transformers(new_dataframe, data_supp_columns, cont_transformers, cat_transformers, date_transformers)
@@ -341,5 +341,56 @@ def constraint_sampling_mimic(n_rows, vae, reordered_cols, data_supp_columns, co
             synthetic_dataframe = pd.concat([synthetic_dataframe, checked_rows])
             
             n_tries += 1
+
+    return synthetic_dataframe
+
+def pandas_filtering(n_rows, vae, reordered_cols, data_supp_columns, cont_transformers, cat_transformers, date_transformers, reverse_transformers=reverse_transformers, version=1):
+
+    # Generate samples
+    synthetic_trial = vae.generate(n_rows)
+    # Create pandas dataframe in column order
+    synthetic_dataframe = pd.DataFrame(synthetic_trial.cpu().detach().numpy(),  columns=reordered_cols)
+
+    # Reverse all the transformations ready for filtering
+    synthetic_dataframe = reverse_transformers(synthetic_dataframe, data_supp_columns, cont_transformers, cat_transformers, date_transformers)
+
+    # Function to filter out the constraints from the set - returns valid dataframe
+    def constraint_check(synthetic_df):
+                                # age greater than 0                   patient was discharged after being admitted           patient admitted after their date of birth         patient first chart after admit time
+        valid_df = synthetic_df[(synthetic_df['age'] > 0) | (synthetic_df['DISCHTIME'] >= synthetic_df['ADMITTIME']) | (synthetic_df['ADMITTIME'] > synthetic_df['DOB']) | (synthetic_df['CHARTTIME'] >= synthetic_df['ADMITTIME'])]
+
+        return valid_df
+
+    # Do first check
+    synthetic_dataframe = constraint_check(synthetic_dataframe)
+
+    # Loop over returning a valid dataframe each time until we get a set that is big enough
+    while(synthetic_dataframe.shape[0] != n_rows):
+
+        rows_needed = n_rows - synthetic_dataframe.shape[0]
+
+
+        # If we have too many, remove the required amount
+        if(rows_needed < 0):
+
+            rows_needed = np.arange(abs(rows_needed))
+
+            # Drop the bottom rows_needed amount
+
+            synthetic_dataframe.drop(rows_needed, axis=0, inplace=True)
+
+        # Need to generate enough to fill the dataframe
+        else:
+            
+            new_set = vae.generate(rows_needed)
+
+            new_set = pd.DataFrame(new_set.cpu().detach().numpy(),  columns=reordered_cols)
+
+            new_set = reverse_transformers(new_set, data_supp_columns, cont_transformers, cat_transformers, date_transformers)
+
+            new_filtered_set = constraint_check(new_set)
+
+            # Add this onto the original and re-run
+            synthetic_dataframe = pd.concat([synthetic_dataframe, new_filtered_set])
 
     return synthetic_dataframe

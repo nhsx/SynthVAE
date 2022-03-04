@@ -35,7 +35,7 @@ import plotly.graph_objects as go
 # Load in the mimic single table data
 
 if torch.cuda.is_available():  
-  dev = "cuda:0" 
+  dev = "gpu" 
 else:  
   dev = "cpu"  
 

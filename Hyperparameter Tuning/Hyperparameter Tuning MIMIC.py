@@ -32,9 +32,14 @@ from sdv.metrics.tabular import NumericalLR, NumericalMLP, NumericalSVR
 from rdt.transformers import categorical, numerical, datetime
 from sklearn.preprocessing import QuantileTransformer
 
-from utils import mimic_pre_proc, constraint_sampling_mimic
+from utils import mimic_pre_proc, constraint_sampling_mimic, pandas_filtering
 
 import optuna
+
+if torch.cuda.is_available():  
+  dev = "gpu" 
+else:  
+  dev = "cpu"  
 
 filepath = "C:/Users/David Brind/Documents/NHSX Internship Work/Private Data/table_one_large_imbalanced_215k.csv"
 
@@ -80,13 +85,13 @@ differential_privacy = False
 
 # -------- Define our Optuna trial -------- #
 
-def objective(trial, differential_privacy=False, target_delta=1e-3, target_eps=10.0, n_epochs=50):
+def objective(trial, differential_privacy=False, target_delta=1e-3, target_eps=10.0, n_epochs=1):
 
     latent_dim = trial.suggest_int('Latent Dimension', 2, 128, step=2) # Hyperparam
     hidden_dim = trial.suggest_int('Hidden Dimension', 32, 1024, step=32) # Hyperparam
-    encoder = Encoder(x_train.shape[1], latent_dim, hidden_dim=hidden_dim)
+    encoder = Encoder(x_train.shape[1], latent_dim, hidden_dim=hidden_dim, device=dev)
     decoder = Decoder(
-        latent_dim, num_continuous, num_categories=num_categories
+        latent_dim, num_continuous, num_categories=num_categories, device=dev
     )
 
     lr = trial.suggest_float('Learning Rate', 1e-5, 1e-1, step=1e-5)
@@ -119,7 +124,7 @@ def objective(trial, differential_privacy=False, target_delta=1e-3, target_eps=1
     # Generate a synthetic set using trained vae
 
     n_rows = data_supp.shape[0]
-    synthetic_transformed_set = constraint_sampling_mimic(n_rows=n_rows, vae=vae, reordered_cols=reordered_dataframe_columns, 
+    synthetic_transformed_set = pandas_filtering(n_rows=n_rows, vae=vae, reordered_cols=reordered_dataframe_columns, 
     data_supp_columns=data_supp.columns, cont_transformers=continuous_transformers, cat_transformers=categorical_transformers, date_transformers=datetime_transformers)
 
     # -------- SDV Metrics -------- #
@@ -129,6 +134,7 @@ def objective(trial, differential_privacy=False, target_delta=1e-3, target_eps=1
     # train/generate/evaluate runs
 
     samples = synthetic_transformed_set
+    metric_set = data_supp.copy()
 
     # We now need to transform the datetime columns using datetime transformers
     for col in original_datetime_columns:
@@ -137,6 +143,9 @@ def objective(trial, differential_privacy=False, target_delta=1e-3, target_eps=1
         temp_datetime = datetime.DatetimeTransformer()
         temp_datetime.fit(samples, columns = col)
         samples = temp_datetime.transform(samples)
+        temp_datetime.fit(metric_set, columns = col)
+        metric_set = temp_datetime.transform(metric_set)
+
 
     # Need these in same column order as the datetime transformed mimic set
 
@@ -146,9 +155,9 @@ def objective(trial, differential_privacy=False, target_delta=1e-3, target_eps=1
     # types from the fields and integers/floats are treated as numerical not categorical
 
     samples[original_categorical_columns] = samples[original_categorical_columns].astype(object)
-    data_supp[original_categorical_columns] = data_supp[original_categorical_columns].astype(object)
+    metric_set[original_categorical_columns] = metric_set[original_categorical_columns].astype(object)
 
-    evals = evaluate(samples, data_supp, metrics=['ContinuousKLDivergence', 'DiscreteKLDivergence'], aggregate=False)
+    evals = evaluate(samples, metric_set, metrics=['ContinuousKLDivergence', 'DiscreteKLDivergence'], aggregate=False)
 
     # New version has added a lot more evaluation metrics
     #bns = (np.array(evals["raw_score"])[0])
@@ -158,9 +167,9 @@ def objective(trial, differential_privacy=False, target_delta=1e-3, target_eps=1
     #kses = (np.array(evals["raw_score"])[4])
     contkls = (np.array(evals["raw_score"])[0])
     disckls = (np.array(evals["raw_score"])[1])
-    gowers = (np.mean(gower.gower_matrix(data_supp, samples)))
+    #gowers = (np.mean(gower.gower_matrix(metric_set, samples)))
 
-    return [contkls, disckls, gowers]
+    return [contkls, disckls]
 
 #%% -------- Run Hyperparam Optimisation -------- #
 
@@ -171,7 +180,7 @@ first_run=True  # First run indicates if we are creating a new hyperparam study
 
 if(first_run==True):
 
-    study = optuna.create_study(directions=['maximize', 'maximize', 'maximize'])
+    study = optuna.create_study(directions=['maximize', 'maximize'])
 
 else:
 
