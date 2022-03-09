@@ -39,7 +39,7 @@ if torch.cuda.is_available():
 else:  
   dev = "cpu"  
 
-filepath = "C:/Users/David Brind/Documents/NHSX Internship Work/Private Data/table_one_large_imbalanced_215k.csv"
+filepath = "C:/Users/frenc/Documents/Dave-NHSX Internship/Private Data/table_one_synthvae.csv"
 
 data_supp = pd.read_csv(filepath)
 #%% -------- Data Pre-Processing -------- #
@@ -50,7 +50,7 @@ original_categorical_columns = ['ETHNICITY', 'DISCHARGE_LOCATION', 'GENDER', 'FI
 original_continuous_columns = ['Unnamed: 0', 'ROW_ID', 'SUBJECT_ID', 'VALUE', 'age']
 original_datetime_columns = ['ADMITTIME', 'DISCHTIME', 'DOB', 'CHARTTIME']
 
-data_supp = data_supp.drop('DOD', axis=1)
+#data_supp = data_supp.drop('DOD', axis=1)
 
 categorical_columns = original_categorical_columns.copy()
 continuous_columns = original_continuous_columns.copy()
@@ -177,7 +177,7 @@ batch_size = 32
 
 generator = None
 sample_rate = batch_size / len(dataset)
-data_loader = DataLoader(3
+data_loader = DataLoader(
     dataset,
     batch_sampler=UniformWithReplacementSampler(
         num_samples=len(dataset), sample_rate=sample_rate, generator=generator
@@ -196,7 +196,7 @@ decoder = Decoder(
 
 vae = VAE(encoder, decoder)
 
-n_epochs = 10
+n_epochs = 50
 
 log_elbo, log_reconstruction, log_divergence, log_categorical, log_numerical = vae.train(data_loader, n_epochs=n_epochs)
 
@@ -222,12 +222,12 @@ fig.update_layout(title="ELBO Breakdown",
 
 fig.show()
 
-filepath_save = ''
+filepath_save = 'C:/Users/frenc/Documents/Dave-NHSX Internship/SynthVAE/Plots/table_one_synthvae/'
 
 # Save static image
-fig.write_image("{}/ELBO Breakdown SynthVAE2.png".format(filepath_save))
+fig.write_image("{}ELBO Breakdown SynthVAE2.png".format(filepath_save))
 # Save interactive image
-fig.write_html("{}/ELBO Breakdown SynthVAE2.html".format(filepath_save))
+fig.write_html("{}ELBO Breakdown SynthVAE2.html".format(filepath_save))
 #%% -------- Plot Loss Features Reconstruction Breakdown -------- #
 
 # Initialize figure with subplots
@@ -379,6 +379,11 @@ synthetic_transformed_set = constraint_sampling(
     cont_transformers=continuous_transformers, cat_transformers=categorical_transformers, date_transformers=datetime_transformers,
     reverse_transformers=reverse_transformers
 )
+
+# %%
+
+synthetic_transformed_set = reverse_transformers(synthetic_set = pd.DataFrame(vae.generate(data_supp.shape[0]).detach().numpy(), columns=reordered_dataframe.columns), data_supp_columns = data_supp.columns, cont_transformers=continuous_transformers, cat_transformers=categorical_transformers, date_transformers=datetime_transformers)
+
 #%% -------- Plot Histograms For All The Variable Distributions -------- #
 
 # Plot some examples using plotly
@@ -406,9 +411,9 @@ for column in original_categorical_columns:
     fig.show()
 
     # Save static image
-    fig.write_image("{}/Variable {} CONSTRAINT.png".format(filepath_save, column))
+    fig.write_image("{}/CONSTRAINT Variable {}.png".format(filepath_save, column))
     # Save interactive image
-    fig.write_html("{}/Variable {} CONSTRAINT.html".format(filepath_save, column))
+    fig.write_html("{}/CONSTRAINT Variable {}.html".format(filepath_save, column))
 
 for column in original_continuous_columns:
     
@@ -433,9 +438,9 @@ for column in original_continuous_columns:
     fig.show()
 
     # Save static image
-    fig.write_image("{}/Variable {} CONSTRAINT.png".format(filepath_save, column))
+    fig.write_image("{}/CONSTRAINT Variable {}.png".format(filepath_save, column))
     # Save interactive image
-    fig.write_html("{}/Variable {} CONSTRAINT.html".format(filepath_save, column))
+    fig.write_html("{}/CONSTRAINT Variable {}.html".format(filepath_save, column))
 
 #%% -------- SDV Metrics -------- #
 # Calculate the sdv metrics for SynthVAE

@@ -33,7 +33,7 @@ from rdt.transformers import categorical, numerical, datetime
 
 # Load in the mimic single table data
 
-filename = ''
+filename = "C:/Users/frenc/Documents/Dave-NHSX Internship/Private Data/table_one_synthvae.csv"
 
 data_supp = pd.read_csv(filename)
 
@@ -44,7 +44,7 @@ torch.cuda.is_available()
 
 original_categorical_columns = ['ETHNICITY', 'DISCHARGE_LOCATION', 'GENDER', 'FIRST_CAREUNIT', 'VALUEUOM', 'LABEL']
 original_continuous_columns = ['Unnamed: 0', 'ROW_ID', 'SUBJECT_ID', 'VALUE', 'age']
-original_datetime_columns = ['ADMITTIME', 'DISCHTIME', 'DOB', 'DOD', 'CHARTTIME']
+original_datetime_columns = ['ADMITTIME', 'DISCHTIME', 'DOB', 'CHARTTIME']
 
 categorical_columns = original_categorical_columns.copy()
 continuous_columns = original_continuous_columns.copy()
@@ -407,4 +407,6 @@ metrics = pd.DataFrame(data = [[bns,lrs,svcs,gmlls,cs,ks,kses,contkls,disckls,go
 columns = ["BNLogLikelihood", "LogisticDetection", "SVCDetection", "GMLogLikelihood",
 "CSTest", "KSTest", "KSTestExtended", "ContinuousKLDivergence", "DiscreteKLDivergence", "Gower"])
 
-metrics.to_csv("{}/Metrics SYNTHVAE.csv".format(filepath_save)
+filepath_save='C:/Users/frenc/Documents/Dave-NHSX Internship/SynthVAE/Plots/table_one_synthvae/'
+
+metrics.to_csv("{}/Metrics SYNTHVAE.csv".format(filepath_save))

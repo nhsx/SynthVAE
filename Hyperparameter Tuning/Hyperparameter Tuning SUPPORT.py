@@ -69,7 +69,7 @@ data_loader = DataLoader(
 
 # Create VAE - either DP preserving or not
 
-differential_privacy = False
+differential_privacy = True
 
 # -------- Define our Optuna trial -------- #
 
@@ -82,8 +82,8 @@ def objective(trial, differential_privacy=False, target_delta=1e-3, target_eps=1
         latent_dim, num_continuous, num_categories=num_categories
     )
 
-    lr = trial.suggest_float('Learning Rate', 1e-5, 1e-1, step=1e-5)
-    vae = VAE(encoder, decoder, lr=lr) # lr hyperparam
+    lr = trial.suggest_float('Learning Rate', 1e-3, 1e-2, step=1e-5)
+    vae = VAE(encoder, decoder, lr=1e-3) # lr hyperparam
 
     target_delta = target_delta
     target_eps = target_eps
@@ -182,19 +182,20 @@ if(first_run==True):
 
 else:
 
-    with open('no_dp_SUPPORT.pkl', 'rb') as f:
+    with open('dp_SUPPORT.pkl', 'rb') as f:
         study = pickle.load(f)
 
 study.optimize(objective, n_trials=30, gc_after_trial=True) # GC to avoid OOM
 #%%
 
 study.best_trials
+
 #%% -------- Save The  Study -------- #
 
 # For a multi objective study we need to find the best trials and basically
 # average between the 3 metrics to get the best trial
 
-with open("no_dp_SUPPORT.pkl", 'wb') as f:
+with open("dp_SUPPORT.pkl", 'wb') as f:
         pickle.dump(study, f)
 
 trial_averages = []
