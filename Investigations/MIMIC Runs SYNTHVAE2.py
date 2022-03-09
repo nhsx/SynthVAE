@@ -41,9 +41,9 @@ data_supp = pd.read_csv(filepath)
 
 # Specify column configurations
 
-original_categorical_columns = ['ETHNICITY', 'DISCHARGE_LOCATION', 'GENDER', 'FIRST_CAREUNIT', 'VALUEUOM', 'LABEL']
-original_continuous_columns = ['Unnamed: 0', 'ROW_ID', 'SUBJECT_ID', 'VALUE', 'age']
-original_datetime_columns = ['ADMITTIME', 'DISCHTIME', 'DOB', 'CHARTTIME']
+original_categorical_columns = ['...', '...', '...',] # Categorical column names from MIMIC Set
+original_continuous_columns = ['...', '...', '...',] # Continuous column names from MIMIC Set
+original_datetime_columns = ['...', '...', '...',] # Datetime column names from MIMIC Set
 
 #data_supp = data_supp.drop('DOD', axis=1)
 
