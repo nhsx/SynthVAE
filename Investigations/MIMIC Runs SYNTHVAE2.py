@@ -32,14 +32,9 @@ from rdt.transformers import categorical, numerical, datetime
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 
-# Load in the mimic single table data
+# Load in the mimic single table data 
 
-if torch.cuda.is_available():  
-  dev = "gpu" 
-else:  
-  dev = "cpu"  
-
-filepath = "C:/Users/frenc/Documents/Dave-NHSX Internship/Private Data/table_one_synthvae.csv"
+filepath = ""
 
 data_supp = pd.read_csv(filepath)
 #%% -------- Data Pre-Processing -------- #
@@ -222,7 +217,7 @@ fig.update_layout(title="ELBO Breakdown",
 
 fig.show()
 
-filepath_save = 'C:/Users/frenc/Documents/Dave-NHSX Internship/SynthVAE/Plots/table_one_synthvae/'
+filepath_save = ''
 
 # Save static image
 fig.write_image("{}ELBO Breakdown SynthVAE2.png".format(filepath_save))

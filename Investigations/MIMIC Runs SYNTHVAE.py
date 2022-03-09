@@ -33,7 +33,7 @@ from rdt.transformers import categorical, numerical, datetime
 
 # Load in the mimic single table data
 
-filename = "C:/Users/frenc/Documents/Dave-NHSX Internship/Private Data/table_one_synthvae.csv"
+filename = ""
 
 data_supp = pd.read_csv(filename)
 

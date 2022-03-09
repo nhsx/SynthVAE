@@ -36,12 +36,7 @@ from utils import mimic_pre_proc, constraint_sampling_mimic, pandas_filtering
 
 import optuna
 
-if torch.cuda.is_available():  
-  dev = "gpu" 
-else:  
-  dev = "cpu"  
-
-filepath = "C:/Users/David Brind/Documents/NHSX Internship Work/Private Data/table_one_large_imbalanced_215k.csv"
+filepath = ""
 
 # Load in the MIMIC dataset
 data_supp = pd.read_csv(filepath)
