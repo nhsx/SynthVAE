@@ -32,9 +32,9 @@ from rdt.transformers import categorical, numerical, datetime
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 
-# Load in the mimic single table data
+# Load in the mimic single table data 
 
-filepath = ''
+filepath = ""
 
 data_supp = pd.read_csv(filepath)
 #%% -------- Data Pre-Processing -------- #
@@ -44,6 +44,8 @@ data_supp = pd.read_csv(filepath)
 original_categorical_columns = ['...', '...', '...',] # Categorical column names from MIMIC Set
 original_continuous_columns = ['...', '...', '...',] # Continuous column names from MIMIC Set
 original_datetime_columns = ['...', '...', '...',] # Datetime column names from MIMIC Set
+
+#data_supp = data_supp.drop('DOD', axis=1)
 
 categorical_columns = original_categorical_columns.copy()
 continuous_columns = original_continuous_columns.copy()
@@ -182,9 +184,9 @@ data_loader = DataLoader(
 # Create VAE
 latent_dim = 256
 hidden_dim = 256
-encoder = Encoder(x_train.shape[1], latent_dim, hidden_dim=hidden_dim)
+encoder = Encoder(x_train.shape[1], latent_dim, hidden_dim=hidden_dim, device=dev)
 decoder = Decoder(
-    latent_dim, num_continuous, num_categories=num_categories
+    latent_dim, num_continuous, num_categories=num_categories, device=dev
 )
 
 vae = VAE(encoder, decoder)
@@ -218,9 +220,9 @@ fig.show()
 filepath_save = ''
 
 # Save static image
-fig.write_image("{}/ELBO Breakdown SynthVAE2.png".format(filepath_save))
+fig.write_image("{}ELBO Breakdown SynthVAE2.png".format(filepath_save))
 # Save interactive image
-fig.write_html("{}/ELBO Breakdown SynthVAE2.html".format(filepath_save))
+fig.write_html("{}ELBO Breakdown SynthVAE2.html".format(filepath_save))
 #%% -------- Plot Loss Features Reconstruction Breakdown -------- #
 
 # Initialize figure with subplots
@@ -372,6 +374,11 @@ synthetic_transformed_set = constraint_sampling(
     cont_transformers=continuous_transformers, cat_transformers=categorical_transformers, date_transformers=datetime_transformers,
     reverse_transformers=reverse_transformers
 )
+
+# %%
+
+synthetic_transformed_set = reverse_transformers(synthetic_set = pd.DataFrame(vae.generate(data_supp.shape[0]).detach().numpy(), columns=reordered_dataframe.columns), data_supp_columns = data_supp.columns, cont_transformers=continuous_transformers, cat_transformers=categorical_transformers, date_transformers=datetime_transformers)
+
 #%% -------- Plot Histograms For All The Variable Distributions -------- #
 
 # Plot some examples using plotly
@@ -399,9 +406,9 @@ for column in original_categorical_columns:
     fig.show()
 
     # Save static image
-    fig.write_image("{}/Variable {} CONSTRAINT.png".format(filepath_save, column))
+    fig.write_image("{}/CONSTRAINT Variable {}.png".format(filepath_save, column))
     # Save interactive image
-    fig.write_html("{}/Variable {} CONSTRAINT.html".format(filepath_save, column))
+    fig.write_html("{}/CONSTRAINT Variable {}.html".format(filepath_save, column))
 
 for column in original_continuous_columns:
     
@@ -426,9 +433,9 @@ for column in original_continuous_columns:
     fig.show()
 
     # Save static image
-    fig.write_image("{}/Variable {} CONSTRAINT.png".format(filepath_save, column))
+    fig.write_image("{}/CONSTRAINT Variable {}.png".format(filepath_save, column))
     # Save interactive image
-    fig.write_html("{}/Variable {} CONSTRAINT.html".format(filepath_save, column))
+    fig.write_html("{}/CONSTRAINT Variable {}.html".format(filepath_save, column))
 
 #%% -------- SDV Metrics -------- #
 # Calculate the sdv metrics for SynthVAE

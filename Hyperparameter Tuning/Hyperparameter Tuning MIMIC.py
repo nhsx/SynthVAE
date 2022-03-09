@@ -29,25 +29,32 @@ from sdv.evaluation import evaluate
 
 from sdv.metrics.tabular import NumericalLR, NumericalMLP, NumericalSVR
 
-from rdt.transformers import categorical, numerical
+from rdt.transformers import categorical, numerical, datetime
 from sklearn.preprocessing import QuantileTransformer
 
-from utils import support_pre_proc
+from utils import mimic_pre_proc, constraint_sampling_mimic, pandas_filtering
 
 import optuna
 
-# Load in the support data
-data_supp = support.read_df()
+filepath = ""
+
+# Load in the MIMIC dataset
+data_supp = pd.read_csv(filepath)
 
 # Save the original columns
 
-original_continuous_columns = ['duration'] + [f"x{i}" for i in range(7,15)]
-original_categorical_columns = ['event'] + [f"x{i}" for i in range(1,7)] 
+original_categorical_columns = ['ETHNICITY', 'DISCHARGE_LOCATION', 'GENDER', 'FIRST_CAREUNIT', 'VALUEUOM', 'LABEL']
+original_continuous_columns = ['Unnamed: 0', 'ROW_ID', 'SUBJECT_ID', 'VALUE', 'age']
+original_datetime_columns = ['ADMITTIME', 'DISCHTIME', 'DOB', 'CHARTTIME']
 
-original_columns = original_categorical_columns + original_continuous_columns
+# Drop DOD column as it contains NANS - for now
+
+data_supp = data_supp.drop('DOD', axis = 1)
+
+original_columns = original_categorical_columns + original_continuous_columns + original_datetime_columns
 #%% -------- Data Pre-Processing -------- #
 
-x_train, data_supp, reordered_dataframe_columns, continuous_transformers, categorical_transformers, num_categories, num_continuous = support_pre_proc(data_supp=data_supp)
+x_train, original_metric_set, reordered_dataframe_columns, continuous_transformers, categorical_transformers, datetime_transformers, num_categories, num_continuous = mimic_pre_proc(data_supp=data_supp, version=2)
 
 #%% -------- Create & Train VAE -------- #
 
@@ -69,7 +76,7 @@ data_loader = DataLoader(
 
 # Create VAE - either DP preserving or not
 
-differential_privacy = True
+differential_privacy = False
 
 # -------- Define our Optuna trial -------- #
 
@@ -77,13 +84,13 @@ def objective(trial, differential_privacy=False, target_delta=1e-3, target_eps=1
 
     latent_dim = trial.suggest_int('Latent Dimension', 2, 128, step=2) # Hyperparam
     hidden_dim = trial.suggest_int('Hidden Dimension', 32, 1024, step=32) # Hyperparam
-    encoder = Encoder(x_train.shape[1], latent_dim, hidden_dim=hidden_dim)
+    encoder = Encoder(x_train.shape[1], latent_dim, hidden_dim=hidden_dim, device=dev)
     decoder = Decoder(
-        latent_dim, num_continuous, num_categories=num_categories
+        latent_dim, num_continuous, num_categories=num_categories, device=dev
     )
 
-    lr = trial.suggest_float('Learning Rate', 1e-3, 1e-2, step=1e-5)
-    vae = VAE(encoder, decoder, lr=1e-3) # lr hyperparam
+    lr = trial.suggest_float('Learning Rate', 1e-5, 1e-1, step=1e-5)
+    vae = VAE(encoder, decoder) # lr hyperparam
 
     target_delta = target_delta
     target_eps = target_eps
@@ -111,31 +118,9 @@ def objective(trial, differential_privacy=False, target_delta=1e-3, target_eps=1
 
     # Generate a synthetic set using trained vae
 
-    synthetic_trial = vae.generate(data_supp.shape[0]) # 8873 is size of support
-
-    # -------- Inverse Transformation On Synthetic Trial -------- #
-
-    # First add the old columns to the synthetic set to see what corresponds to what
-
-    synthetic_dataframe = pd.DataFrame(synthetic_trial.cpu().detach().numpy(),  columns=reordered_dataframe_columns)
-
-    # Now all of the transformations from the dictionary - first loop over the categorical columns
-
-    synthetic_transformed_set = synthetic_dataframe
-
-    for transformer_name in categorical_transformers:
-
-        transformer = categorical_transformers[transformer_name]
-        column_name = transformer_name[12:]
-
-        synthetic_transformed_set = transformer.reverse_transform(synthetic_transformed_set)
-
-    for transformer_name in continuous_transformers:
-
-        transformer = continuous_transformers[transformer_name]
-        column_name = transformer_name[11:]
-
-        synthetic_transformed_set = transformer.reverse_transform(synthetic_transformed_set)
+    n_rows = data_supp.shape[0]
+    synthetic_transformed_set = pandas_filtering(n_rows=n_rows, vae=vae, reordered_cols=reordered_dataframe_columns, 
+    data_supp_columns=data_supp.columns, cont_transformers=continuous_transformers, cat_transformers=categorical_transformers, date_transformers=datetime_transformers)
 
     # -------- SDV Metrics -------- #
     # Calculate the sdv metrics for SynthVAE
@@ -144,18 +129,30 @@ def objective(trial, differential_privacy=False, target_delta=1e-3, target_eps=1
     # train/generate/evaluate runs
 
     samples = synthetic_transformed_set
+    metric_set = data_supp.copy()
 
-    # Need these in same column order
+    # We now need to transform the datetime columns using datetime transformers
+    for col in original_datetime_columns:
 
-    samples = samples[data_supp.columns]
+        # Fit datetime transformer - converts to seconds
+        temp_datetime = datetime.DatetimeTransformer()
+        temp_datetime.fit(samples, columns = col)
+        samples = temp_datetime.transform(samples)
+        temp_datetime.fit(metric_set, columns = col)
+        metric_set = temp_datetime.transform(metric_set)
+
+
+    # Need these in same column order as the datetime transformed mimic set
+
+    samples = samples[metric_set.columns]
 
     # Now categorical columns need to be converted to objects as SDV infers data
     # types from the fields and integers/floats are treated as numerical not categorical
 
     samples[original_categorical_columns] = samples[original_categorical_columns].astype(object)
-    data_supp[original_categorical_columns] = data_supp[original_categorical_columns].astype(object)
+    metric_set[original_categorical_columns] = metric_set[original_categorical_columns].astype(object)
 
-    evals = evaluate(samples, data_supp, metrics=['ContinuousKLDivergence', 'DiscreteKLDivergence'], aggregate=False)
+    evals = evaluate(samples, metric_set, metrics=['ContinuousKLDivergence', 'DiscreteKLDivergence'], aggregate=False)
 
     # New version has added a lot more evaluation metrics
     #bns = (np.array(evals["raw_score"])[0])
@@ -165,9 +162,9 @@ def objective(trial, differential_privacy=False, target_delta=1e-3, target_eps=1
     #kses = (np.array(evals["raw_score"])[4])
     contkls = (np.array(evals["raw_score"])[0])
     disckls = (np.array(evals["raw_score"])[1])
-    gowers = (np.mean(gower.gower_matrix(data_supp, samples)))
+    #gowers = (np.mean(gower.gower_matrix(metric_set, samples)))
 
-    return [contkls, disckls, gowers]
+    return [contkls, disckls]
 
 #%% -------- Run Hyperparam Optimisation -------- #
 
@@ -178,24 +175,23 @@ first_run=True  # First run indicates if we are creating a new hyperparam study
 
 if(first_run==True):
 
-    study = optuna.create_study(directions=['maximize', 'maximize', 'maximize'])
+    study = optuna.create_study(directions=['maximize', 'maximize'])
 
 else:
 
-    with open('dp_SUPPORT.pkl', 'rb') as f:
+    with open('no_dp_MIMIC.pkl', 'rb') as f:
         study = pickle.load(f)
 
-study.optimize(objective, n_trials=30, gc_after_trial=True) # GC to avoid OOM
+study.optimize(objective, n_trials=10, gc_after_trial=True) # GC to avoid OOM
 #%%
 
 study.best_trials
-
 #%% -------- Save The  Study -------- #
 
 # For a multi objective study we need to find the best trials and basically
 # average between the 3 metrics to get the best trial
 
-with open("dp_SUPPORT.pkl", 'wb') as f:
+with open("no_dp_MIMIC.pkl", 'wb') as f:
         pickle.dump(study, f)
 
 trial_averages = []

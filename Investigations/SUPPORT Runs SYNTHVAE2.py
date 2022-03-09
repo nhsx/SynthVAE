@@ -13,6 +13,10 @@ from opacus.utils.uniform_sampler import UniformWithReplacementSampler
 # For the SUPPORT dataset
 from pycox.datasets import support
 
+# VAE is in other folder
+import sys
+sys.path.append('../')
+
 # For VAE dataset formatting
 from torch.utils.data import TensorDataset, DataLoader
 
@@ -96,21 +100,19 @@ for index, column in enumerate(continuous_columns):
 
         continuous_columns = ['duration.normalized'] + [f"x{i}.normalized" for i in range(7,15)]
 
-        # For each categorical column we want to know the number of categories
-
-        num_categories = (
+num_categories = (
         np.array([np.amax(transformed_dataset[col]) for col in categorical_columns]) + 1
-        ).astype(int)
+    ).astype(int)
 
-        num_continuous = len(continuous_columns)
+num_continuous = len(continuous_columns)
 
-    for index, column in enumerate(categorical_columns):
+for index, column in enumerate(categorical_columns):
 
-        temp_categorical = categorical.OneHotEncodingTransformer()
-        temp_categorical.fit(transformed_dataset, columns = column)
-        categorical_transformers['categorical_{}'.format(index)] = temp_categorical
+    temp_categorical = categorical.OneHotEncodingTransformer()
+    temp_categorical.fit(transformed_dataset, columns = column)
+    categorical_transformers['categorical_{}'.format(index)] = temp_categorical
 
-        transformed_dataset = temp_categorical.transform(transformed_dataset)
+    transformed_dataset = temp_categorical.transform(transformed_dataset)
 
 # We need the dataframe in the correct format i.e. categorical variables first and in the order of
 # num_categories with continuous variables placed after
