@@ -97,17 +97,13 @@ def support_pre_proc(data_supp):
 # -------- Pre-Processing for MIMIC sets -------- #
 # Internal sets provided by NHSX - outside users will have to stick with SUPPORT set
 
-def mimic_pre_proc(data_supp, version=1):
+def mimic_pre_proc(data_supp):
 
     # Specify column configurations
 
     original_categorical_columns = ['ETHNICITY', 'DISCHARGE_LOCATION', 'GENDER', 'FIRST_CAREUNIT', 'VALUEUOM', 'LABEL']
     original_continuous_columns = ['Unnamed: 0', 'ROW_ID', 'SUBJECT_ID', 'VALUE', 'age']
-    
-    if(version==1):
-        original_datetime_columns = ['ADMITTIME', 'DISCHTIME', 'DOB', 'CHARTTIME']
-    elif(version==2):
-        original_datetime_columns = ['ADMITTIME', 'DISCHTIME', 'DOB', 'CHARTTIME']
+    original_datetime_columns = ['ADMITTIME', 'DISCHTIME', 'DOB', 'CHARTTIME']
 
 
     categorical_columns = original_categorical_columns.copy()
@@ -267,7 +263,7 @@ def reverse_transformers(synthetic_set, data_supp_columns, cont_transformers, ca
 
 # -------- Constraint based sampling for MIMIC work -------- #
 
-def constraint_sampling_mimic(n_rows, vae, reordered_cols, data_supp_columns, cont_transformers, cat_transformers, date_transformers, reverse_transformers=reverse_transformers, version=1):
+def constraint_sampling_mimic(n_rows, vae, reordered_cols, data_supp_columns, cont_transformers, cat_transformers, date_transformers, reverse_transformers=reverse_transformers):
 
     # n_rows - the number of rows we require
 
@@ -279,7 +275,7 @@ def constraint_sampling_mimic(n_rows, vae, reordered_cols, data_supp_columns, co
 
     synthetic_dataframe = reverse_transformers(synthetic_dataframe, data_supp_columns, cont_transformers, cat_transformers, date_transformers)
 
-    def initial_check(synthetic_dataframe, version=1):
+    def initial_check(synthetic_dataframe):
 
         n_rows = synthetic_dataframe.shape[0]
 
@@ -296,7 +292,7 @@ def constraint_sampling_mimic(n_rows, vae, reordered_cols, data_supp_columns, co
 
     # Now we need to generate & perform this check over and over until all rows match
 
-def constraint_filtering(n_rows, vae, reordered_cols, data_supp_columns, cont_transformers, cat_transformers, date_transformers, reverse_transformers=reverse_transformers, version=1):
+def constraint_filtering(n_rows, vae, reordered_cols, data_supp_columns, cont_transformers, cat_transformers, date_transformers, reverse_transformers=reverse_transformers):
 
     # Generate samples
     synthetic_trial = vae.generate(n_rows)
