@@ -296,55 +296,7 @@ def constraint_sampling_mimic(n_rows, vae, reordered_cols, data_supp_columns, co
 
     # Now we need to generate & perform this check over and over until all rows match
 
-    def generation_checks(new_rows, vae, reordered_cols, initial_check, data_supp_columns, cont_transformers, cat_transformers, date_transformers, version=1):
-
-        # Generate the amount we need
-        new_samples = vae.generate(new_rows)
-
-        new_dataframe = pd.DataFrame(new_samples.cpu().detach().numpy(), columns = reordered_cols) 
-
-        # Reverse transforms
-        synthetic_dataframe = reverse_transformers(new_dataframe, data_supp_columns, cont_transformers, cat_transformers, date_transformers)
-
-        # Perform the first check
-
-        initial_check(synthetic_dataframe, version=version)
-
-        return synthetic_dataframe
-
-    # First pass the generated set through the initial check to see if we need to do constraint sampling
-
-    initial_check(synthetic_dataframe, version=version)
-
-    # While synthetic_dataframe.shape[0] is not the amount we need (or we are racking up excessive attempts), we perform the loop
-    n_tries = 0
-    while( (synthetic_dataframe.shape[0] != n_rows) or (n_tries == 100) ):
-
-        # Generate the amount required
-        rows_needed = n_rows - synthetic_dataframe.shape[0]
-
-        # Possible that we could have added extra rows to whats required so just remove these
-        if(rows_needed < 0):
-            
-            rows_needed = np.arange(abs(rows_needed))
-
-            # Drop the bottom rows_needed amount
-
-            synthetic_dataframe.drop(rows_needed, axis=0, inplace=True)
-
-        # We do not have enough rows so need to generate
-        else:
-
-            checked_rows = generation_checks(rows_needed, vae, reordered_cols, initial_check, data_supp_columns, cont_transformers, cat_transformers, date_transformers, version=version)
-
-            # Add the rows that do fit constraints to the synthetic_dataframe
-            synthetic_dataframe = pd.concat([synthetic_dataframe, checked_rows])
-            
-            n_tries += 1
-
-    return synthetic_dataframe
-
-def pandas_filtering(n_rows, vae, reordered_cols, data_supp_columns, cont_transformers, cat_transformers, date_transformers, reverse_transformers=reverse_transformers, version=1):
+def constraint_filtering(n_rows, vae, reordered_cols, data_supp_columns, cont_transformers, cat_transformers, date_transformers, reverse_transformers=reverse_transformers, version=1):
 
     # Generate samples
     synthetic_trial = vae.generate(n_rows)
