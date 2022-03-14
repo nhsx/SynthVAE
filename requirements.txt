@@ -29,6 +29,7 @@ multivolumefile==0.2.3
 networkx==2.6.2
 numba==0.53.1
 numpy==1.21.1
+optuna==2.10.0
 packaging==21.0
 pandas==1.1.4
 patsy==0.5.1
