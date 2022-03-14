@@ -9,14 +9,14 @@ import torch
 # For Gower distance
 import gower
 
+# VAE is in other folder
+import sys
+sys.path.append('../')
+
 from opacus.utils.uniform_sampler import UniformWithReplacementSampler
 
 # For VAE dataset formatting
 from torch.utils.data import TensorDataset, DataLoader
-
-# VAE is in other folder
-import sys
-sys.path.append('../')
 
 # VAE functions
 from VAE import Decoder, Encoder, VAE
@@ -36,7 +36,7 @@ from utils import mimic_pre_proc, constraint_filtering
 
 # Load in the mimic single table data 
 
-filepath = ""
+filepath = "C:/Users/dxb085/Documents/NHSX Internship/Private MIMIC Data/table_one_large_imbalanced_215k.csv"
 
 data_supp = pd.read_csv(filepath)
 # Save the original columns
@@ -52,7 +52,7 @@ data_supp = data_supp.drop('DOD', axis = 1)
 original_columns = original_categorical_columns + original_continuous_columns + original_datetime_columns
 #%% -------- Data Pre-Processing -------- #
 
-x_train, original_metric_set, reordered_dataframe_columns, continuous_transformers, categorical_transformers, datetime_transformers, num_categories, num_continuous = mimic_pre_proc(data_supp=data_supp, version=2)
+x_train, original_metric_set, reordered_dataframe_columns, continuous_transformers, categorical_transformers, datetime_transformers, num_categories, num_continuous = mimic_pre_proc(data_supp=data_supp)
 
 #%% -------- Create & Train VAE -------- #
 
@@ -75,9 +75,9 @@ data_loader = DataLoader(
 # Create VAE
 latent_dim = 256
 hidden_dim = 256
-encoder = Encoder(x_train.shape[1], latent_dim, hidden_dim=hidden_dim, device=dev)
+encoder = Encoder(x_train.shape[1], latent_dim, hidden_dim=hidden_dim)
 decoder = Decoder(
-    latent_dim, num_continuous, num_categories=num_categories, device=dev
+    latent_dim, num_continuous, num_categories=num_categories
 )
 
 vae = VAE(encoder, decoder)
@@ -87,9 +87,6 @@ n_epochs = 50
 log_elbo, log_reconstruction, log_divergence, log_categorical, log_numerical = vae.train(data_loader, n_epochs=n_epochs)
 
 #%% -------- Plot Loss Features ELBO Breakdown -------- #
-
-from plotly.subplots import make_subplots
-import plotly.graph_objects as go
 
 fig = go.Figure()
 
