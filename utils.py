@@ -376,7 +376,7 @@ def plot_elbo(n_epochs, log_elbo, log_reconstruction, log_divergence, saving_fil
 
     return None
 
-def plot_likelihood_breakdown(n_epochs log_categorical, log_numerical, saving_filepath, pre_proc_method='GMM'):
+def plot_likelihood_breakdown(n_epochs, log_categorical, log_numerical, saving_filepath, pre_proc_method='GMM'):
 
     # Initialize figure with subplots
     fig = make_subplots(
@@ -402,9 +402,9 @@ def plot_likelihood_breakdown(n_epochs log_categorical, log_numerical, saving_fi
     fig.show()
 
     # Save static image
-    fig.write_image("{}/Reconstruction Breakdown SYNTHVAE_{}.png".format(saving_filepath, pre_proc_method))
+    fig.write_image("{}Reconstruction Breakdown SYNTHVAE_{}.png".format(saving_filepath, pre_proc_method))
     # Save interactive image
-    fig.write_html("{}/Reconstruction Breakdown SYNTHVAE_{}.html".format(saving_filepath, pre_proc_method))
+    fig.write_html("{}Reconstruction Breakdown SYNTHVAE_{}.html".format(saving_filepath, pre_proc_method))
 
     return None
 
@@ -435,9 +435,9 @@ def plot_variable_distributions(categorical_columns, continuous_columns, data_su
         fig.show()
 
         # Save static image
-        fig.write_image("{}/Variable {} SynthVAE_{}.png".format(saving_filepath, column, pre_proc_method))
+        fig.write_image("{}Variable {} SynthVAE_{}.png".format(saving_filepath, column, pre_proc_method))
         # Save interactive image
-        fig.write_html("{}/Variable {} SynthVAE_{}.html".format(saving_filepath, column, pre_proc_method))
+        fig.write_html("{}Variable {} SynthVAE_{}.html".format(saving_filepath, column, pre_proc_method))
 
     for column in continuous_columns:
     
@@ -462,9 +462,9 @@ def plot_variable_distributions(categorical_columns, continuous_columns, data_su
         fig.show()
 
         # Save static image
-        fig.write_image("{}/Variable {} SynthVAE_{}.png".format(saving_filepath, column, pre_proc_method))
+        fig.write_image("{}Variable {} SynthVAE_{}.png".format(saving_filepath, column, pre_proc_method))
         # Save interactive image
-        fig.write_html("{}/Variable {} SynthVAE_{}.html".format(saving_filepath, column, pre_proc_method))
+        fig.write_html("{}Variable {} SynthVAE_{}.html".format(saving_filepath, column, pre_proc_method))
 
         return None
 
@@ -489,22 +489,27 @@ def metric_calculation(user_metrics, data_supp, synthetic_supp, categorical_colu
 
     evals = evaluate(synthetic_supp, data_supp, metrics=user_metrics,aggregate=False)
 
-    run_vector = []
+    # evals is a pandas dataframe of metrics - if we want to add a gower metric then we can
+    # save this separately
 
-    for metric_number in len(metrics):
+    metrics = np.array(evals["raw_score"])
 
-        if(metrics[metric_number] == "gower"):
-            run_vector.append(np.mean(gower.gower_matrix(data_supp, synthetic_supp)))
-        else:
-            run_vector.append(np.asarray(evals["raw_score"])[metric_number])
+    if "gower" in user_metrics:
 
-    metrics.append(run_vector)
+        # Find the gower distance
+        metrics = np.append(metrics,np.mean(gower.gower_matrix(data_supp, synthetic_supp)))
 
-    # Save these metrics into a pandas dataframe
+    # Convert to dataframe to return from function
+
+    print(metrics)
 
     metrics = pd.DataFrame(data = metrics,
     columns = user_metrics)
 
-    metrics.to_csv("{}/Metrics SynthVAE_{}.csv".format(saving_filepath, pre_proc_method))
+    # Save these metrics into a pandas dataframe - if the user wants to
+
+    if(saving_filepath!=None):
+
+        metrics.to_csv("{}Metrics SynthVAE_{}.csv".format(saving_filepath, pre_proc_method))
 
     return metrics
