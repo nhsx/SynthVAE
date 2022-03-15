@@ -7,6 +7,9 @@ import pandas as pd
 # Graph Visualisation
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
+# SDV aspects
+from sdv.evaluation import evaluate
+import gower
 
 
 def set_seed(seed):
@@ -405,6 +408,103 @@ def plot_likelihood_breakdown(n_epochs log_categorical, log_numerical, saving_fi
 
     return None
 
-def plot_variable_distributions():
+def plot_variable_distributions(categorical_columns, continuous_columns, data_supp, synthetic_supp, saving_filepath, pre_proc_method="GMM"):
 
+    # Plot some examples using plotly
 
+    for column in categorical_columns:
+
+        # Initialize figure with subplots
+        fig = make_subplots(
+            rows=1, cols=2, subplot_titles=("Synthetic {}".format(column), "Original {}".format(column))
+        )
+
+        # Add traces
+        fig.add_trace(go.Histogram(x=synthetic_supp[column], name = "Synthetic"), row=1, col=1)
+        fig.add_trace(go.Histogram(x=data_supp[column], name = "Original"), row=1, col=2)
+
+        # Update xaxis properties
+        fig.update_xaxes(title_text="Value", row=1, col=1)
+        fig.update_xaxes(title_text="Value", row=1, col=2)
+        # Update yaxis properties
+        fig.update_yaxes(title_text="Counts", row=1, col=1)
+
+        # Update title and height
+        fig.update_layout(title_text="Variable {}".format(column))
+
+        fig.show()
+
+        # Save static image
+        fig.write_image("{}/Variable {} SynthVAE_{}.png".format(saving_filepath, column, pre_proc_method))
+        # Save interactive image
+        fig.write_html("{}/Variable {} SynthVAE_{}.html".format(saving_filepath, column, pre_proc_method))
+
+    for column in continuous_columns:
+    
+        # Initialize figure with subplots
+        fig = make_subplots(
+            rows=1, cols=2, subplot_titles=("Synthetic {}".format(column), "Original {}".format(column))
+        )
+
+        # Add traces
+        fig.add_trace(go.Histogram(x=synthetic_supp[column], name = "Synthetic"), row=1, col=1)
+        fig.add_trace(go.Histogram(x=data_supp[column], name = "Original"), row=1, col=2)
+
+        # Update xaxis properties
+        fig.update_xaxes(title_text="Value", row=1, col=1)
+        fig.update_xaxes(title_text="Value", row=1, col=2)
+        # Update yaxis properties
+        fig.update_yaxes(title_text="Counts", row=1, col=1)
+
+        # Update title and height
+        fig.update_layout(title_text="Variable {}".format(column))
+
+        fig.show()
+
+        # Save static image
+        fig.write_image("{}/Variable {} SynthVAE_{}.png".format(saving_filepath, column, pre_proc_method))
+        # Save interactive image
+        fig.write_html("{}/Variable {} SynthVAE_{}.html".format(saving_filepath, column, pre_proc_method))
+
+        return None
+
+def metric_calculation(user_metrics, data_supp, synthetic_supp, categorical_columns, continuous_columns, saving_filepath=None, pre_proc_method="GMM"):
+
+    # Calculate the sdv metrics for SynthVAE
+
+    # Define lists to contain the metrics achieved
+
+    no_metrics = len(user_metrics)
+    metrics = []
+
+    # Need these in same column order
+
+    synthetic_supp = synthetic_supp[data_supp.columns]
+
+    # Now categorical columns need to be converted to objects as SDV infers data
+    # types from the fields and integers/floats are treated as numerical not categorical
+
+    synthetic_supp[categorical_columns] = synthetic_supp[categorical_columns].astype(object)
+    data_supp[categorical_columns] = data_supp[categorical_columns].astype(object)
+
+    evals = evaluate(synthetic_supp, data_supp, metrics=user_metrics,aggregate=False)
+
+    run_vector = []
+
+    for metric_number in len(metrics):
+
+        if(metrics[metric_number] == "gower"):
+            run_vector.append(np.mean(gower.gower_matrix(data_supp, synthetic_supp)))
+        else:
+            run_vector.append(np.asarray(evals["raw_score"])[metric_number])
+
+    metrics.append(run_vector)
+
+    # Save these metrics into a pandas dataframe
+
+    metrics = pd.DataFrame(data = metrics,
+    columns = user_metrics)
+
+    metrics.to_csv("{}/Metrics SynthVAE_{}.csv".format(saving_filepath, pre_proc_method))
+
+    return metrics
