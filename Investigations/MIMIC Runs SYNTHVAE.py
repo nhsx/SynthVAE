@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 import torch
 
+import sdmetrics
 
 # For Gower distance
 import gower
@@ -33,11 +34,9 @@ from rdt.transformers import categorical, numerical, datetime
 
 # Load in the mimic single table data
 
-filename = ""
+filename = "C:/Users/dxb085/Documents/NHSX Internship/Private MIMIC Data/table_one_synthvae.csv"
 
 data_supp = pd.read_csv(filename)
-
-torch.cuda.is_available()
 #%% -------- Data Pre-Processing -------- #
 
 # Specify column configurations
@@ -182,7 +181,7 @@ decoder = Decoder(
 
 vae = VAE(encoder, decoder)
 
-n_epochs = 50
+n_epochs = 5
 
 log_elbo, log_reconstruction, log_divergence, log_categorical, log_numerical = vae.train(data_loader, n_epochs=n_epochs)
 
@@ -250,7 +249,8 @@ synthetic_trial = vae.generate(data_supp.shape[0]) # 8873 is size of support
 
 # First add the old columns to the synthetic set to see what corresponds to what
 
-synthetic_dataframe = pd.DataFrame(synthetic_trial.detach().numpy(),  columns=reordered_dataframe.columns)
+synthetic_dataframe = pd.DataFrame(synthetic_trial.cpu().detach().numpy(),  columns=reordered_dataframe.columns)
+
 
 # Now all of the transformations from the dictionary - first loop over the categorical columns
 
@@ -409,4 +409,4 @@ columns = ["BNLogLikelihood", "LogisticDetection", "SVCDetection", "GMLogLikelih
 
 filepath_save='C:/Users/frenc/Documents/Dave-NHSX Internship/SynthVAE/Plots/table_one_synthvae/'
 
-metrics.to_csv("{}/Metrics SYNTHVAE.csv".format(filepath_save))
+#metrics.to_csv("{}/Metrics SYNTHVAE.csv".format(filepath_save))

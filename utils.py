@@ -503,7 +503,7 @@ def metric_calculation(user_metrics, data_supp, synthetic_supp, categorical_colu
 
     print(metrics)
 
-    metrics = pd.DataFrame(data = metrics,
+    metrics = pd.DataFrame(data = [metrics],
     columns = user_metrics)
 
     # Save these metrics into a pandas dataframe - if the user wants to
