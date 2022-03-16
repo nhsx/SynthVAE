@@ -191,7 +191,7 @@ class VAE(nn.Module):
 
         return (elbo, reconstruct_loss, divergence_loss, categoric_loglik, gauss_loglik)
 
-    def train(self, x_dataloader, n_epochs, logging_freq=1, patience=5, filepath=None):
+    def train(self, x_dataloader, n_epochs, logging_freq=1, patience=5, delta, filepath=None):
         # mean_norm = 0
         # counter = 0
         log_elbo = []
@@ -204,7 +204,7 @@ class VAE(nn.Module):
         min_elbo = 0.0 # For early stopping workflow
         patience = patience # How many epochs patience we give for early stopping
         stop_counter = 0 # Counter for stops
-        delta = 10 # Difference in elbo value
+        delta = delta # Difference in elbo value
 
         for epoch in range(n_epochs):
 
@@ -245,7 +245,7 @@ class VAE(nn.Module):
 
                 min_elbo = train_loss
 
-            if(train_loss < min_elbo):
+            if(train_loss < (min_elbo - delta)):
 
                 min_elbo = train_loss
                 stop_counter = 0  # Set counter to zero
@@ -278,6 +278,7 @@ class VAE(nn.Module):
         logging_freq=1,
         sample_rate=0.1,
         patience=5, 
+        delta=10,
         filepath=None,
     ):
         if noise_scale is not None:
@@ -312,7 +313,7 @@ class VAE(nn.Module):
         min_elbo = 0.0 # For early stopping workflow
         patience = patience # How many epochs patience we give for early stopping
         stop_counter = 0 # Counter for stops
-        delta = 10 # Difference in elbo value
+        delta = delta # Difference in elbo value
 
         for epoch in range(n_epochs):
             train_loss = 0.0
@@ -348,7 +349,7 @@ class VAE(nn.Module):
 
                 min_elbo = train_loss
 
-            if(train_loss < min_elbo):
+            if(train_loss < (min_elbo - delta)):
 
                 min_elbo = train_loss
                 stop_counter = 0  # Set counter to zero
