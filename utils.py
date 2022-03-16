@@ -19,7 +19,7 @@ def set_seed(seed):
 
 # -------- Pre-Processing for SUPPORT -------- #
 
-def support_pre_proc(data_supp):
+def support_pre_proc(data_supp, pre_proc_method=="GMM"):
 
     #%% -------- Data Pre-Processing -------- #
 
@@ -52,32 +52,43 @@ def support_pre_proc(data_supp):
     # Define columns based on datatype and then loop over creating and fitting 
     # transformers
 
-    for index, column in enumerate(continuous_columns):
+    if(pre_proc_method=="GMM"):
 
-        # Fit GMM
-        temp_continuous = numerical.BayesGMMTransformer()
-        temp_continuous.fit(transformed_dataset, columns = column)
+        for index, column in enumerate(continuous_columns):
+
+            # Fit GMM
+            temp_continuous = numerical.BayesGMMTransformer()
+            temp_continuous.fit(transformed_dataset, columns = column)
+            continuous_transformers['continuous_{}'.format(column)] = temp_continuous
+
+            transformed_dataset = temp_continuous.transform(transformed_dataset)
+
+            # Each numerical one gets a .normalized column + a .component column giving the mixture info
+            # This too needs to be one hot encoded
+
+            categorical_columns += [str(column) + '.component']
+
+            # Let's retrieve the new categorical and continuous column names
+
+            continuous_columns = ['duration.normalized'] + [f"x{i}.normalized" for i in range(7,15)]
+
+            # For each categorical column we want to know the number of categories
+
+            num_categories = (
+            np.array([np.amax(transformed_dataset[col]) for col in categorical_columns]) + 1
+            ).astype(int)
+
+            num_continuous = len(continuous_columns)
+
+    elif(pre_proc_method=="standard"):
+
+        # Fit sklearn standard scaler to each column
+        temp_continuous = StandardScaler()
+        temp_column = transformed_dataset[column].values.reshape(-1,1)
+        temp_continuous.fit(temp_column)
         continuous_transformers['continuous_{}'.format(column)] = temp_continuous
 
-        transformed_dataset = temp_continuous.transform(transformed_dataset)
-
-        # Each numerical one gets a .normalized column + a .component column giving the mixture info
-        # This too needs to be one hot encoded
-
-        categorical_columns += [str(column) + '.component']
-        normalised_column = str(column) + '.component'
-
-        # Let's retrieve the new categorical and continuous column names
-
-        continuous_columns = ['duration.normalized'] + [f"x{i}.normalized" for i in range(7,15)]
-
-        # For each categorical column we want to know the number of categories
-
-        num_categories = (
-        np.array([np.amax(transformed_dataset[col]) for col in categorical_columns]) + 1
-        ).astype(int)
-
-        num_continuous = len(continuous_columns)
+        transformed_dataset[column] = (temp_continuous.transform(temp_column)).flatten()        
 
     for index, column in enumerate(categorical_columns):
 
@@ -296,44 +307,21 @@ def reverse_transformers(synthetic_set, data_supp_columns, cont_transformers, ca
 
 # -------- Constraint based sampling for MIMIC work -------- #
 
-def constraint_sampling_mimic(n_rows, vae, reordered_cols, data_supp_columns, cont_transformers, cat_transformers, date_transformers, reverse_transformers=reverse_transformers):
-
-    # n_rows - the number of rows we require
-
-    synthetic_trial = vae.generate(n_rows) # Generate our big set
-
-    synthetic_dataframe = pd.DataFrame(synthetic_trial.cpu().detach().numpy(),  columns=reordered_cols)
-
-    # Reverse the transforms
-
-    synthetic_dataframe = reverse_transformers(synthetic_dataframe, data_supp_columns, cont_transformers, cat_transformers, date_transformers)
-
-    def initial_check(synthetic_dataframe):
-
-        n_rows = synthetic_dataframe.shape[0]
-
-        # First check which columns do not match the constraints and remove them
-        for i in range(n_rows):
-            # If there are any to drop
-            if(synthetic_dataframe['DISCHTIME'][i] < synthetic_dataframe['ADMITTIME'][i] or (synthetic_dataframe['CHARTTIME'][i] < synthetic_dataframe['ADMITTIME'][i])
-            or (synthetic_dataframe['age'][i] < 0) or (synthetic_dataframe['DOB'][i] < synthetic_dataframe['ADMITTIME'][i])):
-            
-                # Drop the row inplace
-                synthetic_dataframe.drop([i], axis=0, inplace=True)
-
-        return None
-
-    # Now we need to generate & perform this check over and over until all rows match
-
 def constraint_filtering(n_rows, vae, reordered_cols, data_supp_columns, cont_transformers, cat_transformers, date_transformers, reverse_transformers=reverse_transformers):
 
     # Generate samples
     synthetic_trial = vae.generate(n_rows)
-    # Create pandas dataframe in column order
-    synthetic_dataframe = pd.DataFrame(synthetic_trial.cpu().detach().numpy(),  columns=reordered_cols)
+
+    if(torch.cuda.is_available()):
+        # Create pandas dataframe in column order
+        synthetic_dataframe = pd.DataFrame(synthetic_trial.cpu().detach().numpy(),  columns=reordered_cols)
+    else:
+        # Create pandas dataframe in column order
+        synthetic_dataframe = pd.DataFrame(synthetic_trial.detach().numpy(),  columns=reordered_cols)
+
 
     # Reverse all the transformations ready for filtering
-    synthetic_dataframe = reverse_transformers(synthetic_dataframe, data_supp_columns, cont_transformers, cat_transformers, date_transformers)
+    synthetic_dataframe = reverse_transformers(synthetic_dataframe, data_supp_columns, cont_transformers, cat_transformers, date_transformers, pre_proc_method=="GMM")
 
     # Function to filter out the constraints from the set - returns valid dataframe
     def constraint_check(synthetic_df):
