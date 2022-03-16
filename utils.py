@@ -10,6 +10,7 @@ import plotly.graph_objects as go
 # SDV aspects
 from sdv.evaluation import evaluate
 import gower
+from sklearn.preprocessing import StandardScaler
 
 
 def set_seed(seed):
@@ -103,7 +104,7 @@ def support_pre_proc(data_supp):
 # -------- Pre-Processing for MIMIC sets -------- #
 # Internal sets provided by NHSX - outside users will have to stick with SUPPORT set
 
-def mimic_pre_proc(data_supp):
+def mimic_pre_proc(data_supp, pre_proc_method=="GMM"):
 
     # Specify column configurations
 
@@ -173,23 +174,37 @@ def mimic_pre_proc(data_supp):
 
     original_metric_set = transformed_dataset.copy()
 
-    for index, column in enumerate(continuous_columns):
+    if(pre_proc_method=="GMM"):
 
-        # Fit GMM
-        temp_continuous = numerical.BayesGMMTransformer()
-        temp_continuous.fit(transformed_dataset, columns = column)
+        for index, column in enumerate(continuous_columns):
+
+            # Fit GMM
+            temp_continuous = numerical.BayesGMMTransformer()
+            temp_continuous.fit(transformed_dataset, columns = column)
+            continuous_transformers['continuous_{}'.format(column)] = temp_continuous
+
+            categorical_columns += [str(column) + '.component']
+
+            transformed_dataset = temp_continuous.transform(transformed_dataset)
+
+        # Each numerical one gets a .normalized column + a .component column giving the mixture info
+        # This too needs to be one hot encoded
+
+        continuous_columns = [str(col) + '.normalized' for col in continuous_columns]
+
+    elif(pre_proc_method=="standard"):
+
+        for index, column in enumerate(continuous_columns):
+
+        # Fit sklearn standard scaler to each column
+        temp_continuous = StandardScaler()
+        temp_column = transformed_dataset[column].values.reshape(-1,1)
+        temp_continuous.fit(temp_column)
         continuous_transformers['continuous_{}'.format(column)] = temp_continuous
 
-        categorical_columns += [str(column) + '.component']
-
-        transformed_dataset = temp_continuous.transform(transformed_dataset)
-
-    # Each numerical one gets a .normalized column + a .component column giving the mixture info
-    # This too needs to be one hot encoded
+        transformed_dataset[column] = (temp_continuous.transform(temp_column)).flatten()
 
     num_categories = []
-
-    continuous_columns = [str(col) + '.normalized' for col in continuous_columns]
 
     for col in categorical_columns:
 
@@ -236,7 +251,7 @@ def mimic_pre_proc(data_supp):
 
 # -------- Reverse Transformations -------- #
 
-def reverse_transformers(synthetic_set, data_supp_columns, cont_transformers, cat_transformers, date_transformers):
+def reverse_transformers(synthetic_set, data_supp_columns, cont_transformers, cat_transformers, date_transformers, pre_proc_method=="GMM"):
 
     # Now all of the transformations from the dictionary - first loop over the categorical columns
 
@@ -249,12 +264,24 @@ def reverse_transformers(synthetic_set, data_supp_columns, cont_transformers, ca
 
         synthetic_transformed_set = transformer.reverse_transform(synthetic_transformed_set)
 
-    for transformer_name in cont_transformers:
+    if(pre_proc_method=="GMM"):
 
-        transformer = cont_transformers[transformer_name]
-        column_name = transformer_name[11:]
+        for transformer_name in cont_transformers:
 
-        synthetic_transformed_set = transformer.reverse_transform(synthetic_transformed_set)
+            transformer = cont_transformers[transformer_name]
+            column_name = transformer_name[11:]
+
+            synthetic_transformed_set = transformer.reverse_transform(synthetic_transformed_set)
+
+    elif(pre_proc_method=="standard"):
+
+        for transformer_name in continuous_transformers:
+
+            transformer = continuous_transformers[transformer_name]
+            column_name = transformer_name[11:]
+    
+            # Reverse the standard scaling
+            synthetic_transformed_set[column_name] = transformer.inverse_transform(synthetic_transformed_set[column_name].values.reshape(-1, 1)).flatten()
 
     for transformer_name in date_transformers:
 

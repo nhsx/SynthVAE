@@ -113,6 +113,22 @@ plot_variable_distributions(
     data_supp=data_supp, synthetic_supp=synthetic_supp,saving_filepath="",
     pre_proc_method="GMM"
 )
+
+#%% -------- Datetime Handling -------- #
+
+# If the dataset has datetimes then we need to re-convert these to a numerical
+# Value representing seconds, this is so we can evaluate the metrics on them
+
+metric_synthetic_supp = synthetic_supp.copy()
+
+for index, column in enumerate(original_datetime_columns):
+
+        # Fit datetime transformer - converts to seconds
+        temp_datetime = datetime.DatetimeTransformer()
+        temp_datetime.fit(metric_synthetic_supp, columns = column)
+
+        metric_synthetic_supp = temp_datetime.transform(metric_synthetic_supp)
+
 #%% -------- SDV Metrics -------- #
 
 # Define the metrics you want the model to evaluate
@@ -120,7 +136,7 @@ plot_variable_distributions(
 user_metrics = ['ContinuousKLDivergence', 'DiscreteKLDivergence']
 
 metrics = metric_calculation(
-    user_metrics=user_metrics, data_supp=data_supp, synthetic_supp=synthetic_supp,
+    user_metrics=user_metrics, data_supp=original_metric_set, synthetic_supp=metric_synthetic_supp,
     categorical_columns=original_categorical_columns, continuous_columns=original_continuous_columns,
     saving_filepath="", pre_proc_method="GMM"
 )
