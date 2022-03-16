@@ -50,9 +50,11 @@ original_datetime_columns = ['ADMITTIME', 'DISCHTIME', 'DOB', 'CHARTTIME']
 #data_supp = data_supp.drop('DOD', axis = 1)
 
 original_columns = original_categorical_columns + original_continuous_columns + original_datetime_columns
+
+pre_proc_method = "standard"
 #%% -------- Data Pre-Processing -------- #
 
-x_train, original_metric_set, reordered_dataframe_columns, continuous_transformers, categorical_transformers, datetime_transformers, num_categories, num_continuous = mimic_pre_proc(data_supp=data_supp)
+x_train, original_metric_set, reordered_dataframe_columns, continuous_transformers, categorical_transformers, datetime_transformers, num_categories, num_continuous = mimic_pre_proc(data_supp=data_supp, pre_proc_method=pre_proc_method)
 
 #%% -------- Create & Train VAE -------- #
 
@@ -90,13 +92,13 @@ log_elbo, log_reconstruction, log_divergence, log_categorical, log_numerical = v
 
 plot_elbo(
     n_epochs=n_epochs, log_elbo=log_elbo, log_reconstruction=log_reconstruction,
-    log_divergence=log_divergence, saving_filepath="", pre_proc_method="GMM"
+    log_divergence=log_divergence, saving_filepath="", pre_proc_method=pre_proc_method
 )
 #%% -------- Plot Loss Features Reconstruction Breakdown -------- #
 
 plot_likelihood_breakdown(
     n_epochs=n_epochs, log_categorical=log_categorical, log_numerical=log_numerical,
-    saving_filepath="", pre_proc_method="GMM"
+    saving_filepath="", pre_proc_method=pre_proc_method
 )
 
 #%% -------- Constraint Sampling -------- #
@@ -104,14 +106,15 @@ plot_likelihood_breakdown(
 synthetic_supp = constraint_filtering(
     n_rows=data_supp.shape[0], vae=vae, reordered_cols=reordered_dataframe_columns,
     data_supp_columns=data_supp.columns, cont_transformers=continuous_transformers,
-    cat_transformers=categorical_transformers, date_transformers=datetime_transformers
+    cat_transformers=categorical_transformers, date_transformers=datetime_transformers,
+    pre_proc_method=pre_proc_method
 )
 #%% -------- Plot Histograms For All The Variable Distributions -------- #
 
 plot_variable_distributions(
     categorical_columns=original_categorical_columns, continuous_columns=original_continuous_columns,
     data_supp=data_supp, synthetic_supp=synthetic_supp,saving_filepath="",
-    pre_proc_method="GMM"
+    pre_proc_method=pre_proc_method
 )
 
 #%% -------- Datetime Handling -------- #
@@ -138,5 +141,5 @@ user_metrics = ['ContinuousKLDivergence', 'DiscreteKLDivergence']
 metrics = metric_calculation(
     user_metrics=user_metrics, data_supp=original_metric_set, synthetic_supp=metric_synthetic_supp,
     categorical_columns=original_categorical_columns, continuous_columns=original_continuous_columns,
-    saving_filepath="", pre_proc_method="GMM"
+    saving_filepath="", pre_proc_method=pre_proc_method
 )

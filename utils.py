@@ -19,7 +19,7 @@ def set_seed(seed):
 
 # -------- Pre-Processing for SUPPORT -------- #
 
-def support_pre_proc(data_supp, pre_proc_method=="GMM"):
+def support_pre_proc(data_supp, pre_proc_method="GMM"):
 
     #%% -------- Data Pre-Processing -------- #
 
@@ -115,7 +115,7 @@ def support_pre_proc(data_supp, pre_proc_method=="GMM"):
 # -------- Pre-Processing for MIMIC sets -------- #
 # Internal sets provided by NHSX - outside users will have to stick with SUPPORT set
 
-def mimic_pre_proc(data_supp, pre_proc_method=="GMM"):
+def mimic_pre_proc(data_supp, pre_proc_method="GMM"):
 
     # Specify column configurations
 
@@ -207,13 +207,13 @@ def mimic_pre_proc(data_supp, pre_proc_method=="GMM"):
 
         for index, column in enumerate(continuous_columns):
 
-        # Fit sklearn standard scaler to each column
-        temp_continuous = StandardScaler()
-        temp_column = transformed_dataset[column].values.reshape(-1,1)
-        temp_continuous.fit(temp_column)
-        continuous_transformers['continuous_{}'.format(column)] = temp_continuous
+            # Fit sklearn standard scaler to each column
+            temp_continuous = StandardScaler()
+            temp_column = transformed_dataset[column].values.reshape(-1,1)
+            temp_continuous.fit(temp_column)
+            continuous_transformers['continuous_{}'.format(column)] = temp_continuous
 
-        transformed_dataset[column] = (temp_continuous.transform(temp_column)).flatten()
+            transformed_dataset[column] = (temp_continuous.transform(temp_column)).flatten()
 
     num_categories = []
 
@@ -262,7 +262,7 @@ def mimic_pre_proc(data_supp, pre_proc_method=="GMM"):
 
 # -------- Reverse Transformations -------- #
 
-def reverse_transformers(synthetic_set, data_supp_columns, cont_transformers, cat_transformers, date_transformers, pre_proc_method=="GMM"):
+def reverse_transformers(synthetic_set, data_supp_columns, cont_transformers, cat_transformers, date_transformers, pre_proc_method="GMM"):
 
     # Now all of the transformations from the dictionary - first loop over the categorical columns
 
@@ -286,9 +286,9 @@ def reverse_transformers(synthetic_set, data_supp_columns, cont_transformers, ca
 
     elif(pre_proc_method=="standard"):
 
-        for transformer_name in continuous_transformers:
+        for transformer_name in cont_transformers:
 
-            transformer = continuous_transformers[transformer_name]
+            transformer = cont_transformers[transformer_name]
             column_name = transformer_name[11:]
     
             # Reverse the standard scaling
@@ -307,7 +307,7 @@ def reverse_transformers(synthetic_set, data_supp_columns, cont_transformers, ca
 
 # -------- Constraint based sampling for MIMIC work -------- #
 
-def constraint_filtering(n_rows, vae, reordered_cols, data_supp_columns, cont_transformers, cat_transformers, date_transformers, reverse_transformers=reverse_transformers):
+def constraint_filtering(n_rows, vae, reordered_cols, data_supp_columns, cont_transformers, cat_transformers, date_transformers, reverse_transformers=reverse_transformers, pre_proc_method="GMM"):
 
     # Generate samples
     synthetic_trial = vae.generate(n_rows)
@@ -321,7 +321,7 @@ def constraint_filtering(n_rows, vae, reordered_cols, data_supp_columns, cont_tr
 
 
     # Reverse all the transformations ready for filtering
-    synthetic_dataframe = reverse_transformers(synthetic_dataframe, data_supp_columns, cont_transformers, cat_transformers, date_transformers, pre_proc_method=="GMM")
+    synthetic_dataframe = reverse_transformers(synthetic_dataframe, data_supp_columns, cont_transformers, cat_transformers, date_transformers, pre_proc_method=pre_proc_method)
 
     # Function to filter out the constraints from the set - returns valid dataframe
     def constraint_check(synthetic_df):
