@@ -5,6 +5,7 @@ import torch
 from rdt.transformers import numerical, categorical, DatetimeTransformer
 import pandas as pd
 # Graph Visualisation
+import matplotlib.pyplot as plt
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 # SDV aspects
@@ -371,63 +372,61 @@ def constraint_filtering(n_rows, vae, reordered_cols, data_supp_columns, cont_tr
 
 def plot_elbo(n_epochs, log_elbo, log_reconstruction, log_divergence, saving_filepath=None, pre_proc_method='GMM'):
 
-    fig = go.Figure()
-
     x = np.arange(n_epochs)
 
-    fig.add_trace(go.Scatter(x=x, y=log_elbo, mode = "lines+markers", name = "ELBO"))
+    y1 = log_elbo
+    y2 = log_reconstruction
+    y3 = log_divergence
 
-    fig.add_trace(go.Scatter(x=x, y=log_reconstruction, mode = "lines+markers", name = "Reconstruction"))
-
-    fig.add_trace(go.Scatter(x=x, y=log_divergence, mode = "lines+markers", name = "Divergence"))
-
-    fig.update_layout(title="ELBO Breakdown",
-        xaxis_title="Epochs",
-        yaxis_title="Loss Value",
-        legend_title="Loss",)
-
-    fig.show()
+    plt.plot(x, y1, label = "ELBO")
+    plt.plot(x, y2, label = "RECONSTRUCTION")
+    plt.plot(x, y3, label = "DIVERGENCE")
+    plt.xlabel('Number of Epochs')
+    # Set the y axis label of the current axis.
+    plt.ylabel('Loss Value')
+    # Set a title of the current axes.
+    plt.title('ELBO Breakdown')
+    # show a legend on the plot
+    plt.legend()
 
     if(saving_filepath!=None):
         # Save static image
-        fig.write_image("{}ELBO Breakdown SynthVAE_{}.png".format(saving_filepath, pre_proc_method))
-        # Save interactive image
-        fig.write_html("{}ELBO Breakdown SynthVAE_{}.html".format(saving_filepath, pre_proc_method))
+        plt.savefig("{}ELBO Breakdown SynthVAE_{}.png".format(saving_filepath, pre_proc_method))
 
-    return fig
+    plt.show()
+
+    return None
 
 def plot_likelihood_breakdown(n_epochs, log_categorical, log_numerical, saving_filepath=None, pre_proc_method='GMM'):
 
-    # Initialize figure with subplots
-    fig = make_subplots(
-        rows=1, cols=2, subplot_titles=("Categorical Likelihood", "Gaussian Likelihood")
-    )
-
     x = np.arange(n_epochs)
 
-    # Add traces
-    fig.add_trace(go.Scatter(x=x, y=log_categorical, mode = "lines", name = "Categorical"), row=1, col=1)
-    fig.add_trace(go.Scatter(x=x, y=log_numerical, mode = "lines", name = "Numerical"), row=1, col=2)
+    y1 = log_categorical
+    y2 = log_numerical
 
-    # Update xaxis properties
-    fig.update_xaxes(title_text="Epochs", row=1, col=1)
-    fig.update_xaxes(title_text="Epochs", row=1, col=2)
-
-    # Update yaxis properties
-    fig.update_yaxes(title_text="Loss Value", row=1, col=1)
-
-    # Update title and height
-    fig.update_layout(title_text="Reconstruction Breakdown")
-
-    fig.show()
+    plt.subplot(1,2,1)
+    plt.plot(x, y1, label = "CATEGORICAL")
+    plt.xlabel("Number of Epochs")
+    # Set the y axis label of the current axis.
+    plt.ylabel('Loss Value')
+    # Set a title of the current axes.
+    plt.title('Categorical Breakdown')
+    # show a legend on the plot
+    plt.subplot(1,2,2)
+    plt.plot(x, y2, label = "NUMERICAL")
+    plt.xlabel('Number of Epochs')
+    # Set the y axis label of the current axis.
+    plt.ylabel('Loss Value')
+    # Set a title of the current axes.
+    plt.title('Numerical Breakdown')
+    # show a legend on the plot
+    plt.tight_layout()
 
     if(saving_filepath!=None):
         # Save static image
-        fig.write_image("{}Reconstruction Breakdown SYNTHVAE_{}.png".format(saving_filepath, pre_proc_method))
-        # Save interactive image
-        fig.write_html("{}Reconstruction Breakdown SYNTHVAE_{}.html".format(saving_filepath, pre_proc_method))
+        plt.savefig("{}Reconstruction Breakdown SYNTHVAE_{}.png".format(saving_filepath, pre_proc_method))
 
-    return fig
+    return None
 
 def plot_variable_distributions(categorical_columns, continuous_columns, data_supp, synthetic_supp, saving_filepath=None, pre_proc_method="GMM"):
 
@@ -435,59 +434,67 @@ def plot_variable_distributions(categorical_columns, continuous_columns, data_su
 
     for column in categorical_columns:
 
-        # Initialize figure with subplots
-        fig = make_subplots(
-            rows=1, cols=2, subplot_titles=("Synthetic {}".format(column), "Original {}".format(column))
-        )
+        plt.subplot(1,2,1)
+        plt.hist(x=synthetic_supp[column])
+        plt.title("Synthetic")
+        # Set the x axis label of the current axis
+        plt.xlabel('Data Value')
+        # Set the y axis label of the current axis.
+        plt.ylabel('Distribution')
+        # Set a title of the current axes.
+        plt.title('Synthetic'.format(column))
+        # show a legend on the plot
+        plt.subplot(1,2,2)
+        plt.hist(x=data_supp[column])
+        plt.title("Original")
+        # Set the x axis label of the current axis
+        plt.xlabel('Data Value')
+        # Set the y axis label of the current axis.
+        plt.ylabel('Distribution')
+        # Set a title of the current axes.
+        plt.title('Original'.format(column))
+        # show a legend on the plot
+        plt.suptitle("Variable {}".format(column))
 
-        # Add traces
-        fig.add_trace(go.Histogram(x=synthetic_supp[column], name = "Synthetic"), row=1, col=1)
-        fig.add_trace(go.Histogram(x=data_supp[column], name = "Original"), row=1, col=2)
-
-        # Update xaxis properties
-        fig.update_xaxes(title_text="Value", row=1, col=1)
-        fig.update_xaxes(title_text="Value", row=1, col=2)
-        # Update yaxis properties
-        fig.update_yaxes(title_text="Counts", row=1, col=1)
-
-        # Update title and height
-        fig.update_layout(title_text="Variable {}".format(column))
-
-        fig.show()
+        plt.tight_layout()
 
         if(saving_filepath!=None):
             # Save static image
-            fig.write_image("{}Variable {} SynthVAE_{}.png".format(saving_filepath, column, pre_proc_method))
-            # Save interactive image
-            fig.write_html("{}Variable {} SynthVAE_{}.html".format(saving_filepath, column, pre_proc_method))
+            plt.savefig("{}Variable {} SynthVAE_{}.png".format(saving_filepath, column, pre_proc_method))
+
+        plt.show()
 
     for column in continuous_columns:
     
-        # Initialize figure with subplots
-        fig = make_subplots(
-            rows=1, cols=2, subplot_titles=("Synthetic {}".format(column), "Original {}".format(column))
-        )
+        plt.subplot(1,2,1)
+        plt.hist(x=synthetic_supp[column])
+        plt.title("Synthetic")
+        # Set the x axis label of the current axis
+        plt.xlabel('Data Value')
+        # Set the y axis label of the current axis.
+        plt.ylabel('Distribution')
+        # Set a title of the current axes.
+        plt.title('Synthetic'.format(column))
+        # show a legend on the plot
+        plt.subplot(1,2,2)
+        plt.hist(x=data_supp[column])
+        plt.title("Original")
+        # Set the x axis label of the current axis
+        plt.xlabel('Data Value')
+        # Set the y axis label of the current axis.
+        plt.ylabel('Distribution')
+        # Set a title of the current axes.
+        plt.title('Original'.format(column))
+        # show a legend on the plot
+        plt.suptitle("Variable {}".format(column))
 
-        # Add traces
-        fig.add_trace(go.Histogram(x=synthetic_supp[column], name = "Synthetic"), row=1, col=1)
-        fig.add_trace(go.Histogram(x=data_supp[column], name = "Original"), row=1, col=2)
-
-        # Update xaxis properties
-        fig.update_xaxes(title_text="Value", row=1, col=1)
-        fig.update_xaxes(title_text="Value", row=1, col=2)
-        # Update yaxis properties
-        fig.update_yaxes(title_text="Counts", row=1, col=1)
-
-        # Update title and height
-        fig.update_layout(title_text="Variable {}".format(column))
-
-        fig.show()
+        plt.tight_layout()
 
         if(saving_filepath!=None):
             # Save static image
-            fig.write_image("{}Variable {} SynthVAE_{}.png".format(saving_filepath, column, pre_proc_method))
-            # Save interactive image
-            fig.write_html("{}Variable {} SynthVAE_{}.html".format(saving_filepath, column, pre_proc_method))
+            plt.savefig("{}Variable {} SynthVAE_{}.png".format(saving_filepath, column, pre_proc_method))
+
+        plt.show()
 
         return None
 
