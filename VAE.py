@@ -191,7 +191,7 @@ class VAE(nn.Module):
 
         return (elbo, reconstruct_loss, divergence_loss, categoric_loglik, gauss_loglik)
 
-    def train(self, x_dataloader, n_epochs, logging_freq=1, patience=5, delta, filepath=None):
+    def train(self, x_dataloader, n_epochs, logging_freq=1, patience=5, delta=10, filepath=None):
         # mean_norm = 0
         # counter = 0
         log_elbo = []

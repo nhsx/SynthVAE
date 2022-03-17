@@ -262,44 +262,48 @@ def mimic_pre_proc(data_supp, pre_proc_method="GMM"):
 
 # -------- Reverse Transformations -------- #
 
-def reverse_transformers(synthetic_set, data_supp_columns, cont_transformers, cat_transformers, date_transformers, pre_proc_method="GMM"):
+def reverse_transformers(synthetic_set, data_supp_columns, cont_transformers=None, cat_transformers=None, date_transformers=None, pre_proc_method="GMM"):
 
     # Now all of the transformations from the dictionary - first loop over the categorical columns
 
     synthetic_transformed_set = synthetic_set
 
-    for transformer_name in cat_transformers:
+    if(cat_transformers!= None):
+        for transformer_name in cat_transformers:
 
-        transformer = cat_transformers[transformer_name]
-        column_name = transformer_name[12:]
-
-        synthetic_transformed_set = transformer.reverse_transform(synthetic_transformed_set)
-
-    if(pre_proc_method=="GMM"):
-
-        for transformer_name in cont_transformers:
-
-            transformer = cont_transformers[transformer_name]
-            column_name = transformer_name[11:]
+            transformer = cat_transformers[transformer_name]
+            column_name = transformer_name[12:]
 
             synthetic_transformed_set = transformer.reverse_transform(synthetic_transformed_set)
 
-    elif(pre_proc_method=="standard"):
+    if(cont_transformers!= None):
 
-        for transformer_name in cont_transformers:
+        if(pre_proc_method=="GMM"):
 
-            transformer = cont_transformers[transformer_name]
-            column_name = transformer_name[11:]
+            for transformer_name in cont_transformers:
+
+                transformer = cont_transformers[transformer_name]
+                column_name = transformer_name[11:]
+
+                synthetic_transformed_set = transformer.reverse_transform(synthetic_transformed_set)
+
+        elif(pre_proc_method=="standard"):
+
+            for transformer_name in cont_transformers:
+
+                transformer = cont_transformers[transformer_name]
+                column_name = transformer_name[11:]
     
-            # Reverse the standard scaling
-            synthetic_transformed_set[column_name] = transformer.inverse_transform(synthetic_transformed_set[column_name].values.reshape(-1, 1)).flatten()
+                # Reverse the standard scaling
+                synthetic_transformed_set[column_name] = transformer.inverse_transform(synthetic_transformed_set[column_name].values.reshape(-1, 1)).flatten()
 
-    for transformer_name in date_transformers:
+    if(date_transformers!= None):
+        for transformer_name in date_transformers:
 
-        transformer = date_transformers[transformer_name]
-        column_name = transformer_name[9:]
+            transformer = date_transformers[transformer_name]
+            column_name = transformer_name[9:]
 
-        synthetic_transformed_set = transformer.reverse_transform(synthetic_transformed_set)
+            synthetic_transformed_set = transformer.reverse_transform(synthetic_transformed_set)
 
     synthetic_transformed_set = pd.DataFrame(synthetic_transformed_set, columns = data_supp_columns)
 
