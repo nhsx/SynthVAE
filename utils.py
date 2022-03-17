@@ -369,7 +369,7 @@ def constraint_filtering(n_rows, vae, reordered_cols, data_supp_columns, cont_tr
     return synthetic_dataframe
 
 
-def plot_elbo(n_epochs, log_elbo, log_reconstruction, log_divergence, saving_filepath, pre_proc_method='GMM'):
+def plot_elbo(n_epochs, log_elbo, log_reconstruction, log_divergence, saving_filepath=None, pre_proc_method='GMM'):
 
     fig = go.Figure()
 
@@ -388,14 +388,15 @@ def plot_elbo(n_epochs, log_elbo, log_reconstruction, log_divergence, saving_fil
 
     fig.show()
 
-    # Save static image
-    fig.write_image("{}ELBO Breakdown SynthVAE_{}.png".format(saving_filepath, pre_proc_method))
-    # Save interactive image
-    fig.write_html("{}ELBO Breakdown SynthVAE_{}.html".format(saving_filepath, pre_proc_method))
+    if(saving_filepath!=None):
+        # Save static image
+        fig.write_image("{}ELBO Breakdown SynthVAE_{}.png".format(saving_filepath, pre_proc_method))
+        # Save interactive image
+        fig.write_html("{}ELBO Breakdown SynthVAE_{}.html".format(saving_filepath, pre_proc_method))
 
-    return None
+    return fig
 
-def plot_likelihood_breakdown(n_epochs, log_categorical, log_numerical, saving_filepath, pre_proc_method='GMM'):
+def plot_likelihood_breakdown(n_epochs, log_categorical, log_numerical, saving_filepath=None, pre_proc_method='GMM'):
 
     # Initialize figure with subplots
     fig = make_subplots(
@@ -420,14 +421,15 @@ def plot_likelihood_breakdown(n_epochs, log_categorical, log_numerical, saving_f
 
     fig.show()
 
-    # Save static image
-    fig.write_image("{}Reconstruction Breakdown SYNTHVAE_{}.png".format(saving_filepath, pre_proc_method))
-    # Save interactive image
-    fig.write_html("{}Reconstruction Breakdown SYNTHVAE_{}.html".format(saving_filepath, pre_proc_method))
+    if(saving_filepath!=None):
+        # Save static image
+        fig.write_image("{}Reconstruction Breakdown SYNTHVAE_{}.png".format(saving_filepath, pre_proc_method))
+        # Save interactive image
+        fig.write_html("{}Reconstruction Breakdown SYNTHVAE_{}.html".format(saving_filepath, pre_proc_method))
 
-    return None
+    return fig
 
-def plot_variable_distributions(categorical_columns, continuous_columns, data_supp, synthetic_supp, saving_filepath, pre_proc_method="GMM"):
+def plot_variable_distributions(categorical_columns, continuous_columns, data_supp, synthetic_supp, saving_filepath=None, pre_proc_method="GMM"):
 
     # Plot some examples using plotly
 
@@ -453,10 +455,11 @@ def plot_variable_distributions(categorical_columns, continuous_columns, data_su
 
         fig.show()
 
-        # Save static image
-        fig.write_image("{}Variable {} SynthVAE_{}.png".format(saving_filepath, column, pre_proc_method))
-        # Save interactive image
-        fig.write_html("{}Variable {} SynthVAE_{}.html".format(saving_filepath, column, pre_proc_method))
+        if(saving_filepath!=None):
+            # Save static image
+            fig.write_image("{}Variable {} SynthVAE_{}.png".format(saving_filepath, column, pre_proc_method))
+            # Save interactive image
+            fig.write_html("{}Variable {} SynthVAE_{}.html".format(saving_filepath, column, pre_proc_method))
 
     for column in continuous_columns:
     
@@ -480,10 +483,11 @@ def plot_variable_distributions(categorical_columns, continuous_columns, data_su
 
         fig.show()
 
-        # Save static image
-        fig.write_image("{}Variable {} SynthVAE_{}.png".format(saving_filepath, column, pre_proc_method))
-        # Save interactive image
-        fig.write_html("{}Variable {} SynthVAE_{}.html".format(saving_filepath, column, pre_proc_method))
+        if(saving_filepath!=None):
+            # Save static image
+            fig.write_image("{}Variable {} SynthVAE_{}.png".format(saving_filepath, column, pre_proc_method))
+            # Save interactive image
+            fig.write_html("{}Variable {} SynthVAE_{}.html".format(saving_filepath, column, pre_proc_method))
 
         return None
 

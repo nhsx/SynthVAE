@@ -99,13 +99,13 @@ elif(differential_privacy==True):
     print(f"(epsilon, delta): {vae.get_privacy_spent(target_delta)}")
 #%% -------- Plot Loss Features ELBO Breakdown -------- #
 
-plot_elbo(
+elbo_fig = plot_elbo(
     n_epochs=n_epochs, log_elbo=log_elbo, log_reconstruction=log_reconstruction,
     log_divergence=log_divergence, saving_filepath="", pre_proc_method=pre_proc_method
 )
 #%% -------- Plot Loss Features Reconstruction Breakdown -------- #
 
-plot_likelihood_breakdown(
+likelihood_fig = plot_likelihood_breakdown(
     n_epochs=n_epochs, log_categorical=log_categorical, log_numerical=log_numerical,
     saving_filepath="", pre_proc_method=pre_proc_method
 )
