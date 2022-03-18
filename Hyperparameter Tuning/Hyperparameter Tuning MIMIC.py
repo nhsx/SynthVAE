@@ -1,7 +1,5 @@
 #%% -------- Import Libraries -------- #
 
-#%% -------- Import Libraries -------- #
-
 # Standard imports
 from tokenize import String
 import numpy as np
@@ -199,18 +197,3 @@ study.best_trials
 
 with open("no_dp_MIMIC.pkl", 'wb') as f:
         pickle.dump(study, f)
-
-trial_averages = []
-
-for trials in study.best_trials:
-
-    metrics = trials.values
-    trial_averages.append(np.mean(metrics))
-
-# Now find best trial
-
-best_trial = np.amax(np.asarray(trial_averages))
-
-#%% -------- Find params -------- #
-
-study.best_trials[-1].params['Learning Rate']
