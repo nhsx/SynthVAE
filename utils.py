@@ -4,6 +4,14 @@ import numpy as np
 import torch
 from rdt.transformers import numerical, categorical, DatetimeTransformer
 import pandas as pd
+# Graph Visualisation
+import matplotlib.pyplot as plt
+from plotly.subplots import make_subplots
+import plotly.graph_objects as go
+# SDV aspects
+from sdv.evaluation import evaluate
+import gower
+from sklearn.preprocessing import StandardScaler
 
 
 def set_seed(seed):
@@ -12,7 +20,7 @@ def set_seed(seed):
 
 # -------- Pre-Processing for SUPPORT -------- #
 
-def support_pre_proc(data_supp):
+def support_pre_proc(data_supp, pre_proc_method="GMM"):
 
     #%% -------- Data Pre-Processing -------- #
 
@@ -45,32 +53,43 @@ def support_pre_proc(data_supp):
     # Define columns based on datatype and then loop over creating and fitting 
     # transformers
 
-    for index, column in enumerate(continuous_columns):
+    if(pre_proc_method=="GMM"):
 
-        # Fit GMM
-        temp_continuous = numerical.BayesGMMTransformer()
-        temp_continuous.fit(transformed_dataset, columns = column)
+        for index, column in enumerate(continuous_columns):
+
+            # Fit GMM
+            temp_continuous = numerical.BayesGMMTransformer()
+            temp_continuous.fit(transformed_dataset, columns = column)
+            continuous_transformers['continuous_{}'.format(column)] = temp_continuous
+
+            transformed_dataset = temp_continuous.transform(transformed_dataset)
+
+            # Each numerical one gets a .normalized column + a .component column giving the mixture info
+            # This too needs to be one hot encoded
+
+            categorical_columns += [str(column) + '.component']
+
+            # Let's retrieve the new categorical and continuous column names
+
+            continuous_columns = ['duration.normalized'] + [f"x{i}.normalized" for i in range(7,15)]
+
+            # For each categorical column we want to know the number of categories
+
+            num_categories = (
+            np.array([np.amax(transformed_dataset[col]) for col in categorical_columns]) + 1
+            ).astype(int)
+
+            num_continuous = len(continuous_columns)
+
+    elif(pre_proc_method=="standard"):
+
+        # Fit sklearn standard scaler to each column
+        temp_continuous = StandardScaler()
+        temp_column = transformed_dataset[column].values.reshape(-1,1)
+        temp_continuous.fit(temp_column)
         continuous_transformers['continuous_{}'.format(column)] = temp_continuous
 
-        transformed_dataset = temp_continuous.transform(transformed_dataset)
-
-        # Each numerical one gets a .normalized column + a .component column giving the mixture info
-        # This too needs to be one hot encoded
-
-        categorical_columns += [str(column) + '.component']
-        normalised_column = str(column) + '.component'
-
-        # Let's retrieve the new categorical and continuous column names
-
-        continuous_columns = ['duration.normalized'] + [f"x{i}.normalized" for i in range(7,15)]
-
-        # For each categorical column we want to know the number of categories
-
-        num_categories = (
-        np.array([np.amax(transformed_dataset[col]) for col in categorical_columns]) + 1
-        ).astype(int)
-
-        num_continuous = len(continuous_columns)
+        transformed_dataset[column] = (temp_continuous.transform(temp_column)).flatten()        
 
     for index, column in enumerate(categorical_columns):
 
@@ -97,17 +116,13 @@ def support_pre_proc(data_supp):
 # -------- Pre-Processing for MIMIC sets -------- #
 # Internal sets provided by NHSX - outside users will have to stick with SUPPORT set
 
-def mimic_pre_proc(data_supp, version=1):
+def mimic_pre_proc(data_supp, pre_proc_method="GMM"):
 
     # Specify column configurations
 
     original_categorical_columns = ['ETHNICITY', 'DISCHARGE_LOCATION', 'GENDER', 'FIRST_CAREUNIT', 'VALUEUOM', 'LABEL']
     original_continuous_columns = ['Unnamed: 0', 'ROW_ID', 'SUBJECT_ID', 'VALUE', 'age']
-    
-    if(version==1):
-        original_datetime_columns = ['ADMITTIME', 'DISCHTIME', 'DOB', 'CHARTTIME']
-    elif(version==2):
-        original_datetime_columns = ['ADMITTIME', 'DISCHTIME', 'DOB', 'CHARTTIME']
+    original_datetime_columns = ['ADMITTIME', 'DISCHTIME', 'DOB', 'CHARTTIME']
 
 
     categorical_columns = original_categorical_columns.copy()
@@ -171,23 +186,37 @@ def mimic_pre_proc(data_supp, version=1):
 
     original_metric_set = transformed_dataset.copy()
 
-    for index, column in enumerate(continuous_columns):
+    if(pre_proc_method=="GMM"):
 
-        # Fit GMM
-        temp_continuous = numerical.BayesGMMTransformer()
-        temp_continuous.fit(transformed_dataset, columns = column)
-        continuous_transformers['continuous_{}'.format(column)] = temp_continuous
+        for index, column in enumerate(continuous_columns):
 
-        categorical_columns += [str(column) + '.component']
+            # Fit GMM
+            temp_continuous = numerical.BayesGMMTransformer()
+            temp_continuous.fit(transformed_dataset, columns = column)
+            continuous_transformers['continuous_{}'.format(column)] = temp_continuous
 
-        transformed_dataset = temp_continuous.transform(transformed_dataset)
+            categorical_columns += [str(column) + '.component']
 
-    # Each numerical one gets a .normalized column + a .component column giving the mixture info
-    # This too needs to be one hot encoded
+            transformed_dataset = temp_continuous.transform(transformed_dataset)
+
+        # Each numerical one gets a .normalized column + a .component column giving the mixture info
+        # This too needs to be one hot encoded
+
+        continuous_columns = [str(col) + '.normalized' for col in continuous_columns]
+
+    elif(pre_proc_method=="standard"):
+
+        for index, column in enumerate(continuous_columns):
+
+            # Fit sklearn standard scaler to each column
+            temp_continuous = StandardScaler()
+            temp_column = transformed_dataset[column].values.reshape(-1,1)
+            temp_continuous.fit(temp_column)
+            continuous_transformers['continuous_{}'.format(column)] = temp_continuous
+
+            transformed_dataset[column] = (temp_continuous.transform(temp_column)).flatten()
 
     num_categories = []
-
-    continuous_columns = [str(col) + '.normalized' for col in continuous_columns]
 
     for col in categorical_columns:
 
@@ -234,32 +263,48 @@ def mimic_pre_proc(data_supp, version=1):
 
 # -------- Reverse Transformations -------- #
 
-def reverse_transformers(synthetic_set, data_supp_columns, cont_transformers, cat_transformers, date_transformers):
+def reverse_transformers(synthetic_set, data_supp_columns, cont_transformers=None, cat_transformers=None, date_transformers=None, pre_proc_method="GMM"):
 
     # Now all of the transformations from the dictionary - first loop over the categorical columns
 
     synthetic_transformed_set = synthetic_set
 
-    for transformer_name in cat_transformers:
+    if(cat_transformers!= None):
+        for transformer_name in cat_transformers:
 
-        transformer = cat_transformers[transformer_name]
-        column_name = transformer_name[12:]
+            transformer = cat_transformers[transformer_name]
+            column_name = transformer_name[12:]
 
-        synthetic_transformed_set = transformer.reverse_transform(synthetic_transformed_set)
+            synthetic_transformed_set = transformer.reverse_transform(synthetic_transformed_set)
 
-    for transformer_name in cont_transformers:
+    if(cont_transformers!= None):
 
-        transformer = cont_transformers[transformer_name]
-        column_name = transformer_name[11:]
+        if(pre_proc_method=="GMM"):
 
-        synthetic_transformed_set = transformer.reverse_transform(synthetic_transformed_set)
+            for transformer_name in cont_transformers:
 
-    for transformer_name in date_transformers:
+                transformer = cont_transformers[transformer_name]
+                column_name = transformer_name[11:]
 
-        transformer = date_transformers[transformer_name]
-        column_name = transformer_name[9:]
+                synthetic_transformed_set = transformer.reverse_transform(synthetic_transformed_set)
 
-        synthetic_transformed_set = transformer.reverse_transform(synthetic_transformed_set)
+        elif(pre_proc_method=="standard"):
+
+            for transformer_name in cont_transformers:
+
+                transformer = cont_transformers[transformer_name]
+                column_name = transformer_name[11:]
+    
+                # Reverse the standard scaling
+                synthetic_transformed_set[column_name] = transformer.inverse_transform(synthetic_transformed_set[column_name].values.reshape(-1, 1)).flatten()
+
+    if(date_transformers!= None):
+        for transformer_name in date_transformers:
+
+            transformer = date_transformers[transformer_name]
+            column_name = transformer_name[9:]
+
+            synthetic_transformed_set = transformer.reverse_transform(synthetic_transformed_set)
 
     synthetic_transformed_set = pd.DataFrame(synthetic_transformed_set, columns = data_supp_columns)
 
@@ -267,92 +312,21 @@ def reverse_transformers(synthetic_set, data_supp_columns, cont_transformers, ca
 
 # -------- Constraint based sampling for MIMIC work -------- #
 
-def constraint_sampling_mimic(n_rows, vae, reordered_cols, data_supp_columns, cont_transformers, cat_transformers, date_transformers, reverse_transformers=reverse_transformers, version=1):
-
-    # n_rows - the number of rows we require
-
-    synthetic_trial = vae.generate(n_rows) # Generate our big set
-
-    synthetic_dataframe = pd.DataFrame(synthetic_trial.cpu().detach().numpy(),  columns=reordered_cols)
-
-    # Reverse the transforms
-
-    synthetic_dataframe = reverse_transformers(synthetic_dataframe, data_supp_columns, cont_transformers, cat_transformers, date_transformers)
-
-    def initial_check(synthetic_dataframe, version=1):
-
-        n_rows = synthetic_dataframe.shape[0]
-
-        # First check which columns do not match the constraints and remove them
-        for i in range(n_rows):
-            # If there are any to drop
-            if(synthetic_dataframe['DISCHTIME'][i] < synthetic_dataframe['ADMITTIME'][i] or (synthetic_dataframe['CHARTTIME'][i] < synthetic_dataframe['ADMITTIME'][i])
-            or (synthetic_dataframe['age'][i] < 0) or (synthetic_dataframe['DOB'][i] < synthetic_dataframe['ADMITTIME'][i])):
-            
-                # Drop the row inplace
-                synthetic_dataframe.drop([i], axis=0, inplace=True)
-
-        return None
-
-    # Now we need to generate & perform this check over and over until all rows match
-
-    def generation_checks(new_rows, vae, reordered_cols, initial_check, data_supp_columns, cont_transformers, cat_transformers, date_transformers, version=1):
-
-        # Generate the amount we need
-        new_samples = vae.generate(new_rows)
-
-        new_dataframe = pd.DataFrame(new_samples.cpu().detach().numpy(), columns = reordered_cols) 
-
-        # Reverse transforms
-        synthetic_dataframe = reverse_transformers(new_dataframe, data_supp_columns, cont_transformers, cat_transformers, date_transformers)
-
-        # Perform the first check
-
-        initial_check(synthetic_dataframe, version=version)
-
-        return synthetic_dataframe
-
-    # First pass the generated set through the initial check to see if we need to do constraint sampling
-
-    initial_check(synthetic_dataframe, version=version)
-
-    # While synthetic_dataframe.shape[0] is not the amount we need (or we are racking up excessive attempts), we perform the loop
-    n_tries = 0
-    while( (synthetic_dataframe.shape[0] != n_rows) or (n_tries == 100) ):
-
-        # Generate the amount required
-        rows_needed = n_rows - synthetic_dataframe.shape[0]
-
-        # Possible that we could have added extra rows to whats required so just remove these
-        if(rows_needed < 0):
-            
-            rows_needed = np.arange(abs(rows_needed))
-
-            # Drop the bottom rows_needed amount
-
-            synthetic_dataframe.drop(rows_needed, axis=0, inplace=True)
-
-        # We do not have enough rows so need to generate
-        else:
-
-            checked_rows = generation_checks(rows_needed, vae, reordered_cols, initial_check, data_supp_columns, cont_transformers, cat_transformers, date_transformers, version=version)
-
-            # Add the rows that do fit constraints to the synthetic_dataframe
-            synthetic_dataframe = pd.concat([synthetic_dataframe, checked_rows])
-            
-            n_tries += 1
-
-    return synthetic_dataframe
-
-def pandas_filtering(n_rows, vae, reordered_cols, data_supp_columns, cont_transformers, cat_transformers, date_transformers, reverse_transformers=reverse_transformers, version=1):
+def constraint_filtering(n_rows, vae, reordered_cols, data_supp_columns, cont_transformers, cat_transformers, date_transformers, reverse_transformers=reverse_transformers, pre_proc_method="GMM"):
 
     # Generate samples
     synthetic_trial = vae.generate(n_rows)
-    # Create pandas dataframe in column order
-    synthetic_dataframe = pd.DataFrame(synthetic_trial.cpu().detach().numpy(),  columns=reordered_cols)
+
+    if(torch.cuda.is_available()):
+        # Create pandas dataframe in column order
+        synthetic_dataframe = pd.DataFrame(synthetic_trial.cpu().detach().numpy(),  columns=reordered_cols)
+    else:
+        # Create pandas dataframe in column order
+        synthetic_dataframe = pd.DataFrame(synthetic_trial.detach().numpy(),  columns=reordered_cols)
+
 
     # Reverse all the transformations ready for filtering
-    synthetic_dataframe = reverse_transformers(synthetic_dataframe, data_supp_columns, cont_transformers, cat_transformers, date_transformers)
+    synthetic_dataframe = reverse_transformers(synthetic_dataframe, data_supp_columns, cont_transformers, cat_transformers, date_transformers, pre_proc_method=pre_proc_method)
 
     # Function to filter out the constraints from the set - returns valid dataframe
     def constraint_check(synthetic_df):
@@ -394,3 +368,178 @@ def pandas_filtering(n_rows, vae, reordered_cols, data_supp_columns, cont_transf
             synthetic_dataframe = pd.concat([synthetic_dataframe, new_filtered_set])
 
     return synthetic_dataframe
+
+
+def plot_elbo(n_epochs, log_elbo, log_reconstruction, log_divergence, saving_filepath=None, pre_proc_method='GMM'):
+
+    x = np.arange(n_epochs)
+
+    y1 = log_elbo
+    y2 = log_reconstruction
+    y3 = log_divergence
+
+    plt.plot(x, y1, label = "ELBO")
+    plt.plot(x, y2, label = "RECONSTRUCTION")
+    plt.plot(x, y3, label = "DIVERGENCE")
+    plt.xlabel('Number of Epochs')
+    # Set the y axis label of the current axis.
+    plt.ylabel('Loss Value')
+    # Set a title of the current axes.
+    plt.title('ELBO Breakdown')
+    # show a legend on the plot
+    plt.legend()
+
+    if(saving_filepath!=None):
+        # Save static image
+        plt.savefig("{}ELBO Breakdown SynthVAE_{}.png".format(saving_filepath, pre_proc_method))
+
+    plt.show()
+
+    return None
+
+def plot_likelihood_breakdown(n_epochs, log_categorical, log_numerical, saving_filepath=None, pre_proc_method='GMM'):
+
+    x = np.arange(n_epochs)
+
+    y1 = log_categorical
+    y2 = log_numerical
+
+    plt.subplot(1,2,1)
+    plt.plot(x, y1, label = "CATEGORICAL")
+    plt.xlabel("Number of Epochs")
+    # Set the y axis label of the current axis.
+    plt.ylabel('Loss Value')
+    # Set a title of the current axes.
+    plt.title('Categorical Breakdown')
+    # show a legend on the plot
+    plt.subplot(1,2,2)
+    plt.plot(x, y2, label = "NUMERICAL")
+    plt.xlabel('Number of Epochs')
+    # Set the y axis label of the current axis.
+    plt.ylabel('Loss Value')
+    # Set a title of the current axes.
+    plt.title('Numerical Breakdown')
+    # show a legend on the plot
+    plt.tight_layout()
+
+    if(saving_filepath!=None):
+        # Save static image
+        plt.savefig("{}Reconstruction Breakdown SYNTHVAE_{}.png".format(saving_filepath, pre_proc_method))
+
+    return None
+
+def plot_variable_distributions(categorical_columns, continuous_columns, data_supp, synthetic_supp, saving_filepath=None, pre_proc_method="GMM"):
+
+    # Plot some examples using plotly
+
+    for column in categorical_columns:
+
+        plt.subplot(1,2,1)
+        plt.hist(x=synthetic_supp[column])
+        plt.title("Synthetic")
+        # Set the x axis label of the current axis
+        plt.xlabel('Data Value')
+        # Set the y axis label of the current axis.
+        plt.ylabel('Distribution')
+        # Set a title of the current axes.
+        plt.title('Synthetic'.format(column))
+        # show a legend on the plot
+        plt.subplot(1,2,2)
+        plt.hist(x=data_supp[column])
+        plt.title("Original")
+        # Set the x axis label of the current axis
+        plt.xlabel('Data Value')
+        # Set the y axis label of the current axis.
+        plt.ylabel('Distribution')
+        # Set a title of the current axes.
+        plt.title('Original'.format(column))
+        # show a legend on the plot
+        plt.suptitle("Variable {}".format(column))
+
+        plt.tight_layout()
+
+        if(saving_filepath!=None):
+            # Save static image
+            plt.savefig("{}Variable {} SynthVAE_{}.png".format(saving_filepath, column, pre_proc_method))
+
+        plt.show()
+
+    for column in continuous_columns:
+    
+        plt.subplot(1,2,1)
+        plt.hist(x=synthetic_supp[column])
+        plt.title("Synthetic")
+        # Set the x axis label of the current axis
+        plt.xlabel('Data Value')
+        # Set the y axis label of the current axis.
+        plt.ylabel('Distribution')
+        # Set a title of the current axes.
+        plt.title('Synthetic'.format(column))
+        # show a legend on the plot
+        plt.subplot(1,2,2)
+        plt.hist(x=data_supp[column])
+        plt.title("Original")
+        # Set the x axis label of the current axis
+        plt.xlabel('Data Value')
+        # Set the y axis label of the current axis.
+        plt.ylabel('Distribution')
+        # Set a title of the current axes.
+        plt.title('Original'.format(column))
+        # show a legend on the plot
+        plt.suptitle("Variable {}".format(column))
+
+        plt.tight_layout()
+
+        if(saving_filepath!=None):
+            # Save static image
+            plt.savefig("{}Variable {} SynthVAE_{}.png".format(saving_filepath, column, pre_proc_method))
+
+        plt.show()
+
+        return None
+
+def metric_calculation(user_metrics, data_supp, synthetic_supp, categorical_columns, continuous_columns, saving_filepath=None, pre_proc_method="GMM"):
+
+    # Calculate the sdv metrics for SynthVAE
+
+    # Define lists to contain the metrics achieved
+
+    no_metrics = len(user_metrics)
+    metrics = []
+
+    # Need these in same column order
+
+    synthetic_supp = synthetic_supp[data_supp.columns]
+
+    # Now categorical columns need to be converted to objects as SDV infers data
+    # types from the fields and integers/floats are treated as numerical not categorical
+
+    synthetic_supp[categorical_columns] = synthetic_supp[categorical_columns].astype(object)
+    data_supp[categorical_columns] = data_supp[categorical_columns].astype(object)
+
+    evals = evaluate(synthetic_supp, data_supp, metrics=user_metrics,aggregate=False)
+
+    # evals is a pandas dataframe of metrics - if we want to add a gower metric then we can
+    # save this separately
+
+    metrics = np.array(evals["raw_score"])
+
+    if "gower" in user_metrics:
+
+        # Find the gower distance
+        metrics = np.append(metrics,np.mean(gower.gower_matrix(data_supp, synthetic_supp)))
+
+    # Convert to dataframe to return from function
+
+    print(metrics)
+
+    metrics = pd.DataFrame(data = [metrics],
+    columns = user_metrics)
+
+    # Save these metrics into a pandas dataframe - if the user wants to
+
+    if(saving_filepath!=None):
+
+        metrics.to_csv("{}Metrics SynthVAE_{}.csv".format(saving_filepath, pre_proc_method))
+
+    return metrics
