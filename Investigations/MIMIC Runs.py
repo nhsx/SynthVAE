@@ -24,7 +24,7 @@ from utils import mimic_pre_proc, constraint_filtering, plot_elbo, plot_likeliho
 
 # Load in the mimic single table data 
 
-filepath = "C:/Users/dxb085/Documents/NHSX Internship/Private MIMIC Data/table_one_synthvae.csv"
+filepath = ".../Private MIMIC Data/table_one_synthvae.csv"
 
 data_supp = pd.read_csv(filepath)
 # Save the original columns
