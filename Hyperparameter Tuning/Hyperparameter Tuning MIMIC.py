@@ -1,22 +1,19 @@
 #%% -------- Import Libraries -------- #
 
+#%% -------- Import Libraries -------- #
+
 # Standard imports
+from tokenize import String
 import numpy as np
 import pandas as pd
 import torch
 
+# VAE is in other folder
 import sys
 sys.path.append('../')
 
-# For Gower distance
-import gower
-
-import pickle
-
+# Opacus support for differential privacy
 from opacus.utils.uniform_sampler import UniformWithReplacementSampler
-
-# For the SUPPORT dataset
-from pycox.datasets import support
 
 # For VAE dataset formatting
 from torch.utils.data import TensorDataset, DataLoader
@@ -24,19 +21,16 @@ from torch.utils.data import TensorDataset, DataLoader
 # VAE functions
 from VAE import Decoder, Encoder, VAE
 
-# SDV aspects
-from sdv.evaluation import evaluate
+# For datetime columns we need a transformer
+from rdt.transformers import datetime
 
-from sdv.metrics.tabular import NumericalLR, NumericalMLP, NumericalSVR
-
-from rdt.transformers import categorical, numerical, datetime
-from sklearn.preprocessing import QuantileTransformer
-
-from utils import mimic_pre_proc, constraint_sampling_mimic, pandas_filtering
+# Utility file contains all functions required to run notebook
+from utils import mimic_pre_proc, constraint_filtering, plot_elbo, plot_likelihood_breakdown, plot_variable_distributions, metric_calculation, reverse_transformers
 
 import optuna
+import pickle
 
-filepath = ""
+filepath = "C:/Users/dxb085/Documents/NHSX Internship/Private MIMIC Data/table_one_synthvae.csv"
 
 # Load in the MIMIC dataset
 data_supp = pd.read_csv(filepath)
@@ -49,19 +43,43 @@ original_datetime_columns = ['ADMITTIME', 'DISCHTIME', 'DOB', 'CHARTTIME']
 
 # Drop DOD column as it contains NANS - for now
 
-data_supp = data_supp.drop('DOD', axis = 1)
+#data_supp = data_supp.drop('DOD', axis = 1)
 
 original_columns = original_categorical_columns + original_continuous_columns + original_datetime_columns
 #%% -------- Data Pre-Processing -------- #
 
-x_train, original_metric_set, reordered_dataframe_columns, continuous_transformers, categorical_transformers, datetime_transformers, num_categories, num_continuous = mimic_pre_proc(data_supp=data_supp, version=2)
+pre_proc_method = "GMM"
+
+x_train, original_metric_set, reordered_dataframe_columns, continuous_transformers, categorical_transformers, datetime_transformers, num_categories, num_continuous = mimic_pre_proc(data_supp=data_supp, pre_proc_method=pre_proc_method)
 
 #%% -------- Create & Train VAE -------- #
+
+# User defined parameters
+
+# General training
+batch_size=32
+n_epochs=5
+logging_freq=1 # Number of epochs we should log the results to the user
+patience=5 # How many epochs should we allow the model train to see if
+# improvement is made
+delta=10 # The difference between elbo values that registers an improvement
+filepath=None # Where to save the best model
+
+
+# Privacy params
+differential_privacy = False # Do we want to implement differential privacy
+sample_rate=0.1 # Sampling rate
+noise_scale=None # Noise multiplier - influences how much noise to add
+target_eps=1 # Target epsilon for privacy accountant
+target_delta=1e-5 # Target delta for privacy accountant
+
+# Define the metrics you want the model to evaluate
+
+user_metrics = ['ContinuousKLDivergence', 'DiscreteKLDivergence']
 
 # Prepare data for interaction with torch VAE
 Y = torch.Tensor(x_train)
 dataset = TensorDataset(Y)
-batch_size = 32
 
 generator = None
 sample_rate = batch_size / len(dataset)
@@ -74,28 +92,21 @@ data_loader = DataLoader(
     generator=generator,
 )
 
-# Create VAE - either DP preserving or not
-
-differential_privacy = False
 
 # -------- Define our Optuna trial -------- #
 
-def objective(trial, differential_privacy=False, target_delta=1e-3, target_eps=10.0, n_epochs=50):
+def objective(trial, user_metrics, differential_privacy=False, target_delta=1e-3, target_eps=10.0, n_epochs=50):
 
     latent_dim = trial.suggest_int('Latent Dimension', 2, 128, step=2) # Hyperparam
     hidden_dim = trial.suggest_int('Hidden Dimension', 32, 1024, step=32) # Hyperparam
-    encoder = Encoder(x_train.shape[1], latent_dim, hidden_dim=hidden_dim, device=dev)
+
+    encoder = Encoder(x_train.shape[1], latent_dim, hidden_dim=hidden_dim)
     decoder = Decoder(
-        latent_dim, num_continuous, num_categories=num_categories, device=dev
+        latent_dim, num_continuous, num_categories=num_categories
     )
 
-    lr = trial.suggest_float('Learning Rate', 1e-5, 1e-1, step=1e-5)
-    vae = VAE(encoder, decoder) # lr hyperparam
-
-    target_delta = target_delta
-    target_eps = target_eps
-
-    n_epochs = n_epochs
+    lr = trial.suggest_float('Learning Rate', 1e-3, 1e-2, step=1e-5)
+    vae = VAE(encoder, decoder, lr=1e-3) # lr hyperparam
 
     C = trial.suggest_int('C', 10, 1e4, step=50)
 
@@ -116,55 +127,44 @@ def objective(trial, differential_privacy=False, target_delta=1e-3, target_eps=1
 
     # -------- Generate Synthetic Data -------- #
 
-    # Generate a synthetic set using trained vae
+    synthetic_supp = constraint_filtering(
+    n_rows=data_supp.shape[0], vae=vae, reordered_cols=reordered_dataframe_columns,
+    data_supp_columns=data_supp.columns, cont_transformers=continuous_transformers,
+    cat_transformers=categorical_transformers, date_transformers=datetime_transformers,
+    pre_proc_method=pre_proc_method
+    )
 
-    n_rows = data_supp.shape[0]
-    synthetic_transformed_set = pandas_filtering(n_rows=n_rows, vae=vae, reordered_cols=reordered_dataframe_columns, 
-    data_supp_columns=data_supp.columns, cont_transformers=continuous_transformers, cat_transformers=categorical_transformers, date_transformers=datetime_transformers)
+    # -------- Datetime Handling -------- #
+
+    # If the dataset has datetimes then we need to re-convert these to a numerical
+    # Value representing seconds, this is so we can evaluate the metrics on them
+
+    metric_synthetic_supp = synthetic_supp.copy()
+
+    for index, column in enumerate(original_datetime_columns):
+
+        # Fit datetime transformer - converts to seconds
+        temp_datetime = datetime.DatetimeTransformer()
+        temp_datetime.fit(metric_synthetic_supp, columns = column)
+
+        metric_synthetic_supp = temp_datetime.transform(metric_synthetic_supp)
 
     # -------- SDV Metrics -------- #
     # Calculate the sdv metrics for SynthVAE
 
-    # Define lists to contain the metrics achieved on the
-    # train/generate/evaluate runs
+    metrics = metric_calculation(
+    user_metrics=user_metrics, data_supp=data_supp, synthetic_supp=synthetic_supp,
+    categorical_columns=original_categorical_columns, continuous_columns=original_continuous_columns,
+    saving_filepath=None, pre_proc_method=pre_proc_method
+    )
 
-    samples = synthetic_transformed_set
-    metric_set = data_supp.copy()
+    # Optuna wants a list of values in float form
 
-    # We now need to transform the datetime columns using datetime transformers
-    for col in original_datetime_columns:
+    list_metrics = [metrics[i] for i in metrics.columns]
 
-        # Fit datetime transformer - converts to seconds
-        temp_datetime = datetime.DatetimeTransformer()
-        temp_datetime.fit(samples, columns = col)
-        samples = temp_datetime.transform(samples)
-        temp_datetime.fit(metric_set, columns = col)
-        metric_set = temp_datetime.transform(metric_set)
+    print(list_metrics)
 
-
-    # Need these in same column order as the datetime transformed mimic set
-
-    samples = samples[metric_set.columns]
-
-    # Now categorical columns need to be converted to objects as SDV infers data
-    # types from the fields and integers/floats are treated as numerical not categorical
-
-    samples[original_categorical_columns] = samples[original_categorical_columns].astype(object)
-    metric_set[original_categorical_columns] = metric_set[original_categorical_columns].astype(object)
-
-    evals = evaluate(samples, metric_set, metrics=['ContinuousKLDivergence', 'DiscreteKLDivergence'], aggregate=False)
-
-    # New version has added a lot more evaluation metrics
-    #bns = (np.array(evals["raw_score"])[0])
-    #gmlls = (np.array(evals["raw_score"])[1])
-    #cs = (np.array(evals["raw_score"])[2])
-    #ks = (np.array(evals["raw_score"])[3])
-    #kses = (np.array(evals["raw_score"])[4])
-    contkls = (np.array(evals["raw_score"])[0])
-    disckls = (np.array(evals["raw_score"])[1])
-    #gowers = (np.mean(gower.gower_matrix(metric_set, samples)))
-
-    return [contkls, disckls]
+    return list_metrics
 
 #%% -------- Run Hyperparam Optimisation -------- #
 
@@ -175,14 +175,20 @@ first_run=True  # First run indicates if we are creating a new hyperparam study
 
 if(first_run==True):
 
-    study = optuna.create_study(directions=['maximize', 'maximize'])
+    directions = ['maximize' for i in range(len(user_metrics))]
+
+    study = optuna.create_study(directions=directions)
 
 else:
 
     with open('no_dp_MIMIC.pkl', 'rb') as f:
         study = pickle.load(f)
 
-study.optimize(objective, n_trials=10, gc_after_trial=True) # GC to avoid OOM
+study.optimize(
+    lambda trial : objective(
+    trial, user_metrics=user_metrics, differential_privacy=differential_privacy, target_delta=target_delta, target_eps=target_eps, n_epochs=n_epochs
+    ), n_trials=3, gc_after_trial=True
+    ) # GC to avoid OOM
 #%%
 
 study.best_trials

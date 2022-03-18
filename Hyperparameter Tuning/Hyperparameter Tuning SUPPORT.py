@@ -5,14 +5,11 @@ import numpy as np
 import pandas as pd
 import torch
 
+# VAE is in other folder as well as opacus adapted library
 import sys
 sys.path.append('../')
 
-# For Gower distance
-import gower
-
-import pickle
-
+# Opacus support for differential privacy
 from opacus.utils.uniform_sampler import UniformWithReplacementSampler
 
 # For the SUPPORT dataset
@@ -24,17 +21,11 @@ from torch.utils.data import TensorDataset, DataLoader
 # VAE functions
 from VAE import Decoder, Encoder, VAE
 
-# SDV aspects
-from sdv.evaluation import evaluate
-
-from sdv.metrics.tabular import NumericalLR, NumericalMLP, NumericalSVR
-
-from rdt.transformers import categorical, numerical
-from sklearn.preprocessing import QuantileTransformer
-
-from utils import support_pre_proc
+# Utility file contains all functions required to run notebook
+from utils import support_pre_proc, plot_elbo, plot_likelihood_breakdown, plot_variable_distributions, metric_calculation, reverse_transformers
 
 import optuna
+import pickle
 
 # Load in the support data
 data_supp = support.read_df()
@@ -47,14 +38,38 @@ original_categorical_columns = ['event'] + [f"x{i}" for i in range(1,7)]
 original_columns = original_categorical_columns + original_continuous_columns
 #%% -------- Data Pre-Processing -------- #
 
-x_train, data_supp, reordered_dataframe_columns, continuous_transformers, categorical_transformers, num_categories, num_continuous = support_pre_proc(data_supp=data_supp)
+pre_proc_method = "GMM"
+
+x_train, data_supp, reordered_dataframe_columns, continuous_transformers, categorical_transformers, num_categories, num_continuous = support_pre_proc(data_supp=data_supp, pre_proc_method=pre_proc_method)
 
 #%% -------- Create & Train VAE -------- #
+
+# User defined parameters
+
+# General training
+batch_size=32
+n_epochs=5
+logging_freq=1 # Number of epochs we should log the results to the user
+patience=5 # How many epochs should we allow the model train to see if
+# improvement is made
+delta=10 # The difference between elbo values that registers an improvement
+filepath=None # Where to save the best model
+
+
+# Privacy params
+differential_privacy = False # Do we want to implement differential privacy
+sample_rate=0.1 # Sampling rate
+noise_scale=None # Noise multiplier - influences how much noise to add
+target_eps=1 # Target epsilon for privacy accountant
+target_delta=1e-5 # Target delta for privacy accountant
+
+# Define the metrics you want the model to evaluate
+
+user_metrics = ['ContinuousKLDivergence', 'DiscreteKLDivergence']
 
 # Prepare data for interaction with torch VAE
 Y = torch.Tensor(x_train)
 dataset = TensorDataset(Y)
-batch_size = 32
 
 generator = None
 sample_rate = batch_size / len(dataset)
@@ -67,16 +82,13 @@ data_loader = DataLoader(
     generator=generator,
 )
 
-# Create VAE - either DP preserving or not
-
-differential_privacy = True
-
 # -------- Define our Optuna trial -------- #
 
-def objective(trial, differential_privacy=False, target_delta=1e-3, target_eps=10.0, n_epochs=50):
+def objective(trial, user_metrics, differential_privacy=False, target_delta=1e-3, target_eps=10.0, n_epochs=50):
 
     latent_dim = trial.suggest_int('Latent Dimension', 2, 128, step=2) # Hyperparam
     hidden_dim = trial.suggest_int('Hidden Dimension', 32, 1024, step=32) # Hyperparam
+
     encoder = Encoder(x_train.shape[1], latent_dim, hidden_dim=hidden_dim)
     decoder = Decoder(
         latent_dim, num_continuous, num_categories=num_categories
@@ -85,12 +97,7 @@ def objective(trial, differential_privacy=False, target_delta=1e-3, target_eps=1
     lr = trial.suggest_float('Learning Rate', 1e-3, 1e-2, step=1e-5)
     vae = VAE(encoder, decoder, lr=1e-3) # lr hyperparam
 
-    target_delta = target_delta
-    target_eps = target_eps
-
-    n_epochs = n_epochs
-
-    C = trial.suggest_int('C', 10, 1e4, step=50)
+    C = trial.suggest_int('C', 10, 1e4, step=50) # Clipping hyperparam
 
     if differential_privacy == True:
         log_elbo, log_reconstruction, log_divergence, log_categorical, log_numerical = vae.diff_priv_train(
@@ -107,67 +114,36 @@ def objective(trial, differential_privacy=False, target_delta=1e-3, target_eps=1
 
         log_elbo, log_reconstruction, log_divergence, log_categorical, log_numerical = vae.train(data_loader, n_epochs=n_epochs)
 
-    # -------- Generate Synthetic Data -------- #
+    # -------- Synthetic Data Generation -------- #
 
-    # Generate a synthetic set using trained vae
+    synthetic_sample = vae.generate(data_supp.shape[0])
 
-    synthetic_trial = vae.generate(data_supp.shape[0]) # 8873 is size of support
+    if(torch.cuda.is_available()):
+        synthetic_sample = pd.DataFrame(synthetic_sample.cpu().detach(), columns=reordered_dataframe_columns)
+    else:
+        synthetic_sample = pd.DataFrame(synthetic_sample.detach(), columns=reordered_dataframe_columns)
 
-    # -------- Inverse Transformation On Synthetic Trial -------- #
+    # Reverse the transformations
 
-    # First add the old columns to the synthetic set to see what corresponds to what
-
-    synthetic_dataframe = pd.DataFrame(synthetic_trial.cpu().detach().numpy(),  columns=reordered_dataframe_columns)
-
-    # Now all of the transformations from the dictionary - first loop over the categorical columns
-
-    synthetic_transformed_set = synthetic_dataframe
-
-    for transformer_name in categorical_transformers:
-
-        transformer = categorical_transformers[transformer_name]
-        column_name = transformer_name[12:]
-
-        synthetic_transformed_set = transformer.reverse_transform(synthetic_transformed_set)
-
-    for transformer_name in continuous_transformers:
-
-        transformer = continuous_transformers[transformer_name]
-        column_name = transformer_name[11:]
-
-        synthetic_transformed_set = transformer.reverse_transform(synthetic_transformed_set)
-
+    synthetic_supp = reverse_transformers(synthetic_set=synthetic_sample, data_supp_columns=data_supp.columns, 
+                                      cont_transformers=continuous_transformers, cat_transformers=categorical_transformers,
+                                      pre_proc_method=pre_proc_method
+                                     )
     # -------- SDV Metrics -------- #
-    # Calculate the sdv metrics for SynthVAE
 
-    # Define lists to contain the metrics achieved on the
-    # train/generate/evaluate runs
+    metrics = metric_calculation(
+        user_metrics=user_metrics, data_supp=data_supp, synthetic_supp=synthetic_supp,
+        categorical_columns=original_categorical_columns, continuous_columns=original_continuous_columns,
+        saving_filepath=None, pre_proc_method=pre_proc_method
+    )
 
-    samples = synthetic_transformed_set
+    # Optuna wants a list of values in float form
 
-    # Need these in same column order
+    list_metrics = [metrics[i] for i in metrics.columns]
 
-    samples = samples[data_supp.columns]
+    print(list_metrics)
 
-    # Now categorical columns need to be converted to objects as SDV infers data
-    # types from the fields and integers/floats are treated as numerical not categorical
-
-    samples[original_categorical_columns] = samples[original_categorical_columns].astype(object)
-    data_supp[original_categorical_columns] = data_supp[original_categorical_columns].astype(object)
-
-    evals = evaluate(samples, data_supp, metrics=['ContinuousKLDivergence', 'DiscreteKLDivergence'], aggregate=False)
-
-    # New version has added a lot more evaluation metrics
-    #bns = (np.array(evals["raw_score"])[0])
-    #gmlls = (np.array(evals["raw_score"])[1])
-    #cs = (np.array(evals["raw_score"])[2])
-    #ks = (np.array(evals["raw_score"])[3])
-    #kses = (np.array(evals["raw_score"])[4])
-    contkls = (np.array(evals["raw_score"])[0])
-    disckls = (np.array(evals["raw_score"])[1])
-    gowers = (np.mean(gower.gower_matrix(data_supp, samples)))
-
-    return [contkls, disckls, gowers]
+    return list_metrics
 
 #%% -------- Run Hyperparam Optimisation -------- #
 
@@ -178,14 +154,20 @@ first_run=True  # First run indicates if we are creating a new hyperparam study
 
 if(first_run==True):
 
-    study = optuna.create_study(directions=['maximize', 'maximize', 'maximize'])
+    directions = ['maximize' for i in range(len(user_metrics))]
+
+    study = optuna.create_study(directions=directions)
 
 else:
 
     with open('dp_SUPPORT.pkl', 'rb') as f:
         study = pickle.load(f)
 
-study.optimize(objective, n_trials=30, gc_after_trial=True) # GC to avoid OOM
+study.optimize(
+    lambda trial : objective(
+    trial, user_metrics=user_metrics, differential_privacy=differential_privacy, target_delta=target_delta, target_eps=target_eps, n_epochs=n_epochs
+    ), n_trials=3, gc_after_trial=True
+    ) # GC to avoid OOM
 #%%
 
 study.best_trials
@@ -204,11 +186,3 @@ for trials in study.best_trials:
 
     metrics = trials.values
     trial_averages.append(np.mean(metrics))
-
-# Now find best trial
-
-best_trial = np.amax(np.asarray(trial_averages))
-
-#%% -------- Find params -------- #
-
-study.best_trials[-1].params['Learning Rate']
