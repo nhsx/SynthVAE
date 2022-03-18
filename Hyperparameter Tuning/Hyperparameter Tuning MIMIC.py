@@ -28,7 +28,7 @@ from utils import mimic_pre_proc, constraint_filtering, plot_elbo, plot_likeliho
 import optuna
 import pickle
 
-filepath = "C:/Users/dxb085/Documents/NHSX Internship/Private MIMIC Data/table_one_synthvae.csv"
+filepath = ".../Private MIMIC Data/table_one_synthvae.csv"
 
 # Load in the MIMIC dataset
 data_supp = pd.read_csv(filepath)
