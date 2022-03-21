@@ -6,12 +6,6 @@ import numpy as np
 import pandas as pd
 import torch
 
-# For Gower distance
-import gower
-
-# For data preprocessing
-from rdt.transformers import categorical, numerical
-
 from opacus.utils.uniform_sampler import UniformWithReplacementSampler
 
 # For the SUPPORT dataset
@@ -26,11 +20,7 @@ from VAE import Decoder, Encoder, VAE
 # SDV aspects
 from sdv.evaluation import evaluate
 
-from sdv.metrics.tabular import NumericalLR, NumericalMLP, NumericalSVR
-
-# Graph Visualisation
-from plotly.subplots import make_subplots
-import plotly.graph_objects as go
+from sdv.metrics.tabular import NumericalLR, NumericalMLP, NumericalSVR # Decision on privacy metrics/fairness metrics needed
 
 # Other
 from utils import set_seed, support_pre_proc, plot_elbo, plot_likelihood_breakdown, plot_variable_distributions, reverse_transformers, metric_calculation
