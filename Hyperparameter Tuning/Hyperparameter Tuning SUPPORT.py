@@ -141,8 +141,6 @@ def objective(trial, user_metrics, differential_privacy=False, target_delta=1e-3
 
     list_metrics = [metrics[i] for i in metrics.columns]
 
-    print(list_metrics)
-
     return list_metrics
 
 #%% -------- Run Hyperparam Optimisation -------- #
