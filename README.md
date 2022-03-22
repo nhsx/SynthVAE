@@ -75,9 +75,9 @@ optional arguments:
   --diff_priv DIFF_PRIV
                         run VAE with differential privacy
   --savefile SAVEFILE   save trained model's state_dict to file
-  --savevisualisation   save the loss & variable plots
-  -- metrics            calculate and save the metrics of the training set
-  -- pre_proc_method    {GMM, standard}
+  --savevisualisation   save the loss & variable plots using the filepath given
+  --metrics            calculate and save the metrics of the training set using the filepath given
+  --pre_proc_method    {GMM, standard}
                         set the pre-processing method
 ```
 
