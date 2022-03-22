@@ -52,6 +52,13 @@ parser.add_argument(
     help="Pre-processing method for the dataset. Either GMM or standard. (Gaussian mixture modelling method or standard scaler)"
 )
 
+parser.add_argument(
+    "--savemetrics",
+    default=False,
+    type=bool,
+    help="Set if we want to save the metrics - saved under Metric Breakdown.csv unless changed"
+)
+
 args = parser.parse_args()
 
 n_seeds = args.n_runs
@@ -60,23 +67,19 @@ my_seeds = np.random.randint(1e6, size=n_seeds)
 
 data_supp = support.read_df()
 
-# Setup column data types for SDV models to leverage
+# Setup columns
 
-field_types = {
-    "event" : "categorical",
-    "x1" : "categorical",
-    "x2" : "categorical",
-    "x3" : "categorical",
-    "x4" : "categorical",
-    "x5" : "categorical",
-    "x6" : "categorical"
-}
+original_continuous_columns = ['duration'] + [f"x{i}" for i in range(7,15)]
+original_categorical_columns = ['event'] + [f"x{i}" for i in range(1,7)] 
+
 
 #%% -------- Data Pre-Processing -------- #
 
 pre_proc_method = args.pre_proc_method
 
-data, data_supp, reordered_dataframe_columns, continuous_transformers, categorical_transformers, num_categories, num_continuous = support_pre_proc(data_supp=data_supp, pre_proc_method=pre_proc_method)
+x_train, data_supp, reordered_dataframe_columns, continuous_transformers, categorical_transformers, num_categories, num_continuous = support_pre_proc(data_supp=data_supp, pre_proc_method=pre_proc_method)
+
+data = pd.DataFrame(x_train, columns=reordered_dataframe_columns)
 
 # Define lists to contain the metrics achieved on the
 # train/generate/evaluate runs
@@ -106,6 +109,8 @@ for i in range(n_seeds):
 
     new_data = model.sample(data.shape[0])
 
+    print(new_data.head())
+
     # new_data = Independent._fit_sample(data, None)
 
     data_ = data.copy()
@@ -116,15 +121,26 @@ for i in range(n_seeds):
                                       cont_transformers=continuous_transformers, cat_transformers=categorical_transformers,
                                       pre_proc_method=pre_proc_method)
 
-    evals = evaluate(new_data, data_, aggregate=False)
+    # Define the metrics you want the model to evaluate
 
-    svcs.append(np.array(evals["raw_score"])[2])
-    gmlls.append(np.array(evals["raw_score"])[3])
-    cs.append(np.array(evals["raw_score"])[4])
-    ks.append(np.array(evals["raw_score"])[5])
-    kses.append(np.array(evals["raw_score"])[6])
-    contkls.append(np.array(evals["raw_score"])[7])
-    disckls.append(np.array(evals["raw_score"])[8])
+    user_metrics = ['SVCDetection', 'GMLogLikelihood', 'CSTest', 'KSTest', 'KSTestExtended', 'ContinuousKLDivergence', 'DiscreteKLDivergence']
+
+    metrics = metric_calculation(
+        user_metrics=user_metrics, data_supp=data_supp, synthetic_supp=synthetic_supp,
+        categorical_columns=original_categorical_columns, continuous_columns=original_continuous_columns,
+        saving_filepath=None, pre_proc_method=pre_proc_method
+    )
+
+    list_metrics = [metrics[i] for i in metrics.columns]
+
+    # New version has added a lot more evaluation metrics - only use fidelity metrics for now
+    svcs.append(np.array(list_metrics[0]))
+    gmlls.append(np.array(list_metrics[1]))
+    cs.append(np.array(list_metrics[2]))
+    ks.append(np.array(list_metrics[3]))
+    kses.append(np.array(list_metrics[4]))
+    contkls.append(np.array(list_metrics[5]))
+    disckls.append(np.array(list_metrics[6]))
 
 svcs = np.array(svcs)
 gmlls = np.array(gmlls)
@@ -141,3 +157,18 @@ print(f"KS: {np.mean(ks)} +/- {np.std(ks)}")
 print(f"KSE: {np.mean(kses)} +/- {np.std(kses)}")
 print(f"ContKL: {np.mean(contkls)} +/- {np.std(contkls)}")
 print(f"DiscKL: {np.mean(disckls)} +/- {np.std(disckls)}")
+
+if args.savemetrics:
+
+    metrics = pd.DataFrame(
+        {"SVCDetection":svcs[:, 0],
+        "GMLogLikelihood":gmlls[:,0],
+        "CSTest":cs[:,0],
+        "KSTest":ks[:,0],
+        "KSTestExtended":kses[:,0],
+        "ContinuousKLDivergence":contkls[:,0],
+        "DiscreteKLDivergence":disckls[:,0]
+        }
+        )
+
+    metrics.to_csv("Metric Breakdown.csv") # Change filepath location here

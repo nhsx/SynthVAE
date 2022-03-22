@@ -529,10 +529,6 @@ def metric_calculation(user_metrics, data_supp, synthetic_supp, categorical_colu
         # Find the gower distance
         metrics = np.append(metrics,np.mean(gower.gower_matrix(data_supp, synthetic_supp)))
 
-    # Convert to dataframe to return from function
-
-    print(metrics)
-
     metrics = pd.DataFrame(data = [metrics],
     columns = user_metrics)
 

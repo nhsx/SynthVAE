@@ -234,10 +234,7 @@ if(args.metrics is not None):
     kses = np.array(kses)
     contkls = np.array(contkls)
     disckls = np.array(disckls)
-    gowers = np.array(gowers)
 
-    print(f"BN: {np.mean(bns)} +/- {np.std(bns)}")
-    print(f"LR: {np.mean(lrs)} +/- {np.std(lrs)}")
     print(f"SVC: {np.mean(svcs)} +/- {np.std(svcs)}")
     print(f"GMLL: {np.mean(gmlls)} +/- {np.std(gmlls)}")
     print(f"CS: {np.mean(cs)} +/- {np.std(cs)}")
@@ -245,13 +242,12 @@ if(args.metrics is not None):
     print(f"KSE: {np.mean(kses)} +/- {np.std(kses)}")
     print(f"ContKL: {np.mean(contkls)} +/- {np.std(contkls)}")
     print(f"DiscKL: {np.mean(disckls)} +/- {np.std(disckls)}")
-    print(f"Gower: {np.mean(gowers)} +/- {np.std(gowers)}")
 
     # Save these metrics into a pandas dataframe
 
-    metrics = pd.DataFrame(data = [[svcs,gmlls,cs,ks,kses,contkls,disckls,gowers]],
-    columns = ["BNLogLikelihood", "LogisticDetection", "SVCDetection", "GMLogLikelihood",
-    "CSTest", "KSTest", "KSTestExtended", "ContinuousKLDivergence", "DiscreteKLDivergence", "Gower"])
+    metrics = pd.DataFrame(data = [[svcs,gmlls,cs,ks,kses,contkls,disckls]],
+    columns = ["SVCDetection", "GMLogLikelihood", "CSTest", "KSTest", "KSTestExtended",
+     "ContinuousKLDivergence", "DiscreteKLDivergence"])
 
     filepath = args.metrics
     metrics.to_csv("{}/Metric Breakdown.csv".format(filepath))
