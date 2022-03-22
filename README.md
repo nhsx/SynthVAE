@@ -3,7 +3,7 @@
 
 ### About the Project
 
-This repository holds code for the NHSX Analytics Unit PhD internship project (previously known as Synthetic Data Generation - VAE) contextualising and investigating the potential use of Variational AutoEncoders (VAEs) for synthetic health data generation undertaken by Dominic Danks.
+This repository holds code for the NHSX Analytics Unit PhD internship project (previously known as Synthetic Data Generation - VAE) contextualising and investigating the potential use of Variational AutoEncoders (VAEs) for synthetic health data generation initially undertaken by Dominic Danks. This has then been further extended through the work undertaken by David Brind.
 
 [Project Description - Synthetic Data Exploration: Variational Autoencoders](https://nhsx.github.io/nhsx-internship-projects/synthetic-data-exploration-vae/)
 
@@ -19,10 +19,10 @@ _**Note:** No data, public or private are shared in this repository._
 
 ### Built With
 
-[![Python v3.8](https://img.shields.io/badge/python-v3.8-blue.svg)](https://www.python.org/downloads/release/python-380/)
-- [PyTorch](https://github.com/pytorch)
-- [SDV](https://github.com/sdv-dev/SDV)
-- [Opacus](https://github.com/pytorch/opacus)
+[![Python v3.8.12](https://img.shields.io/badge/python-v3.8-blue.svg)](https://www.python.org/downloads/release/python-380/)
+- [PyTorch v1.9.0](https://github.com/pytorch)
+- [SDV v0.13.1](https://github.com/sdv-dev/SDV)
+- [Opacus v0.14.0](https://github.com/pytorch/opacus)
 
 ### Getting Started
 
@@ -96,7 +96,7 @@ optional arguments:
 
 #### Dataset
 
-Experiments are run against the [Study to Understand Prognoses Preferences Outcomes and Risks of Treatment (SUPPORT) dataset](https://biostat.app.vumc.org/wiki/Main/SupportDesc) accessed via the [pycox](https://github.com/havakv/pycox) python library.
+Experiments are run against the [Study to Understand Prognoses Preferences Outcomes and Risks of Treatment (SUPPORT) dataset](https://biostat.app.vumc.org/wiki/Main/SupportDesc) accessed via the [pycox](https://github.com/havakv/pycox) python library. Further experiments to test scalability of model were also performed on a pre-processed single table extracted from MIMIC-III dataset. The pre-processing to access this single table can be found within the SynthVAE files.
 
 ### Roadmap
 
