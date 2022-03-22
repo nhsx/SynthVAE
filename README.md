@@ -48,7 +48,7 @@ To reproduce the experiments contained in the report involving the [SDV](https:/
 ```
 python sdv_baselines.py --help
 
-usage: sdv_baselines.py [-h] [--n_runs N_RUNS] [--model_type {CopulaGAN,CTGAN,GaussianCopula,TVAE}] [--pre_proc_method {GMM, standard}]
+usage: sdv_baselines.py [-h] [--n_runs N_RUNS] [--model_type {CopulaGAN,CTGAN,GaussianCopula,TVAE}] [--pre_proc_method {GMM, standard}] [--savemetrics {True, False}]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -57,6 +57,7 @@ optional arguments:
                         set model for baseline experiment
   --pre_proc_method  {GMM, standard}
                         set the pre-processing method
+  --savemetrics         set if you wish to save the metrics for this model run - saves default as Metric Breakdown.csv unless changed
 ```
 
 #### Scratch VAE + Differential Privacy
