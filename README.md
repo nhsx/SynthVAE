@@ -48,13 +48,15 @@ To reproduce the experiments contained in the report involving the [SDV](https:/
 ```
 python sdv_baselines.py --help
 
-usage: sdv_baselines.py [-h] [--n_runs N_RUNS] [--model_type {CopulaGAN,CTGAN,GaussianCopula,TVAE}]
+usage: sdv_baselines.py [-h] [--n_runs N_RUNS] [--model_type {CopulaGAN,CTGAN,GaussianCopula,TVAE}] [--pre_proc_method {GMM, standard}]
 
 optional arguments:
   -h, --help            show this help message and exit
   --n_runs N_RUNS       set number of runs/seeds
   --model_type {CopulaGAN,CTGAN,GaussianCopula,TVAE}
                         set model for baseline experiment
+  --pre_proc_method  {GMM, standard}
+                        set the pre-processing method
 ```
 
 #### Scratch VAE + Differential Privacy
@@ -64,7 +66,7 @@ To reproduce the experiments contained in the report involving the VAE with/with
 ```
 python scratch_vae_expts.py --help
 
-usage: scratch_vae_expts.py [-h] [--n_runs N_RUNS] [--diff_priv DIFF_PRIV] [--savefile SAVEFILE]
+usage: scratch_vae_expts.py [-h] [--n_runs N_RUNS] [--diff_priv DIFF_PRIV] [--savefile SAVEFILE] [--savevisualisation SAVEVISUALISATION] [--metrics METRICS] [--pre_proc_method {GMM, standard}]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -72,6 +74,10 @@ optional arguments:
   --diff_priv DIFF_PRIV
                         run VAE with differential privacy
   --savefile SAVEFILE   save trained model's state_dict to file
+  --savevisualisation   save the loss & variable plots
+  -- metrics            calculate and save the metrics of the training set
+  -- pre_proc_method    {GMM, standard}
+                        set the pre-processing method
 ```
 
 Code to load a saved model and generate correlation heatmaps is contained within `plot.py`.
