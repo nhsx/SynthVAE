@@ -1,6 +1,7 @@
 import argparse
 import numpy as np
 import pandas as pd
+import torch
 
 # For Gower distance
 import gower
@@ -33,6 +34,13 @@ parser.add_argument(
     required=True,
     type=str,
     help="load trained model's state_dict from file",
+)
+
+parser.add_argument(
+    '--pre_proc_method',
+    default="GMM",
+    type=str,
+    help="Choose the pre-processing method that you will apply to the dataset, either GMM or standard"
 )
 
 args = parser.parse_args()
@@ -95,7 +103,7 @@ divider = make_axes_locatable(ax)
 cax = divider.append_axes("right", size="5%", pad=0.05)
 #####
 plt.colorbar(im,cax=cax)
-plt.savefig('actual_corr.png', bbox_inches='tight')
+plt.savefig('actual_corr_{}.png'.format(pre_proc_method), bbox_inches='tight')
 # Plot 2: Correlation matrix of synthetic data
 plt.figure()
 ax = plt.gca()
@@ -108,7 +116,7 @@ divider = make_axes_locatable(ax)
 cax = divider.append_axes("right", size="5%", pad=0.05)
 #####
 plt.colorbar(im,cax=cax)
-plt.savefig('sample_corr.png', bbox_inches='tight')
+plt.savefig('sample_corr_{}.png'.format(pre_proc_method), bbox_inches='tight')
 # Plot 3: Difference between real and synth correlation matrices + Gower and RMSE values
 plt.figure()
 g = np.mean(gower.gower_matrix(data_supp, synthetic_supp))
@@ -124,4 +132,4 @@ divider = make_axes_locatable(ax)
 cax = divider.append_axes("right", size="5%", pad=0.05)
 #####
 plt.colorbar(im,cax=cax)
-plt.savefig('diff_corr.png', bbox_inches='tight')
+plt.savefig('diff_corr_{}.png'.format(pre_proc_method), bbox_inches='tight')
