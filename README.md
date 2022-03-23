@@ -3,7 +3,7 @@
 
 ### About the Project
 
-This repository holds code for the NHSX Analytics Unit PhD internship project (previously known as Synthetic Data Generation - VAE) contextualising and investigating the potential use of Variational AutoEncoders (VAEs) for synthetic health data generation initially undertaken by Dominic Danks. This has then been further extended through the work undertaken by David Brind.
+This repository holds code for the NHSX Analytics Unit PhD internship project (previously known as Synthetic Data Generation - VAE) contextualising and investigating the potential use of Variational AutoEncoders (VAEs) for synthetic health data generation initially undertaken by Dominic Danks (last commit to the repository: commit 88a4bdf). This has then been further extended through the work undertaken by David Brind.
 
 [Project Description - Synthetic Data Exploration: Variational Autoencoders](https://nhsx.github.io/nhsx-internship-projects/synthetic-data-exploration-vae/)
 
@@ -14,6 +14,7 @@ _**Note:** No data, public or private are shared in this repository._
 - The main code is found in the root of the repository (see Usage below for more information)
 - The accompanying [report](./reports/report.pdf) is also available in the `reports` folder
 - More information about the VAE with Differential Privacy can be found in the [model card](./model_card.md)
+- scratch_vae_expts.py is similar to the files you will find within the investigations folder. To re-run our results then scratch_vae_expts.py is all you require. If you want an easy way to understand our code and work process then using the respective notebooks within the investigations folder helps to run through the work.
 
 **N.B.** A modified copy of [Opacus](https://github.com/pytorch/opacus) (v0.14.0), a library for training PyTorch models with differential privacy, is contained within the repository. See the [model card](./model_card.md) for more details.
 
@@ -50,8 +51,8 @@ This code has been tested both on CPU in the torch v1.9.0 given. But it has also
 Refer to [PyTorch documentation](https://pytorch.org/get-started/previous-versions/) under v1.9.0 for wheel linux & windows CUDA 11.1 for the pip install required.
 
 We use:
-- 'pip install torch==1.9.0+cu111 torchvision==0.10.0+cu111 torchaudio==0.9.0 -f https://download.pytorch.org/whl/torch_stable.html' 
-to get the gpu supported versions of PyTorch that we require.
+- `'pip install torch==1.9.0+cu111 torchvision==0.10.0+cu111 torchaudio==0.9.0 -f https://download.pytorch.org/whl/torch_stable.html'` 
+after using the pip install on requirements file in order to get the gpu supported versions of PyTorch that we require.
 
 Note that the model used is a simple MLP encoder/decoder and we are working with tabular data. Therefore the speed up provided by GPU is not that noticeable and it is easy to train using the CPU version for people without GPU support.
 
@@ -108,6 +109,8 @@ usage: plot.py [-h] --savefile SAVEFILE
 optional arguments:
   -h, --help           show this help message and exit
   --savefile SAVEFILE  load trained model's state_dict from file
+  --pre_proc_method    {GMM, standard}
+                       specify the pre-processing method that you wish to employ
 ```
 
 #### Note On Reproducibility Of Results
