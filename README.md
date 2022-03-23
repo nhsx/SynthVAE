@@ -43,13 +43,15 @@ To create a suitable environment:
 
 This code has been tested both on CPU in the torch v1.9.0 given. But it has also been run on a GPU environment. The specifications for the device running this are as follows:
 
-NVIDIA GeForce RTX 3070 Laptop GPU
-CUDA v11.1
-cuDNN v8.1.0 for CUDA v11.1
+- NVIDIA GeForce RTX 3070 Laptop GPU
+- CUDA v11.1
+- cuDNN v8.1.0 for CUDA v11.1
 
 Refer to [PyTorch documentation](https://pytorch.org/get-started/previous-versions/) under v1.9.0 for wheel linux & windows CUDA 11.1 for the pip install required.
 
-We use 'pip install torch==1.9.0+cu111 torchvision==0.10.0+cu111 torchaudio==0.9.0 -f https://download.pytorch.org/whl/torch_stable.html' to get the gpu supported versions of PyTorch that we require.
+We use:
+- 'pip install torch==1.9.0+cu111 torchvision==0.10.0+cu111 torchaudio==0.9.0 -f https://download.pytorch.org/whl/torch_stable.html' 
+to get the gpu supported versions of PyTorch that we require.
 
 Note that the model used is a simple MLP encoder/decoder and we are working with tabular data. Therefore the speed up provided by GPU is not that noticeable and it is easy to train using the CPU version for people without GPU support.
 
