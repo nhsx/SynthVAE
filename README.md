@@ -110,9 +110,17 @@ optional arguments:
   --savefile SAVEFILE  load trained model's state_dict from file
 ```
 
+#### Note On Reproducibility Of Results
+
+Using the specific seed we provide as well as the <b>"standard"</b> <b>pre_proc_method</b> will result in a reproduction of our results for the SUPPORT & MIMIC-III sets. If you use the <b>"GMM"</b> <b>pre_proc_method</b> then there is currently an issue with replicating our results.
+
+This is due to the random nature of the GMM algorithm used. We need to incorporate a seeded way to train this pre-processing method to ensure that results can be obtained for SUPPORT and MIMIC-III sets.
+
 #### Dataset
 
 Experiments are run against the [Study to Understand Prognoses Preferences Outcomes and Risks of Treatment (SUPPORT) dataset](https://biostat.app.vumc.org/wiki/Main/SupportDesc) accessed via the [pycox](https://github.com/havakv/pycox) python library. Further experiments to test scalability of model were also performed on a pre-processed single table extracted from [MIMIC-III dataset](https://physionet.org/content/mimiciii/1.4/). The pre-processing to access this single table can be found within the SynthVAE files.
+
+Find information regarding using other datasets in the data guidance. There are certain conditions your data has to abide by in order for this model to work on these sets. 
 
 ### Roadmap
 
