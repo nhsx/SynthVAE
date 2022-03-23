@@ -498,6 +498,8 @@ def plot_variable_distributions(categorical_columns, continuous_columns, data_su
 
         return None
 
+# Distributional metrics - Check distribution differences between synthetic & original dataset as well as how
+# Easy it is to discriminate them i.e. svc detection
 def metric_calculation(user_metrics, data_supp, synthetic_supp, categorical_columns, continuous_columns, saving_filepath=None, pre_proc_method="GMM"):
 
     # Calculate the sdv metrics for SynthVAE
@@ -539,3 +541,15 @@ def metric_calculation(user_metrics, data_supp, synthetic_supp, categorical_colu
         metrics.to_csv("{}Metrics SynthVAE_{}.csv".format(saving_filepath, pre_proc_method))
 
     return metrics
+
+# Build in some privacy metrics from SDV - TO DO!!!
+
+def privacy_metrics(user_metrics, data_supp, synthetic_supp, categorical_columns, continuous_columns, saving_filepath=None, pre_proc_method="GMM"):
+
+    return None
+
+# Build in some fairness metrics (will have to find a library/code these ourselves) - TO DO!!!
+
+def fairness_metrics(user_metrics, data_supp, synthetic_supp, categorical_columns, continuous_columns, saving_filepath=None, pre_proc_method="GMM"):
+
+    return None
