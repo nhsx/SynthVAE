@@ -39,6 +39,22 @@ To create a suitable environment:
 - `source synth_env/bin/activate`
 - `pip install -r requirements.txt`
 
+#### GPU Support
+
+This code has been tested both on CPU in the torch v1.9.0 given. But it has also been run on a GPU environment. The specifications for the device running this are as follows:
+
+- NVIDIA GeForce RTX 3070 Laptop GPU
+- CUDA v11.1
+- cuDNN v8.1.0 for CUDA v11.1
+
+Refer to [PyTorch documentation](https://pytorch.org/get-started/previous-versions/) under v1.9.0 for wheel linux & windows CUDA 11.1 for the pip install required.
+
+We use:
+- 'pip install torch==1.9.0+cu111 torchvision==0.10.0+cu111 torchaudio==0.9.0 -f https://download.pytorch.org/whl/torch_stable.html' 
+to get the gpu supported versions of PyTorch that we require.
+
+Note that the model used is a simple MLP encoder/decoder and we are working with tabular data. Therefore the speed up provided by GPU is not that noticeable and it is easy to train using the CPU version for people without GPU support.
+
 ### Usage
 
 #### SDV Baselines
@@ -96,7 +112,7 @@ optional arguments:
 
 #### Dataset
 
-Experiments are run against the [Study to Understand Prognoses Preferences Outcomes and Risks of Treatment (SUPPORT) dataset](https://biostat.app.vumc.org/wiki/Main/SupportDesc) accessed via the [pycox](https://github.com/havakv/pycox) python library. Further experiments to test scalability of model were also performed on a pre-processed single table extracted from MIMIC-III dataset. The pre-processing to access this single table can be found within the SynthVAE files.
+Experiments are run against the [Study to Understand Prognoses Preferences Outcomes and Risks of Treatment (SUPPORT) dataset](https://biostat.app.vumc.org/wiki/Main/SupportDesc) accessed via the [pycox](https://github.com/havakv/pycox) python library. Further experiments to test scalability of model were also performed on a pre-processed single table extracted from [MIMIC-III dataset](https://physionet.org/content/mimiciii/1.4/). The pre-processing to access this single table can be found within the SynthVAE files.
 
 ### Roadmap
 
