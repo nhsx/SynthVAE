@@ -36,7 +36,7 @@ including as the level of DP is varied. It would also be of interest to apply DP
 whether the performance drop as a function of implemented privacy is similar or different
 across the models.
 
-Currently the SynthVAE model only works for data which is 'clean'. I.e data that has no missingness or NaNs within its input. It can handle continuous, categorical and datetime variables. Special types such as nominal data cannot be handled properly however the model may still run. Column names have to be specified in the code for the variable group they belong to. A simple example CSV file is provided under [example_csv.csv]((./example_csv.csv).
+Currently the SynthVAE model only works for data which is 'clean'. I.e data that has no missingness or NaNs within its input. It can handle continuous, categorical and datetime variables. Special types such as nominal data cannot be handled properly however the model may still run. Column names have to be specified in the code for the variable group they belong to. A simple example CSV file is provided under [example_csv.csv](./example_csv.csv).
 
 ## Additional notes
 
