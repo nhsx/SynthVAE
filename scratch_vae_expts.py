@@ -50,22 +50,22 @@ parser.add_argument(
     help="number of epochs to train for"
 )
 parser.add_argument(
-    "--savefile",
+    "--savemodel",
     default=None,
-    type=str,
+    type=bool,
     help="save trained model's state_dict to file",
 )
 parser.add_argument(
     "--savevisualisation",
     default=None,
-    type=str,
-    help="save model visualisations for ELBO & variable generations at the following filepath - only applicable for final run"
+    type=bool,
+    help="save model visualisations for ELBO & variable generations - only applicable for final run"
 )
 parser.add_argument(
-    "--metrics",
+    "--savemetrics",
     default=None,
-    type=str,
-    help="save metrics to the following filepath - averaged over all runs"
+    type=bool,
+    help="save metrics - averaged over all runs"
 )
 parser.add_argument(
     "--pre_proc_method",
@@ -199,10 +199,10 @@ for i in range(n_seeds):
                                       pre_proc_method=pre_proc_method
                                      )
 
-    if args.savefile is not None:
-        vae.save(args.savefile)
+    if args.savefile == True:
+        vae.save("SynthVAE model.pt")
 
-    if args.metrics is not None:
+    if args.metrics == True:
         
         # Define the metrics you want the model to evaluate
 
@@ -225,7 +225,7 @@ for i in range(n_seeds):
         contkls.append(np.array(list_metrics[5]))
         disckls.append(np.array(list_metrics[6]))
 
-if(args.metrics is not None):    
+if(args.metrics == True):    
 
     svcs = np.array(svcs)
     gmlls = np.array(gmlls)
@@ -250,17 +250,15 @@ if(args.metrics is not None):
      "ContinuousKLDivergence", "DiscreteKLDivergence"])
 
     filepath = args.metrics
-    metrics.to_csv("{}/Metric Breakdown.csv".format(filepath))
+    metrics.to_csv("Metric Breakdown.csv")
 #%% -------- Visualisation Figures -------- ##
-if(args.savevisualisation is not None):
-
-    filepath = args.savevisualisation
+if(args.savevisualisation == True):
 
     # -------- Plot ELBO Breakdowns -------- #
 
     elbo_fig = plot_elbo(
     n_epochs=n_epochs, log_elbo=log_elbo, log_reconstruction=log_reconstruction,
-    log_divergence=log_divergence, saving_filepath=filepath
+    log_divergence=log_divergence, saving_filepath=""
 )
 
     # -------- Plot Reconstruction Breakdowns -------- #
