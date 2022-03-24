@@ -70,11 +70,12 @@ usage: sdv_baselines.py [-h] [--n_runs N_RUNS] [--model_type {CopulaGAN,CTGAN,Ga
 optional arguments:
   -h, --help            show this help message and exit
   --n_runs N_RUNS       set number of runs/seeds
-  --model_type {CopulaGAN,CTGAN,GaussianCopula,TVAE}
+  --model_type          {CopulaGAN,CTGAN,GaussianCopula,TVAE}
                         set model for baseline experiment
-  --pre_proc_method  {GMM, standard}
+  --pre_proc_method     {GMM, standard}
                         set the pre-processing method
-  --savemetrics         set if you wish to save the metrics for this model run - saves default as Metric Breakdown.csv unless changed
+  --savemetrics         {True, False}        
+                        set if you wish to save the metrics for this model run - saves default as Metric Breakdown.csv unless changed
 ```
 
 #### Scratch VAE + Differential Privacy
@@ -84,7 +85,7 @@ To reproduce the experiments contained in the report involving the VAE with/with
 ```
 python scratch_vae_expts.py --help
 
-usage: scratch_vae_expts.py [-h] [--n_runs N_RUNS] [--diff_priv DIFF_PRIV] [--savefile SAVEFILE] [--savevisualisation SAVEVISUALISATION] [--metrics METRICS] [--pre_proc_method {GMM, standard}]
+usage: scratch_vae_expts.py [-h] [--n_runs N_RUNS] [--diff_priv DIFF_PRIV] [--savefile SAVEFILE] [--savevisualisation {True, False}] [--savemetrics {True, False}] [--pre_proc_method {GMM, standard}]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -92,8 +93,10 @@ optional arguments:
   --diff_priv DIFF_PRIV
                         run VAE with differential privacy
   --savefile SAVEFILE   save trained model's state_dict to file
-  --savevisualisation   save the loss & variable plots using the filepath given
-  --metrics            calculate and save the metrics of the training set using the filepath given
+  --savevisualisation   {True, False}
+                        save the loss & variable plots
+  --savemetrics         {True, False}
+                       calculate and save the metrics of the training set
   --pre_proc_method    {GMM, standard}
                         set the pre-processing method
 ```
