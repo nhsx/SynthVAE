@@ -37,8 +37,13 @@ def distribution_metrics(gower, data_supp, synthetic_supp, categorical_columns, 
         # Find the gower distance
         metrics = np.append(metrics,np.mean(gower.gower_matrix(data_supp, synthetic_supp)))
 
-    metrics = pd.DataFrame(data = [metrics],
-    columns = (distributional_metrics + ["Gower"]))
+        metrics = pd.DataFrame(data = [metrics],
+        columns = (distributional_metrics + ["Gower"]))
+
+    else:
+
+        metrics = pd.DataFrame(data = [metrics],
+        columns = (distributional_metrics))
 
     # Save these metrics into a pandas dataframe - if the user wants to
 
