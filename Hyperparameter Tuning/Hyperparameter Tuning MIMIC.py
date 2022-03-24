@@ -1,6 +1,7 @@
 #%% -------- Import Libraries -------- #
 
 # Standard imports
+from selectors import EpollSelector
 from tokenize import String
 import numpy as np
 import pandas as pd
@@ -23,7 +24,8 @@ from VAE import Decoder, Encoder, VAE
 from rdt.transformers import datetime
 
 # Utility file contains all functions required to run notebook
-from utils import mimic_pre_proc, constraint_filtering, plot_elbo, plot_likelihood_breakdown, plot_variable_distributions, metric_calculation, reverse_transformers
+from utils import mimic_pre_proc, constraint_filtering, plot_elbo, plot_likelihood_breakdown, plot_variable_distributions, reverse_transformers
+from metrics import distribution_metrics
 
 import optuna
 import pickle
@@ -73,7 +75,7 @@ target_delta=1e-5 # Target delta for privacy accountant
 
 # Define the metrics you want the model to evaluate
 
-user_metrics = ['ContinuousKLDivergence', 'DiscreteKLDivergence']
+gower=False
 
 # Prepare data for interaction with torch VAE
 Y = torch.Tensor(x_train)
@@ -150,8 +152,8 @@ def objective(trial, user_metrics, differential_privacy=False, target_delta=1e-3
     # -------- SDV Metrics -------- #
     # Calculate the sdv metrics for SynthVAE
 
-    metrics = metric_calculation(
-    user_metrics=user_metrics, data_supp=data_supp, synthetic_supp=synthetic_supp,
+    metrics = distribution_metrics(
+    gower=gower, data_supp=data_supp, synthetic_supp=synthetic_supp,
     categorical_columns=original_categorical_columns, continuous_columns=original_continuous_columns,
     saving_filepath=None, pre_proc_method=pre_proc_method
     )
@@ -173,7 +175,10 @@ first_run=True  # First run indicates if we are creating a new hyperparam study
 
 if(first_run==True):
 
-    directions = ['maximize' for i in range(len(user_metrics))]
+    if(gower==True):
+        directions = ['maximize' for i in range(6)]
+    else:
+        directions = ['maximize' for i in range(5)]
 
     study = optuna.create_study(directions=directions)
 
@@ -184,7 +189,7 @@ else:
 
 study.optimize(
     lambda trial : objective(
-    trial, user_metrics=user_metrics, differential_privacy=differential_privacy, target_delta=target_delta, target_eps=target_eps, n_epochs=n_epochs
+    trial, gower=gower, differential_privacy=differential_privacy, target_delta=target_delta, target_eps=target_eps, n_epochs=n_epochs
     ), n_trials=3, gc_after_trial=True
     ) # GC to avoid OOM
 #%%

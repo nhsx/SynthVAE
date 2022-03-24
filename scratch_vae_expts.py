@@ -23,8 +23,8 @@ from sdv.evaluation import evaluate
 from sdv.metrics.tabular import NumericalLR, NumericalMLP, NumericalSVR # Decision on privacy metrics/fairness metrics needed
 
 # Other
-from utils import set_seed, support_pre_proc, plot_elbo, plot_likelihood_breakdown, plot_variable_distributions, reverse_transformers, metric_calculation
-
+from utils import set_seed, support_pre_proc, plot_elbo, plot_likelihood_breakdown, plot_variable_distributions, reverse_transformers
+from metrics import distribution_metrics
 
 warnings.filterwarnings("ignore")
 set_seed(0)
@@ -72,6 +72,12 @@ parser.add_argument(
     default="GMM",
     type=str,
     help="Pre-processing method for the dataset. Either GMM or standard. (Gaussian mixture modelling method or standard scaler)"
+)
+parser.add_argument(
+    "--gower",
+    default=False,
+    type=bool,
+    help="Do you want to calculate the average gower distance"
 )
 
 args = parser.parse_args()
@@ -140,13 +146,15 @@ data_loader = DataLoader(
 # )
 
 # For metric saving - save each metric after each run for each seed
-svcs = []
-gmlls = []
 cs = []
 ks = []
 kses = []
 contkls = []
 disckls = []
+
+if(args.gower==True):
+
+    gowers = []
 
 for i in range(n_seeds):
     diff_priv_in = ""
@@ -204,12 +212,8 @@ for i in range(n_seeds):
 
     if args.metrics == True:
         
-        # Define the metrics you want the model to evaluate
-
-        user_metrics = ['SVCDetection', 'GMLogLikelihood', 'CSTest', 'KSTest', 'KSTestExtended', 'ContinuousKLDivergence', 'DiscreteKLDivergence']
-
-        metrics = metric_calculation(
-            user_metrics=user_metrics, data_supp=data_supp, synthetic_supp=synthetic_supp,
+        metrics = distribution_metrics(
+            gower=args.gower, data_supp=data_supp, synthetic_supp=synthetic_supp,
             categorical_columns=original_categorical_columns, continuous_columns=original_continuous_columns,
             saving_filepath="", pre_proc_method=pre_proc_method
         )
@@ -217,37 +221,36 @@ for i in range(n_seeds):
         list_metrics = [metrics[i] for i in metrics.columns]
 
         # New version has added a lot more evaluation metrics - only use fidelity metrics for now
-        svcs.append(np.array(list_metrics[0]))
-        gmlls.append(np.array(list_metrics[1]))
-        cs.append(np.array(list_metrics[2]))
-        ks.append(np.array(list_metrics[3]))
-        kses.append(np.array(list_metrics[4]))
-        contkls.append(np.array(list_metrics[5]))
-        disckls.append(np.array(list_metrics[6]))
+        cs.append(np.array(list_metrics[0]))
+        ks.append(np.array(list_metrics[1]))
+        kses.append(np.array(list_metrics[2]))
+        contkls.append(np.array(list_metrics[3]))
+        disckls.append(np.array(list_metrics[4]))
+        if(args.gower==True):
+            gowers.append(np.array(list_metrics[5]))
 
 if(args.metrics == True):    
 
-    svcs = np.array(svcs)
-    gmlls = np.array(gmlls)
     cs = np.array(cs)
     ks = np.array(ks)
     kses = np.array(kses)
     contkls = np.array(contkls)
     disckls = np.array(disckls)
 
-    print(f"SVC: {np.mean(svcs)} +/- {np.std(svcs)}")
-    print(f"GMLL: {np.mean(gmlls)} +/- {np.std(gmlls)}")
     print(f"CS: {np.mean(cs)} +/- {np.std(cs)}")
     print(f"KS: {np.mean(ks)} +/- {np.std(ks)}")
     print(f"KSE: {np.mean(kses)} +/- {np.std(kses)}")
     print(f"ContKL: {np.mean(contkls)} +/- {np.std(contkls)}")
     print(f"DiscKL: {np.mean(disckls)} +/- {np.std(disckls)}")
 
+    if(args.gower==True):
+        gowers = np.array(gowers)
+        print(f"Gowers : {np.mean(gowers)} +/- {np.std(gowers)}")
+
     # Save these metrics into a pandas dataframe
 
-    metrics = pd.DataFrame(data = [[svcs,gmlls,cs,ks,kses,contkls,disckls]],
-    columns = ["SVCDetection", "GMLogLikelihood", "CSTest", "KSTest", "KSTestExtended",
-     "ContinuousKLDivergence", "DiscreteKLDivergence"])
+    metrics = pd.DataFrame(data = [[cs,ks,kses,contkls,disckls, gowers]],
+    columns = ["CSTest", "KSTest", "KSTestExtended", "ContinuousKLDivergence", "DiscreteKLDivergence", "Gower"])
 
     filepath = args.metrics
     metrics.to_csv("Metric Breakdown.csv")

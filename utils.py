@@ -6,8 +6,6 @@ from rdt.transformers import numerical, categorical, DatetimeTransformer
 import pandas as pd
 # Graph Visualisation
 import matplotlib.pyplot as plt
-from plotly.subplots import make_subplots
-import plotly.graph_objects as go
 # SDV aspects
 from sdv.evaluation import evaluate
 import gower
@@ -497,59 +495,3 @@ def plot_variable_distributions(categorical_columns, continuous_columns, data_su
         plt.show()
 
         return None
-
-# Distributional metrics - Check distribution differences between synthetic & original dataset as well as how
-# Easy it is to discriminate them i.e. svc detection
-def metric_calculation(user_metrics, data_supp, synthetic_supp, categorical_columns, continuous_columns, saving_filepath=None, pre_proc_method="GMM"):
-
-    # Calculate the sdv metrics for SynthVAE
-
-    # Define lists to contain the metrics achieved
-
-    no_metrics = len(user_metrics)
-    metrics = []
-
-    # Need these in same column order
-
-    synthetic_supp = synthetic_supp[data_supp.columns]
-
-    # Now categorical columns need to be converted to objects as SDV infers data
-    # types from the fields and integers/floats are treated as numerical not categorical
-
-    synthetic_supp[categorical_columns] = synthetic_supp[categorical_columns].astype(object)
-    data_supp[categorical_columns] = data_supp[categorical_columns].astype(object)
-
-    evals = evaluate(synthetic_supp, data_supp, metrics=user_metrics,aggregate=False)
-
-    # evals is a pandas dataframe of metrics - if we want to add a gower metric then we can
-    # save this separately
-
-    metrics = np.array(evals["raw_score"])
-
-    if "gower" in user_metrics:
-
-        # Find the gower distance
-        metrics = np.append(metrics,np.mean(gower.gower_matrix(data_supp, synthetic_supp)))
-
-    metrics = pd.DataFrame(data = [metrics],
-    columns = user_metrics)
-
-    # Save these metrics into a pandas dataframe - if the user wants to
-
-    if(saving_filepath!=None):
-
-        metrics.to_csv("{}Metrics SynthVAE_{}.csv".format(saving_filepath, pre_proc_method))
-
-    return metrics
-
-# Build in some privacy metrics from SDV - TO DO!!!
-
-def privacy_metrics(user_metrics, data_supp, synthetic_supp, categorical_columns, continuous_columns, saving_filepath=None, pre_proc_method="GMM"):
-
-    return None
-
-# Build in some fairness metrics (will have to find a library/code these ourselves) - TO DO!!!
-
-def fairness_metrics(user_metrics, data_supp, synthetic_supp, categorical_columns, continuous_columns, saving_filepath=None, pre_proc_method="GMM"):
-
-    return None

@@ -20,7 +20,8 @@ from torch.utils.data import TensorDataset, DataLoader
 # VAE functions
 from VAE import Decoder, Encoder, VAE
 
-from utils import support_pre_proc, plot_elbo, plot_likelihood_breakdown, plot_variable_distributions, metric_calculation, reverse_transformers
+from utils import support_pre_proc, plot_elbo, plot_likelihood_breakdown, plot_variable_distributions, reverse_transformers
+from metrics import distribution_metrics
 
 # Load in the support data
 data_supp = support.read_df()
@@ -133,10 +134,10 @@ plot_variable_distributions(
 
 # Define the metrics you want the model to evaluate
 
-user_metrics = ['ContinuousKLDivergence', 'DiscreteKLDivergence']
+gower=False
 
-metrics = metric_calculation(
-    user_metrics=user_metrics, data_supp=data_supp, synthetic_supp=synthetic_supp,
+metrics = distribution_metrics(
+    gower=gower, data_supp=data_supp, synthetic_supp=synthetic_supp,
     categorical_columns=original_categorical_columns, continuous_columns=original_continuous_columns,
     saving_filepath="", pre_proc_method=pre_proc_method
 )

@@ -16,7 +16,8 @@ from sdv.evaluation import evaluate
 from sdv.tabular import CopulaGAN, CTGAN, GaussianCopula, TVAE
 
 # Other
-from utils import set_seed, support_pre_proc, metric_calculation, reverse_transformers
+from utils import set_seed, support_pre_proc, reverse_transformers
+from metrics import distribution_metrics
 
 
 warnings.filterwarnings("ignore")
@@ -59,6 +60,13 @@ parser.add_argument(
     help="Set if we want to save the metrics - saved under Metric Breakdown.csv unless changed"
 )
 
+parser.add_argument(
+    "--gower",
+    default=False,
+    type=bool,
+    help="Do you want to calculate the average gower distance"
+)
+
 args = parser.parse_args()
 
 n_seeds = args.n_runs
@@ -83,13 +91,14 @@ data = pd.DataFrame(x_train, columns=reordered_dataframe_columns)
 
 # Define lists to contain the metrics achieved on the
 # train/generate/evaluate runs
-svcs = []
-gmlls = []
 cs = []
 ks = []
 kses = []
 contkls = []
 disckls = []
+
+if(args.gower==True):
+    gowers=[]
 
 
 # Perform the train/generate/evaluate runs
@@ -121,12 +130,9 @@ for i in range(n_seeds):
                                       cont_transformers=continuous_transformers, cat_transformers=categorical_transformers,
                                       pre_proc_method=pre_proc_method)
 
-    # Define the metrics you want the model to evaluate
 
-    user_metrics = ['SVCDetection', 'GMLogLikelihood', 'CSTest', 'KSTest', 'KSTestExtended', 'ContinuousKLDivergence', 'DiscreteKLDivergence']
-
-    metrics = metric_calculation(
-        user_metrics=user_metrics, data_supp=data_supp, synthetic_supp=synthetic_supp,
+    metrics = distribution_metrics(
+        gower=args.gower, data_supp=data_supp, synthetic_supp=synthetic_supp,
         categorical_columns=original_categorical_columns, continuous_columns=original_continuous_columns,
         saving_filepath=None, pre_proc_method=pre_proc_method
     )
@@ -134,41 +140,55 @@ for i in range(n_seeds):
     list_metrics = [metrics[i] for i in metrics.columns]
 
     # New version has added a lot more evaluation metrics - only use fidelity metrics for now
-    svcs.append(np.array(list_metrics[0]))
-    gmlls.append(np.array(list_metrics[1]))
-    cs.append(np.array(list_metrics[2]))
-    ks.append(np.array(list_metrics[3]))
-    kses.append(np.array(list_metrics[4]))
-    contkls.append(np.array(list_metrics[5]))
-    disckls.append(np.array(list_metrics[6]))
+    cs.append(np.array(list_metrics[0]))
+    ks.append(np.array(list_metrics[1]))
+    kses.append(np.array(list_metrics[2]))
+    contkls.append(np.array(list_metrics[3]))
+    disckls.append(np.array(list_metrics[4]))
+    if(args.gower==True):
 
-svcs = np.array(svcs)
-gmlls = np.array(gmlls)
+        gowers.append(np.array(list_metrics[5]))
+
+
 cs = np.array(cs)
 ks = np.array(ks)
 kses = np.array(kses)
 contkls = np.array(contkls)
 disckls = np.array(disckls)
 
-print(f"SVC: {np.mean(svcs)} +/- {np.std(svcs)}")
-print(f"GMLL: {np.mean(gmlls)} +/- {np.std(gmlls)}")
+if(args.gower==True):
+
+    gowers = np.array(gowers)
+
 print(f"CS: {np.mean(cs)} +/- {np.std(cs)}")
 print(f"KS: {np.mean(ks)} +/- {np.std(ks)}")
 print(f"KSE: {np.mean(kses)} +/- {np.std(kses)}")
 print(f"ContKL: {np.mean(contkls)} +/- {np.std(contkls)}")
 print(f"DiscKL: {np.mean(disckls)} +/- {np.std(disckls)}")
+print(f"Gowers: {np.mean(gowers)} +/- {np.std(gowers)}")
 
 if args.savemetrics:
 
-    metrics = pd.DataFrame(
-        {"SVCDetection":svcs[:, 0],
-        "GMLogLikelihood":gmlls[:,0],
-        "CSTest":cs[:,0],
-        "KSTest":ks[:,0],
-        "KSTestExtended":kses[:,0],
-        "ContinuousKLDivergence":contkls[:,0],
-        "DiscreteKLDivergence":disckls[:,0]
-        }
-        )
+    if(args.gower==True):
+        metrics = pd.DataFrame(
+            {
+            "CSTest":cs[:,0],
+            "KSTest":ks[:,0],
+            "KSTestExtended":kses[:,0],
+            "ContinuousKLDivergence":contkls[:,0],
+            "DiscreteKLDivergence":disckls[:,0],
+            "Gower":gowers[:,0]
+            }
+            )
+    else:
+        metrics = pd.DataFrame(
+            {
+            "CSTest":cs[:,0],
+            "KSTest":ks[:,0],
+            "KSTestExtended":kses[:,0],
+            "ContinuousKLDivergence":contkls[:,0],
+            "DiscreteKLDivergence":disckls[:,0],
+            }
+            )
 
     metrics.to_csv("Metric Breakdown.csv") # Change filepath location here

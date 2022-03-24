@@ -20,7 +20,8 @@ from VAE import Decoder, Encoder, VAE
 
 from rdt.transformers import datetime
 
-from utils import mimic_pre_proc, constraint_filtering, plot_elbo, plot_likelihood_breakdown, plot_variable_distributions, metric_calculation
+from utils import mimic_pre_proc, constraint_filtering, plot_elbo, plot_likelihood_breakdown, plot_variable_distributions
+from metrics import distribution_metrics
 
 # Load in the mimic single table data 
 
@@ -150,10 +151,10 @@ for index, column in enumerate(original_datetime_columns):
 
 # Define the metrics you want the model to evaluate
 
-user_metrics = ['ContinuousKLDivergence', 'DiscreteKLDivergence']
+gower=False
 
-metrics = metric_calculation(
-    user_metrics=user_metrics, data_supp=original_metric_set, synthetic_supp=metric_synthetic_supp,
+metrics = distribution_metrics(
+    gower=gower, data_supp=original_metric_set, synthetic_supp=metric_synthetic_supp,
     categorical_columns=original_categorical_columns, continuous_columns=original_continuous_columns,
     saving_filepath="", pre_proc_method=pre_proc_method
 )
