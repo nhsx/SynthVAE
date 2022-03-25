@@ -126,12 +126,6 @@ There are a selection of plots & metrics the model can output. These are given b
 
 ![elbo](../docs/ELBO Breakdown SynthVAE_GMM_run_1.png) 
 
-![likelihood](../docs/Reconstruction Breakdown SYNTHVAE_GMM_run_1.png) 
-
-![variable_1](../docs/Variable duration SynthVAE_GMM_run_1.png) 
-
-![variable_2](../docs/Variable event SynthVAE_GMM_run_1.png)
-
 The distributional metrics produces a csv following this order - depending on number of runs:
 
 | CSTest | KSTestExtended | KSTestExtended | ContinuousKLDivergence | DiscreteKLDivergence |
