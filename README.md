@@ -156,16 +156,14 @@ There are a selection of plots & metrics the model can output. These are given b
 
 The distributional metrics produces a csv following this order - depending on number of runs:
 
-| CSTest | KSTestExtended | KSTestExtended | ContinuousKLDivergence | DiscreteKLDivergence |
-| --- | --- | --- | --- | --- |
-| 0.91 | 0.85 | 0.87 | 0.91 | 0.97 |
-| 0.90 | 0.86 | 0.88 | 0.92 | 0.99 |
+| SVCDetection | GMLogLikelihood | CSTest | KSTestExtended | KSTestExtended | ContinuousKLDivergence | DiscreteKLDivergence |
+| --- | --- | --- | --- | --- | --- | --- |
+| 0.32 | -520.01 | 0.91 | 0.85 | 0.87 | 0.91 | 0.97 |
+| 0.31 | -523.21 | 0.90 | 0.86 | 0.88 | 0.92 | 0.99 |
 
 #### Note On Reproducibility Of Results
 
 In order to get reproducible results we have added in the <b>random_state</b> argument to the RDT transformers in order to set the sklearn's <b>random_state</b> argument. This results in the GMM pre-processing method producing the same transformation each run for the same dataset. Currently we only use distributional metrics from SDV that do not rely on sklearn.
-
-Metrics such as <b>SVCDetection</b>, <b>GMLikelihood</b> etc use sklearn library and so <b>random_state</b> argument needs to be added to these to ensure reproducibility.
 
 #### Dataset
 
