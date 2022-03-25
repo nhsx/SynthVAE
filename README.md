@@ -65,7 +65,7 @@ To reproduce the experiments contained in the report involving the [SDV](https:/
 ```
 python sdv_baselines.py --help
 
-usage: sdv_baselines.py [-h] [--n_runs N_RUNS] [--model_type {CopulaGAN,CTGAN,GaussianCopula,TVAE}] [--pre_proc_method {GMM, standard}] [--savemetrics {True, False}]
+usage: sdv_baselines.py [-h] [--n_runs N_RUNS] [--model_type {CopulaGAN,CTGAN,GaussianCopula,TVAE}] [--pre_proc_method {GMM, standard}] [--savemetrics {True, False}] [--gower {True, False}]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -76,6 +76,8 @@ optional arguments:
                         set the pre-processing method
   --savemetrics         {True, False}        
                         set if you wish to save the metrics for this model run - saves default as Metric Breakdown.csv unless changed
+  --gower               {True, False}
+                        calculate the average gower distance
 ```
 
 #### Scratch VAE + Differential Privacy
@@ -85,7 +87,7 @@ To reproduce the experiments contained in the report involving the VAE with/with
 ```
 python scratch_vae_expts.py --help
 
-usage: scratch_vae_expts.py [-h] [--n_runs N_RUNS] [--diff_priv DIFF_PRIV] [--savefile SAVEFILE] [--savevisualisation {True, False}] [--savemetrics {True, False}] [--pre_proc_method {GMM, standard}]
+usage: scratch_vae_expts.py [-h] [--n_runs N_RUNS] [--diff_priv DIFF_PRIV] [--savefile SAVEFILE] [--savevisualisation {True, False}] [--savemetrics {True, False}] [--pre_proc_method {GMM, standard}] [--gower {True, False}]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -96,9 +98,11 @@ optional arguments:
   --savevisualisation   {True, False}
                         save the loss & variable plots
   --savemetrics         {True, False}
-                       calculate and save the metrics of the training set
-  --pre_proc_method    {GMM, standard}
+                        calculate and save the metrics of the training set
+  --pre_proc_method     {GMM, standard}
                         set the pre-processing method
+  --gower               {True, False}
+                        calculate the average gower distance
 ```
 
 Code to load a saved model and generate correlation heatmaps is contained within `plot.py`.
@@ -116,6 +120,19 @@ optional arguments:
                        specify the pre-processing method that you wish to employ
 ```
 
+#### Outputs Of The Model
+
+There are a selection of plots & metrics the model can output. These are given by parse arguments <b>--savemetrics</b>, <b>--savevisualisation</b> or functions <b>plot_elbo</b>, <b>plot_likelihood_breakdown</b>, <b>plot_variable_distributions</b> & <b>distribution_metrics</b> in the notebooks provided. These outputs give you a graph displaying the ELBO breakdown during training, the breakdown of categorical & numerical likelihoods, a comparison of variable distributions between original data & synthetic data for each variable as well as a csv file displaying all the distributional metrics from SDV.
+
+[elbo](./docs/ELBO Breakdown SynthVAE_GMM_run_1.png) [likelihood](./docs/Reconstruction Breakdown SYNTHVAE_GMM_run_1.png) [variable_1](./docs/Variable duration SynthVAE_GMM_run_1.png) [variable_2](./docs/Variable event SynthVAE_GMM_run_1.png)
+
+The distributional metrics produces a csv following this order - depending on number of runs:
+
+| CSTest | KSTestExtended | KSTestExtended | ContinuousKLDivergence | DiscreteKLDivergence |
+| --- | --- | --- | --- | --- |
+| 0.91 | 0.85 | 0.87 | 0.91 | 0.97 |
+| 0.90 | 0.86 | 0.88 | 0.92 | 0.99 |
+
 #### Note On Reproducibility Of Results
 
 In order to get reproducible results we have added in the <b>random_state</b> argument to the RDT transformers in order to set the sklearn's <b>random_state</b> argument. This results in the GMM pre-processing method producing the same transformation each run for the same dataset. Currently we only use distributional metrics from SDV that do not rely on sklearn.
@@ -126,7 +143,7 @@ Metrics such as <b>SVCDetection</b>, <b>GMLikelihood</b> etc use sklearn library
 
 Experiments are run against the [Study to Understand Prognoses Preferences Outcomes and Risks of Treatment (SUPPORT) dataset](https://biostat.app.vumc.org/wiki/Main/SupportDesc) accessed via the [pycox](https://github.com/havakv/pycox) python library. Further experiments to test scalability of model were also performed on a pre-processed single table extracted from [MIMIC-III dataset](https://physionet.org/content/mimiciii/1.4/). The pre-processing to access this single table can be found within the [SynthVAE files](./MIMIC_preproc.ipynb).
 
-Find information regarding using other datasets in the data guidance. There are certain conditions your data has to abide by in order for this model to work on these sets. 
+Your dataset should follow a simple structure as shown in the [example table](./example_csv.csv) - continuous, categorical & datetime variables with no missingness or NaN values. Number of columns can be as many as required along with as many rows as required.
 
 ### Roadmap
 
