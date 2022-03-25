@@ -118,9 +118,9 @@ optional arguments:
 
 #### Note On Reproducibility Of Results
 
-Using the specific seed we provide as well as the <b>"standard"</b> <b>pre_proc_method</b> will result in a reproduction of our results for the SUPPORT & MIMIC-III sets. If you use the <b>"GMM"</b> <b>pre_proc_method</b> then there is currently an issue with replicating our results.
+In order to get reproducible results we have added in the <b>random_state</b> argument to the RDT transformers in order to set the sklearn's <b>random_state</b> argument. This results in the GMM pre-processing method producing the same transformation each run for the same dataset. Currently we only use distributional metrics from SDV that do not rely on sklearn.
 
-This is due to the random nature of the GMM algorithm used. We need to incorporate a seeded way to train this pre-processing method to ensure that results can be obtained for SUPPORT and MIMIC-III sets.
+Metrics such as <b>SVCDetection</b>, <b>GMLikelihood</b> etc use sklearn library and so <b>random_state</b> argument needs to be added to these to ensure reproducibility.
 
 #### Dataset
 
