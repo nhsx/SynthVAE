@@ -3,6 +3,8 @@ from sdv.evaluation import evaluate
 import gower
 import pandas as pd
 
+from sdv.metrics.tabular import NumericalMLP, CategoricalSVM
+
 # Distributional metrics - Check distribution differences between synthetic & original dataset as well as how
 # Easy it is to discriminate them i.e. svc detection
 def distribution_metrics(gower, data_supp, synthetic_supp, categorical_columns, continuous_columns, saving_filepath=None, pre_proc_method="GMM"):
@@ -55,7 +57,37 @@ def distribution_metrics(gower, data_supp, synthetic_supp, categorical_columns, 
 
 # Build in some privacy metrics from SDV - TO DO!!!
 
-def privacy_metrics(user_metrics, data_supp, synthetic_supp, categorical_columns, continuous_columns, saving_filepath=None, pre_proc_method="GMM"):
+def privacy_metrics(private_variable, data_supp, synthetic_supp, categorical_columns, continuous_columns, saving_filepath=None, pre_proc_method="GMM"):
+
+    if(private_variable in continuous_columns):
+
+        continuous_columns = [column for column in continuous_columns if column != private_variable]
+
+        mlp_priv = NumericalMLP.compute(
+            data_supp.fillna(0),
+            synthetic_supp.fillna(0),
+            key_fields=(
+                continuous_columns
+            ),
+            sensitive_fields=[private_variable],
+        )
+        
+        return mlp_priv
+
+    elif(private_variable in categorical_columns):
+
+        categorical_columns = [column for column in categorical_columns if column != private_variable]
+
+        svm_priv = CategoricalSVM.compute(
+            data_supp.fillna(0),
+            synthetic_supp.fillna(0),
+            key_fields=(
+                categorical_columns
+            ),
+            sensitive_fields=[private_variable]
+        )
+
+        return svm_priv
 
     return None
 
