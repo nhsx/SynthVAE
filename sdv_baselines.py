@@ -91,6 +91,8 @@ data = pd.DataFrame(x_train, columns=reordered_dataframe_columns)
 
 # Define lists to contain the metrics achieved on the
 # train/generate/evaluate runs
+svc = []
+gmm = []
 cs = []
 ks = []
 kses = []
@@ -140,16 +142,18 @@ for i in range(n_seeds):
     list_metrics = [metrics[i] for i in metrics.columns]
 
     # New version has added a lot more evaluation metrics - only use fidelity metrics for now
-    cs.append(np.array(list_metrics[0]))
-    ks.append(np.array(list_metrics[1]))
-    kses.append(np.array(list_metrics[2]))
-    contkls.append(np.array(list_metrics[3]))
-    disckls.append(np.array(list_metrics[4]))
+    svc.append(np.array(list_metrics[0]))
+    gmm.append(np.array(list_metrics[1]))
+    cs.append(np.array(list_metrics[2]))
+    ks.append(np.array(list_metrics[3]))
+    kses.append(np.array(list_metrics[4]))
+    contkls.append(np.array(list_metrics[5]))
+    disckls.append(np.array(list_metrics[6]))
     if(args.gower==True):
+        gowers.append(np.array(list_metrics[7]))
 
-        gowers.append(np.array(list_metrics[5]))
-
-
+svc = np.array(svc)
+gmm = np.array(gmm)
 cs = np.array(cs)
 ks = np.array(ks)
 kses = np.array(kses)
@@ -160,6 +164,8 @@ if(args.gower==True):
 
     gowers = np.array(gowers)
 
+print(f"SVC: {np.mean(svc)} +/- {np.std(svc)}")
+print(f"GMM: {np.mean(gmm)} +/- {np.std(gmm)}")
 print(f"CS: {np.mean(cs)} +/- {np.std(cs)}")
 print(f"KS: {np.mean(ks)} +/- {np.std(ks)}")
 print(f"KSE: {np.mean(kses)} +/- {np.std(kses)}")
@@ -172,6 +178,8 @@ if args.savemetrics:
     if(args.gower==True):
         metrics = pd.DataFrame(
             {
+            "SVCDetection":svc[:,0],
+            "GMLogLikelihood":gmm[:,0],
             "CSTest":cs[:,0],
             "KSTest":ks[:,0],
             "KSTestExtended":kses[:,0],
@@ -183,6 +191,8 @@ if args.savemetrics:
     else:
         metrics = pd.DataFrame(
             {
+            "SVCDetection":svc[:,0],
+            "GMLogLikelihood":gmm[:,0],
             "CSTest":cs[:,0],
             "KSTest":ks[:,0],
             "KSTestExtended":kses[:,0],

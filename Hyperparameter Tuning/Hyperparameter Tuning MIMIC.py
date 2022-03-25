@@ -176,9 +176,9 @@ first_run=True  # First run indicates if we are creating a new hyperparam study
 if(first_run==True):
 
     if(gower==True):
-        directions = ['maximize' for i in range(6)]
+        directions = ['maximize' for i in range(8)]
     else:
-        directions = ['maximize' for i in range(5)]
+        directions = ['maximize' for i in range(7)]
 
     study = optuna.create_study(directions=directions)
 

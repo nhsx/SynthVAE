@@ -8,7 +8,7 @@ import pandas as pd
 def distribution_metrics(gower, data_supp, synthetic_supp, categorical_columns, continuous_columns, saving_filepath=None, pre_proc_method="GMM"):
 
     # Calculate the sdv distributional metrics for SynthVAE
-    distributional_metrics = ["CSTest", "KSTest", "KSTestExtended", "ContinuousKLDivergence", "DiscreteKLDivergence"]
+    distributional_metrics = ["SVCDetection", "GMLogLikelihood", "CSTest", "KSTest", "KSTestExtended", "ContinuousKLDivergence", "DiscreteKLDivergence"]
 
     # Define lists to contain the metrics achieved
 
