@@ -129,10 +129,14 @@ There are a selection of plots & metrics the model can output. These are given b
   <figcaption><b>Elbo Breakdown</b></figcaption>
 </figure>
 
+
+
 <figure>
   <img src="docs/Reconstruction Breakdown SYNTHVAE_GMM_run_1.png" width="432" height="288">
   <figcaption><b>Likelihood Breakdown</b></figcaption>
 </figure>
+
+
 
 <figure>
   <img src="docs/Variable duration SynthVAE_GMM_run_1.png" width="432" height="288">
@@ -140,10 +144,14 @@ There are a selection of plots & metrics the model can output. These are given b
 </figure>
 
 
+
+
 <figure>
   <img src="docs/Variable event SynthVAE_GMM_run_1.png" width="432" height="288">
   <figcaption><b>Example Discrete Variable Comparison</b></figcaption>
 </figure>
+
+
 
 
 The distributional metrics produces a csv following this order - depending on number of runs:
