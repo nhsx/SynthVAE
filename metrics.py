@@ -89,8 +89,6 @@ def privacy_metrics(private_variable, data_supp, synthetic_supp, categorical_col
 
         return svm_priv
 
-    return None
-
 # Build in some fairness metrics (will have to find a library/code these ourselves) - TO DO!!!
 
 def fairness_metrics(user_metrics, data_supp, synthetic_supp, categorical_columns, continuous_columns, saving_filepath=None, pre_proc_method="GMM"):

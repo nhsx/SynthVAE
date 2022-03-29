@@ -364,6 +364,10 @@ class VAE(nn.Module):
                 print(f"\tEpoch: {epoch:2}. Elbo: {train_loss:11.2f}. Reconstruction Loss: {reconstruction_epoch_loss:11.2f}. KL Divergence: {divergence_epoch_loss:11.2f}. Categorical Loss: {categorical_epoch_reconstruct:11.2f}. Numerical Loss: {numerical_epoch_reconstruct:11.2f}")
                 # print(f"\tMean norm: {mean_norm}")
 
+            if (stop_counter==patience):
+
+                break
+
         return (log_elbo, log_reconstruct, log_divergence, log_cat_loss, log_num_loss)
 
     def get_privacy_spent(self, delta):
