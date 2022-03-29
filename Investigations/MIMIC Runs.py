@@ -21,7 +21,7 @@ from VAE import Decoder, Encoder, VAE
 from rdt.transformers import datetime
 
 from utils import mimic_pre_proc, constraint_filtering, plot_elbo, plot_likelihood_breakdown, plot_variable_distributions
-from metrics import distribution_metrics
+from metrics import distribution_metrics, privacy_metrics
 
 # Load in the mimic single table data 
 
@@ -158,3 +158,13 @@ metrics = distribution_metrics(
     categorical_columns=original_categorical_columns, continuous_columns=original_continuous_columns,
     saving_filepath="", pre_proc_method=pre_proc_method
 )
+
+#%% -------- Privacy Metrics -------- #
+
+# Specify our private variable
+
+private_variable = 'x14'
+
+privacy_metric = privacy_metrics(private_variable=private_variable, data_supp=data_supp,
+                                synthetic_supp=synthetic_supp, categorical_columns=original_categorical_columns,
+                                continuous_columns=original_continuous_columns, saving_filepath=None, pre_proc_method=pre_proc_method)
