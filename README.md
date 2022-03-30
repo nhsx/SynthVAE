@@ -16,7 +16,7 @@ _**Note:** No data, public or private are shared in this repository._
 - More information about the VAE with Differential Privacy can be found in the [model card](./model_card.md)
 - scratch_vae_expts.py is similar to the files you will find within the investigations folder. To re-run our results then scratch_vae_expts.py is all you require. If you want an easy way to understand our code and work process then using the respective notebooks within the investigations folder helps to run through the work.
 
-**N.B.** A modified copy of [Opacus](https://github.com/pytorch/opacus) (v0.14.0), a library for training PyTorch models with differential privacy, is contained within the repository. See the [model card](./model_card.md) for more details.
+**N.B.** A modified copy of [Opacus](https://github.com/pytorch/opacus) (v0.14.0), a library for training PyTorch models with differential privacy, is contained within the repository. A modified copy of [RDT](https://github.com/sdv-dev/RDT) (v0.6.2) that allows us to set the <b>random_state</b> for our GMM transformer method is also contained within the repository. See the [model card](./model_card.md) for more details.
 
 ### Built With
 
