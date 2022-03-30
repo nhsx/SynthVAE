@@ -161,6 +161,8 @@ The distributional metrics produces a csv following this order - depending on nu
 | 0.32 | -520.01 | 0.91 | 0.85 | 0.87 | 0.91 | 0.97 |
 | 0.31 | -523.21 | 0.90 | 0.86 | 0.88 | 0.92 | 0.99 |
 
+For information on these metrics then look in the [report](./reports/report.pdf) as well as the [SDV single table metrics documentation](https://sdv.dev/SDV/user_guides/evaluation/single_table_metrics.html)
+
 #### Note On Reproducibility Of Results
 
 In order to get reproducible results we have added in the <b>random_state</b> argument to the RDT transformers in order to set the sklearn's <b>random_state</b> argument. This results in the GMM pre-processing method producing the same transformation each run for the same dataset. Currently we only use distributional metrics from SDV that do not rely on sklearn.
