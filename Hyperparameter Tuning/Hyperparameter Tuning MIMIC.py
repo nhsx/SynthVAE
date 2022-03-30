@@ -111,7 +111,7 @@ def objective(trial, user_metrics, differential_privacy=False, target_delta=1e-3
     C = trial.suggest_int('C', 10, 1e4, step=50)
 
     if differential_privacy == True:
-        log_elbo, log_reconstruction, log_divergence, log_categorical, log_numerical = vae.diff_priv_train(
+        training_epochs, log_elbo, log_reconstruction, log_divergence, log_categorical, log_numerical = vae.diff_priv_train(
             data_loader,
             n_epochs=n_epochs,
             C=C, # Hyperparam
@@ -123,7 +123,7 @@ def objective(trial, user_metrics, differential_privacy=False, target_delta=1e-3
 
     else:
 
-        log_elbo, log_reconstruction, log_divergence, log_categorical, log_numerical = vae.train(data_loader, n_epochs=n_epochs)
+        training_epochs, log_elbo, log_reconstruction, log_divergence, log_categorical, log_numerical = vae.train(data_loader, n_epochs=n_epochs)
 
     # -------- Generate Synthetic Data -------- #
 

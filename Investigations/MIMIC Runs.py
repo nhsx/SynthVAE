@@ -92,10 +92,10 @@ decoder = Decoder(
 vae = VAE(encoder, decoder)
 
 if(differential_privacy==False):
-    log_elbo, log_reconstruction, log_divergence, log_categorical, log_numerical = vae.train(data_loader, n_epochs=n_epochs)
+    training_epochs, log_elbo, log_reconstruction, log_divergence, log_categorical, log_numerical = vae.train(data_loader, n_epochs=n_epochs)
     
 elif(differential_privacy==True):
-    log_elbo, log_reconstruction, log_divergence, log_categorical, log_numerical = vae.diff_priv_train(
+    training_epochs, log_elbo, log_reconstruction, log_divergence, log_categorical, log_numerical = vae.diff_priv_train(
             data_loader,
             n_epochs=n_epochs,
             C=C,
@@ -108,13 +108,13 @@ elif(differential_privacy==True):
 #%% -------- Plot Loss Features ELBO Breakdown -------- #
 
 elbo_fig = plot_elbo(
-    n_epochs=n_epochs, log_elbo=log_elbo, log_reconstruction=log_reconstruction,
+    n_epochs=training_epochs, log_elbo=log_elbo, log_reconstruction=log_reconstruction,
     log_divergence=log_divergence, saving_filepath="", pre_proc_method=pre_proc_method
 )
 #%% -------- Plot Loss Features Reconstruction Breakdown -------- #
 
 likelihood_fig = plot_likelihood_breakdown(
-    n_epochs=n_epochs, log_categorical=log_categorical, log_numerical=log_numerical,
+    n_epochs=training_epochs, log_categorical=log_categorical, log_numerical=log_numerical,
     saving_filepath="", pre_proc_method=pre_proc_method
 )
 #%% -------- Constraint Sampling -------- #

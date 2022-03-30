@@ -262,10 +262,12 @@ class VAE(nn.Module):
         # self.mean_norm = mean_norm
 
             if(stop_counter==patience):
+                
+                n_epochs = (epoch + 1)
 
                 break
 
-        return (log_elbo, log_reconstruct, log_divergence, log_cat_loss, log_num_loss)
+        return (n_epochs, log_elbo, log_reconstruct, log_divergence, log_cat_loss, log_num_loss)
 
     def diff_priv_train(
         self,
@@ -366,9 +368,10 @@ class VAE(nn.Module):
 
             if (stop_counter==patience):
 
+                n_epochs = (epoch + 1)
                 break
 
-        return (log_elbo, log_reconstruct, log_divergence, log_cat_loss, log_num_loss)
+        return (n_epochs, log_elbo, log_reconstruct, log_divergence, log_cat_loss, log_num_loss)
 
     def get_privacy_spent(self, delta):
         if hasattr(self, "privacy_engine"):
