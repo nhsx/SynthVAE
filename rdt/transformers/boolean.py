@@ -27,7 +27,7 @@ class BooleanTransformer(BaseTransformer):
             Defaults to ``None``.
     """
 
-    INPUT_TYPE = 'boolean'
+    INPUT_TYPE = "boolean"
     DETERMINISTIC_TRANSFORM = True
     DETERMINISTIC_REVERSE = True
 
@@ -45,10 +45,10 @@ class BooleanTransformer(BaseTransformer):
                 Mapping from the transformed column names to the produced data types.
         """
         output_types = {
-            'value': 'float',
+            "value": "float",
         }
         if self.null_transformer and self.null_transformer.creates_null_column():
-            output_types['is_null'] = 'float'
+            output_types["is_null"] = "float"
 
         return self._add_prefix(output_types)
 
@@ -75,7 +75,7 @@ class BooleanTransformer(BaseTransformer):
         Returns
             pandas.DataFrame or pandas.Series
         """
-        data = pd.to_numeric(data, errors='coerce')
+        data = pd.to_numeric(data, errors="coerce")
         return self.null_transformer.transform(data).astype(float)
 
     def _reverse_transform(self, data):
@@ -101,4 +101,4 @@ class BooleanTransformer(BaseTransformer):
 
             data = pd.Series(data)
 
-        return np.round(data).clip(0, 1).astype('boolean').astype('object')
+        return np.round(data).clip(0, 1).astype("boolean").astype("object")

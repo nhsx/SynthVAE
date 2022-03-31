@@ -6,11 +6,11 @@ from rdt.performance.datasets import boolean, categorical, datetime, numerical
 from rdt.performance.datasets.base import BaseDatasetGenerator
 
 __all__ = [
-    'boolean',
-    'categorical',
-    'datetime',
-    'numerical',
-    'BaseDatasetGenerator',
+    "boolean",
+    "categorical",
+    "datetime",
+    "numerical",
+    "BaseDatasetGenerator",
 ]
 
 

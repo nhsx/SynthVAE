@@ -13,7 +13,7 @@ MIN_PERCENT = 20  # the minimum percentage of true or false is 20%
 class BooleanGenerator(BaseDatasetGenerator, ABC):
     """Base class for generators that generate boolean data."""
 
-    DATA_TYPE = 'boolean'
+    DATA_TYPE = "boolean"
 
 
 class RandomBooleanGenerator(BooleanGenerator):
@@ -36,18 +36,9 @@ class RandomBooleanGenerator(BooleanGenerator):
     def get_performance_thresholds():
         """Return the expected threseholds."""
         return {
-            'fit': {
-                'time': 1e-6,
-                'memory': 200.0
-            },
-            'transform': {
-                'time': 1e-6,
-                'memory': 200.0
-            },
-            'reverse_transform': {
-                'time': 5e-6,
-                'memory': 500.0,
-            }
+            "fit": {"time": 1e-6, "memory": 200.0},
+            "transform": {"time": 1e-6, "memory": 200.0},
+            "reverse_transform": {"time": 5e-6, "memory": 500.0,},
         }
 
 
@@ -71,18 +62,9 @@ class RandomBooleanNaNsGenerator(BooleanGenerator):
     def get_performance_thresholds():
         """Return the expected threseholds."""
         return {
-            'fit': {
-                'time': 1e-6,
-                'memory': 200.0
-            },
-            'transform': {
-                'time': 1e-5,
-                'memory': 1000.0
-            },
-            'reverse_transform': {
-                'time': 5e-5,
-                'memory': 1000.0,
-            }
+            "fit": {"time": 1e-6, "memory": 200.0},
+            "transform": {"time": 1e-5, "memory": 1000.0},
+            "reverse_transform": {"time": 5e-5, "memory": 1000.0,},
         }
 
 
@@ -104,18 +86,9 @@ class RandomSkewedBooleanGenerator(BooleanGenerator):
     def get_performance_thresholds():
         """Return the expected threseholds."""
         return {
-            'fit': {
-                'time': 1e-6,
-                'memory': 200.0
-            },
-            'transform': {
-                'time': 1e-6,
-                'memory': 200.0
-            },
-            'reverse_transform': {
-                'time': 5e-6,
-                'memory': 500.0,
-            }
+            "fit": {"time": 1e-6, "memory": 200.0},
+            "transform": {"time": 1e-6, "memory": 200.0},
+            "reverse_transform": {"time": 5e-6, "memory": 500.0,},
         }
 
 
@@ -139,18 +112,9 @@ class RandomSkewedBooleanNaNsGenerator(BooleanGenerator):
     def get_performance_thresholds():
         """Return the expected threseholds."""
         return {
-            'fit': {
-                'time': 1e-6,
-                'memory': 200.0
-            },
-            'transform': {
-                'time': 1e-5,
-                'memory': 1000.0
-            },
-            'reverse_transform': {
-                'time': 5e-5,
-                'memory': 1000.0,
-            }
+            "fit": {"time": 1e-6, "memory": 200.0},
+            "transform": {"time": 1e-5, "memory": 1000.0},
+            "reverse_transform": {"time": 5e-5, "memory": 1000.0,},
         }
 
 
@@ -167,18 +131,9 @@ class ConstantBooleanGenerator(BooleanGenerator):
     def get_performance_thresholds():
         """Return the expected threseholds."""
         return {
-            'fit': {
-                'time': 1e-6,
-                'memory': 200.0
-            },
-            'transform': {
-                'time': 1e-6,
-                'memory': 200.0
-            },
-            'reverse_transform': {
-                'time': 5e-6,
-                'memory': 500.0,
-            }
+            "fit": {"time": 1e-6, "memory": 200.0},
+            "transform": {"time": 1e-6, "memory": 200.0},
+            "reverse_transform": {"time": 5e-6, "memory": 500.0,},
         }
 
 
@@ -201,16 +156,7 @@ class ConstantBooleanNaNsGenerator(BooleanGenerator):
     def get_performance_thresholds():
         """Return the expected threseholds."""
         return {
-            'fit': {
-                'time': 1e-6,
-                'memory': 200.0
-            },
-            'transform': {
-                'time': 1e-5,
-                'memory': 1000.0
-            },
-            'reverse_transform': {
-                'time': 5e-5,
-                'memory': 1000.0,
-            }
+            "fit": {"time": 1e-6, "memory": 200.0},
+            "transform": {"time": 1e-5, "memory": 1000.0},
+            "reverse_transform": {"time": 5e-5, "memory": 1000.0,},
         }

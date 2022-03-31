@@ -56,7 +56,7 @@ class BaseTransformer:
 
         output = {}
         for output_columns, output_type in dictionary.items():
-            output[f'{self.column_prefix}.{output_columns}'] = output_type
+            output[f"{self.column_prefix}.{output_columns}"] = output_type
 
         return output
 
@@ -131,7 +131,7 @@ class BaseTransformer:
 
         missing = set(columns) - set(data.columns)
         if missing:
-            raise KeyError(f'Columns {missing} were not present in the data.')
+            raise KeyError(f"Columns {missing} were not present in the data.")
 
         self.columns = columns
 
@@ -156,13 +156,13 @@ class BaseTransformer:
             data[columns] = columns_data
 
     def _build_output_columns(self, data):
-        self.column_prefix = '#'.join(self.columns)
+        self.column_prefix = "#".join(self.columns)
         self.output_columns = list(self.get_output_types().keys())
 
         # make sure none of the generated `output_columns` exists in the data
         data_columns = set(data.columns)
         while data_columns & set(self.output_columns):
-            self.column_prefix += '#'
+            self.column_prefix += "#"
             self.output_columns = list(self.get_output_types().keys())
 
     def _fit(self, columns_data):

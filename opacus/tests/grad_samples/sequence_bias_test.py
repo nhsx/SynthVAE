@@ -11,16 +11,11 @@ from .common import GradSampleHooks_test
 
 class SequenceBias_test(GradSampleHooks_test):
     @given(
-        N=st.integers(1, 4),
-        T=st.integers(10, 20),
-        D=st.integers(4, 8),
+        N=st.integers(1, 4), T=st.integers(10, 20), D=st.integers(4, 8),
     )
     @settings(deadline=10000)
     def test_batch_second(
-        self,
-        N: int,
-        T: int,
-        D: int,
+        self, N: int, T: int, D: int,
     ):
 
         seqbias = SequenceBias(D)

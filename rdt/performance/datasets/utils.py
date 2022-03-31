@@ -14,7 +14,7 @@ def add_nans(array):
         np.array:
             The same array with some values replaced by NaNs.
     """
-    if array.dtype.kind == 'i':
+    if array.dtype.kind == "i":
         array = array.astype(float)
 
     length = len(array)

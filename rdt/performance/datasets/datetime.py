@@ -13,7 +13,7 @@ from rdt.performance.datasets.utils import add_nans
 class DatetimeGenerator(BaseDatasetGenerator, ABC):
     """Base class for generators that generate datatime data."""
 
-    DATA_TYPE = 'datetime'
+    DATA_TYPE = "datetime"
 
 
 class RandomGapDatetimeGenerator(DatetimeGenerator):
@@ -25,24 +25,15 @@ class RandomGapDatetimeGenerator(DatetimeGenerator):
         today = datetime.datetime.today()
         delta = datetime.timedelta(days=1)
         dates = [(np.random.random() * delta + today) for i in range(num_rows)]
-        return np.array(dates, dtype='datetime64')
+        return np.array(dates, dtype="datetime64")
 
     @staticmethod
     def get_performance_thresholds():
         """Return the expected threseholds."""
         return {
-            'fit': {
-                'time': 5e-06,
-                'memory': 500.0
-            },
-            'transform': {
-                'time': 5e-06,
-                'memory': 300.0
-            },
-            'reverse_transform': {
-                'time': 5e-06,
-                'memory': 1000.0,
-            }
+            "fit": {"time": 5e-06, "memory": 500.0},
+            "transform": {"time": 5e-06, "memory": 300.0},
+            "reverse_transform": {"time": 5e-06, "memory": 1000.0,},
         }
 
 
@@ -55,24 +46,15 @@ class RandomGapSecondsDatetimeGenerator(DatetimeGenerator):
         today = datetime.datetime.today()
         delta = datetime.timedelta(seconds=1)
         dates = [(np.random.random() * delta + today) for i in range(num_rows)]
-        return np.array(dates, dtype='datetime64')
+        return np.array(dates, dtype="datetime64")
 
     @staticmethod
     def get_performance_thresholds():
         """Return the expected threseholds."""
         return {
-            'fit': {
-                'time': 5e-06,
-                'memory': 500.0
-            },
-            'transform': {
-                'time': 5e-06,
-                'memory': 300.0
-            },
-            'reverse_transform': {
-                'time': 5e-06,
-                'memory': 1000.0,
-            }
+            "fit": {"time": 5e-06, "memory": 500.0},
+            "transform": {"time": 5e-06, "memory": 300.0},
+            "reverse_transform": {"time": 5e-06, "memory": 1000.0,},
         }
 
 
@@ -83,24 +65,15 @@ class RandomGapDatetimeNaNsGenerator(DatetimeGenerator):
     def generate(num_rows):
         """Generate a ``num_rows`` number of rows."""
         dates = RandomGapDatetimeGenerator.generate(num_rows)
-        return add_nans(dates.astype('O'))
+        return add_nans(dates.astype("O"))
 
     @staticmethod
     def get_performance_thresholds():
         """Return the expected threseholds."""
         return {
-            'fit': {
-                'time': 5e-06,
-                'memory': 500.0
-            },
-            'transform': {
-                'time': 5e-06,
-                'memory': 1000.0
-            },
-            'reverse_transform': {
-                'time': 5e-06,
-                'memory': 1000.0,
-            }
+            "fit": {"time": 5e-06, "memory": 500.0},
+            "transform": {"time": 5e-06, "memory": 1000.0},
+            "reverse_transform": {"time": 5e-06, "memory": 1000.0,},
         }
 
 
@@ -113,24 +86,15 @@ class EqualGapHoursDatetimeGenerator(DatetimeGenerator):
         today = datetime.datetime.today()
         delta = datetime.timedelta
         dates = [delta(hours=i) + today for i in range(num_rows)]
-        return np.array(dates, dtype='datetime64')
+        return np.array(dates, dtype="datetime64")
 
     @staticmethod
     def get_performance_thresholds():
         """Return the expected threseholds."""
         return {
-            'fit': {
-                'time': 5e-06,
-                'memory': 500.0
-            },
-            'transform': {
-                'time': 5e-06,
-                'memory': 300.0
-            },
-            'reverse_transform': {
-                'time': 5e-06,
-                'memory': 1000.0,
-            }
+            "fit": {"time": 5e-06, "memory": 500.0},
+            "transform": {"time": 5e-06, "memory": 300.0},
+            "reverse_transform": {"time": 5e-06, "memory": 1000.0,},
         }
 
 
@@ -146,24 +110,15 @@ class EqualGapDaysDatetimeGenerator(DatetimeGenerator):
         today = min(datetime.datetime.today(), pd.Timestamp.max - delta(num_rows))
         dates = [delta(i) + today for i in range(num_rows)]
 
-        return np.array(dates, dtype='datetime64')
+        return np.array(dates, dtype="datetime64")
 
     @staticmethod
     def get_performance_thresholds():
         """Return the expected threseholds."""
         return {
-            'fit': {
-                'time': 5e-06,
-                'memory': 500.0
-            },
-            'transform': {
-                'time': 5e-06,
-                'memory': 300.0
-            },
-            'reverse_transform': {
-                'time': 5e-06,
-                'memory': 1000.0,
-            }
+            "fit": {"time": 5e-06, "memory": 500.0},
+            "transform": {"time": 5e-06, "memory": 300.0},
+            "reverse_transform": {"time": 5e-06, "memory": 1000.0,},
         }
 
 
@@ -179,22 +134,13 @@ class EqualGapWeeksDatetimeGenerator(DatetimeGenerator):
         today = datetime.datetime.today()
         dates = [min(delta(weeks=i) + today, pd.Timestamp.max) for i in range(num_rows)]
 
-        return np.array(dates, dtype='datetime64')
+        return np.array(dates, dtype="datetime64")
 
     @staticmethod
     def get_performance_thresholds():
         """Return the expected threseholds."""
         return {
-            'fit': {
-                'time': 5e-06,
-                'memory': 500.0
-            },
-            'transform': {
-                'time': 5e-06,
-                'memory': 300.0
-            },
-            'reverse_transform': {
-                'time': 5e-06,
-                'memory': 1000.0,
-            }
+            "fit": {"time": 5e-06, "memory": 500.0},
+            "transform": {"time": 5e-06, "memory": 300.0},
+            "reverse_transform": {"time": 5e-06, "memory": 1000.0,},
         }

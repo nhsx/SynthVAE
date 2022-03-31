@@ -18,24 +18,24 @@ from rdt.transformers.null import NullTransformer
 from rdt.transformers.numerical import NumericalTransformer
 
 __all__ = [
-    'BaseTransformer',
-    'NullTransformer',
-    'get_transformer_class',
-    'get_transformer_instance',
-    'get_transformers_by_type',
-    'get_default_transformers',
-    'get_default_transformer',
+    "BaseTransformer",
+    "NullTransformer",
+    "get_transformer_class",
+    "get_transformer_instance",
+    "get_transformers_by_type",
+    "get_default_transformers",
+    "get_default_transformer",
 ]
 
 
 def _import_addons():
     """Import all the addon modules."""
-    addons_path = Path(__file__).parent / 'addons'
-    for addon_json_path in addons_path.glob('*/*.json'):
-        with open(addon_json_path, 'r', encoding='utf-8') as addon_json_file:
-            transformers = json.load(addon_json_file).get('transformers', [])
+    addons_path = Path(__file__).parent / "addons"
+    for addon_json_path in addons_path.glob("*/*.json"):
+        with open(addon_json_path, "r", encoding="utf-8") as addon_json_file:
+            transformers = json.load(addon_json_file).get("transformers", [])
             for transformer in transformers:
-                module = transformer.rsplit('.', 1)[0]
+                module = transformer.rsplit(".", 1)[0]
                 if module not in sys.modules:
                     importlib.import_module(module)
 
@@ -51,12 +51,12 @@ globals().update(TRANSFORMERS)
 __all__.extend(TRANSFORMERS.keys())
 
 DEFAULT_TRANSFORMERS = {
-    'numerical': NumericalTransformer,
-    'integer': NumericalTransformer(dtype=np.int64),
-    'float': NumericalTransformer(dtype=np.float64),
-    'categorical': CategoricalTransformer(fuzzy=True),
-    'boolean': BooleanTransformer,
-    'datetime': DatetimeTransformer,
+    "numerical": NumericalTransformer,
+    "integer": NumericalTransformer(dtype=np.int64),
+    "float": NumericalTransformer(dtype=np.float64),
+    "categorical": CategoricalTransformer(fuzzy=True),
+    "boolean": BooleanTransformer,
+    "datetime": DatetimeTransformer,
 }
 
 
@@ -71,10 +71,10 @@ def get_transformer_class(transformer):
         BaseTransformer:
             BaseTransformer subclass class object.
     """
-    if len(transformer.split('.')) == 1:
+    if len(transformer.split(".")) == 1:
         return TRANSFORMERS[transformer]
 
-    package, name = transformer.rsplit('.', 1)
+    package, name = transformer.rsplit(".", 1)
     return TRANSFORMERS.get(name, getattr(importlib.import_module(package), name))
 
 

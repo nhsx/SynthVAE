@@ -73,17 +73,13 @@ class HyperTransformer:
     # pylint: disable=too-many-instance-attributes
 
     _DTYPES_TO_DATA_TYPES = {
-        'i': 'integer',
-        'f': 'float',
-        'O': 'categorical',
-        'b': 'boolean',
-        'M': 'datetime',
+        "i": "integer",
+        "f": "float",
+        "O": "categorical",
+        "b": "boolean",
+        "M": "datetime",
     }
-    _DEFAULT_OUTPUT_TYPES = [
-        'numerical',
-        'float',
-        'integer'
-    ]
+    _DEFAULT_OUTPUT_TYPES = ["numerical", "float", "integer"]
 
     @staticmethod
     def _add_field_to_set(field, field_set):
@@ -101,11 +97,7 @@ class HyperTransformer:
 
     @staticmethod
     def _subset(input_list, other_list, not_in=False):
-        return [
-            element
-            for element in input_list
-            if (element in other_list) ^ not_in
-        ]
+        return [element for element in input_list if (element in other_list) ^ not_in]
 
     def _create_multi_column_fields(self):
         multi_column_fields = {}
@@ -118,21 +110,31 @@ class HyperTransformer:
     def _validate_field_transformers(self):
         for field in self.field_transformers:
             if self._field_in_set(field, self._specified_fields):
-                raise ValueError(f'Multiple transformers specified for the field {field}. '
-                                 'Each field can have at most one transformer defined in '
-                                 'field_transformers.')
+                raise ValueError(
+                    f"Multiple transformers specified for the field {field}. "
+                    "Each field can have at most one transformer defined in "
+                    "field_transformers."
+                )
 
             self._add_field_to_set(field, self._specified_fields)
 
-    def __init__(self, copy=True, field_data_types=None, default_data_type_transformers=None,
-                 field_transformers=None, transform_output_types=None):
+    def __init__(
+        self,
+        copy=True,
+        field_data_types=None,
+        default_data_type_transformers=None,
+        field_transformers=None,
+        transform_output_types=None,
+    ):
         self.copy = copy
         self.field_data_types = field_data_types or {}
         self.default_data_type_transformers = default_data_type_transformers or {}
         self.field_transformers = field_transformers or {}
         self._specified_fields = set()
         self._validate_field_transformers()
-        self.transform_output_types = transform_output_types or self._DEFAULT_OUTPUT_TYPES
+        self.transform_output_types = (
+            transform_output_types or self._DEFAULT_OUTPUT_TYPES
+        )
         self._multi_column_fields = self._create_multi_column_fields()
         self._transformers_sequence = []
         self._output_columns = []
@@ -143,7 +145,9 @@ class HyperTransformer:
 
     @staticmethod
     def _field_in_data(field, data):
-        all_columns_in_data = isinstance(field, tuple) and all(col in data for col in field)
+        all_columns_in_data = isinstance(field, tuple) and all(
+            col in data for col in field
+        )
         return field in data or all_columns_in_data
 
     def _populate_field_data_types(self, data):
@@ -237,7 +241,7 @@ class HyperTransformer:
         if not self._fitted:
             raise NotFittedError
 
-        return self._transformers_tree[field].get('transformer', None)
+        return self._transformers_tree[field].get("transformer", None)
 
     def get_output_transformers(self, field):
         """Return dict mapping output columns of field to transformers used on them.
@@ -255,8 +259,10 @@ class HyperTransformer:
             raise NotFittedError
 
         next_transformers = {}
-        for output in self._transformers_tree[field].get('outputs', []):
-            next_transformers[output] = self._transformers_tree[output].get('transformer', None)
+        for output in self._transformers_tree[field].get("outputs", []):
+            next_transformers[output] = self._transformers_tree[output].get(
+                "transformer", None
+            )
 
         return next_transformers
 
@@ -281,11 +287,11 @@ class HyperTransformer:
             raise NotFittedError
 
         final_outputs = []
-        outputs = self._transformers_tree[field].get('outputs', []).copy()
+        outputs = self._transformers_tree[field].get("outputs", []).copy()
         while len(outputs) > 0:
             output = outputs.pop()
             if output in self._transformers_tree:
-                outputs.extend(self._transformers_tree[output].get('outputs', []))
+                outputs.extend(self._transformers_tree[output].get("outputs", []))
             else:
                 final_outputs.append(output)
 
@@ -316,8 +322,8 @@ class HyperTransformer:
         """
         modified_tree = deepcopy(self._transformers_tree)
         for field in modified_tree:
-            class_name = modified_tree[field]['transformer'].__class__.__name__
-            modified_tree[field]['transformer'] = class_name
+            class_name = modified_tree[field]["transformer"].__class__.__name__
+            modified_tree[field]["transformer"] = class_name
 
         return yaml.safe_dump(dict(modified_tree))
 
@@ -360,12 +366,13 @@ class HyperTransformer:
 
         output_types = transformer.get_output_types()
         next_transformers = transformer.get_next_transformers()
-        self._transformers_tree[field]['transformer'] = transformer
-        self._transformers_tree[field]['outputs'] = list(output_types)
+        self._transformers_tree[field]["transformer"] = transformer
+        self._transformers_tree[field]["outputs"] = list(output_types)
         for (output_name, output_type) in output_types.items():
             output_field = self._multi_column_fields.get(output_name, output_name)
             next_transformer = self._get_next_transformer(
-                output_field, output_type, next_transformers)
+                output_field, output_type, next_transformers
+            )
 
             if next_transformer:
                 if self._field_in_data(output_field, data):
@@ -376,8 +383,10 @@ class HyperTransformer:
     def _validate_all_fields_fitted(self):
         non_fitted_fields = self._specified_fields.difference(self._fitted_fields)
         if non_fitted_fields:
-            warnings.warn('The following fields were specified in the input arguments but not'
-                          + f'found in the data: {non_fitted_fields}')
+            warnings.warn(
+                "The following fields were specified in the input arguments but not"
+                + f"found in the data: {non_fitted_fields}"
+            )
 
     def _sort_output_columns(self):
         """Sort ``_output_columns`` to follow the same order as the ``_input_columns``."""
@@ -398,7 +407,9 @@ class HyperTransformer:
         # Loop through field_transformers that are first level
         for field in self.field_transformers:
             if self._field_in_data(field, data):
-                data = self._fit_field_transformer(data, field, self.field_transformers[field])
+                data = self._fit_field_transformer(
+                    data, field, self.field_transformers[field]
+                )
 
         for (field, data_type) in self.field_data_types.items():
             if not self._field_in_set(field, self._fitted_fields):

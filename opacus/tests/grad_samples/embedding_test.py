@@ -21,14 +21,7 @@ class Embedding_test(GradSampleHooks_test):
     )
     @settings(deadline=10000)
     def test_input_across_dims(
-        self,
-        N: int,
-        T: int,
-        Q: int,
-        R: int,
-        V: int,
-        D: int,
-        dim: int,
+        self, N: int, T: int, Q: int, R: int, V: int, D: int, dim: int,
     ):
 
         if dim == 1:

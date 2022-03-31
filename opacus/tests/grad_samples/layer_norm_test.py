@@ -20,13 +20,7 @@ class LayerNorm_test(GradSampleHooks_test):
     )
     @settings(deadline=10000)
     def test_input_norm(
-        self,
-        N: int,
-        Z: int,
-        W: int,
-        H: int,
-        input_dim: int,
-        norm_dim: int,
+        self, N: int, Z: int, W: int, H: int, input_dim: int, norm_dim: int,
     ):
 
         if norm_dim >= input_dim:

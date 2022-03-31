@@ -36,11 +36,10 @@ def _set_memory_for_method(method, dataset, peak_memory):
 
 
 def _profile_memory(method, dataset):
-    ctx = mp.get_context('spawn')
-    peak_memory = ctx.Value('i', 0)
+    ctx = mp.get_context("spawn")
+    peak_memory = ctx.Value("i", 0)
     profiling_process = ctx.Process(
-        target=_set_memory_for_method,
-        args=(method, dataset, peak_memory)
+        target=_set_memory_for_method, args=(method, dataset, peak_memory)
     )
     profiling_process.start()
     profiling_process.join()
@@ -76,34 +75,38 @@ def profile_transformer(transformer, dataset_generator, transform_size, fit_size
     transform_dataset = fit_dataset.sample(transform_size, replace=replace)
 
     try:
-        fit_time = _profile_time(transformer, 'fit', fit_dataset, copy=True)
+        fit_time = _profile_time(transformer, "fit", fit_dataset, copy=True)
         fit_memory = _profile_memory(transformer.fit, fit_dataset)
         transformer.fit(fit_dataset)
 
-        transform_time = _profile_time(transformer, 'transform', transform_dataset)
+        transform_time = _profile_time(transformer, "transform", transform_dataset)
         transform_memory = _profile_memory(transformer.transform, transform_dataset)
 
         reverse_dataset = transformer.transform(transform_dataset)
-        reverse_time = _profile_time(transformer, 'reverse_transform', reverse_dataset)
+        reverse_time = _profile_time(transformer, "reverse_transform", reverse_dataset)
         reverse_memory = _profile_memory(transformer.reverse_transform, reverse_dataset)
     except TypeError:
         # temporarily support both old and new style transformers
-        fit_time = _profile_time(transformer, '_fit', fit_dataset, copy=True)
+        fit_time = _profile_time(transformer, "_fit", fit_dataset, copy=True)
         fit_memory = _profile_memory(transformer._fit, fit_dataset)
         transformer._fit(fit_dataset)
 
-        transform_time = _profile_time(transformer, '_transform', transform_dataset)
+        transform_time = _profile_time(transformer, "_transform", transform_dataset)
         transform_memory = _profile_memory(transformer._transform, transform_dataset)
 
         reverse_dataset = transformer._transform(transform_dataset)
-        reverse_time = _profile_time(transformer, '_reverse_transform', reverse_dataset)
-        reverse_memory = _profile_memory(transformer._reverse_transform, reverse_dataset)
+        reverse_time = _profile_time(transformer, "_reverse_transform", reverse_dataset)
+        reverse_memory = _profile_memory(
+            transformer._reverse_transform, reverse_dataset
+        )
 
-    return pd.Series({
-        'Fit Time': fit_time,
-        'Fit Memory': fit_memory,
-        'Transform Time': transform_time,
-        'Transform Memory': transform_memory,
-        'Reverse Transform Time': reverse_time,
-        'Reverse Transform Memory': reverse_memory
-    })
+    return pd.Series(
+        {
+            "Fit Time": fit_time,
+            "Fit Memory": fit_memory,
+            "Transform Time": transform_time,
+            "Transform Memory": transform_memory,
+            "Reverse Transform Time": reverse_time,
+            "Reverse Transform Memory": reverse_memory,
+        }
+    )

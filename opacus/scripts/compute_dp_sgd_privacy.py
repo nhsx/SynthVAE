@@ -119,18 +119,10 @@ def main():
         help="Input sample rate (probability of each sample from the dataset to be selected for a next batch)",
     )
     parser.add_argument(
-        "-n",
-        "--noise-multiplier",
-        type=float,
-        required=True,
-        help="Noise multiplier",
+        "-n", "--noise-multiplier", type=float, required=True, help="Noise multiplier",
     )
     parser.add_argument(
-        "-e",
-        "--epochs",
-        type=int,
-        required=True,
-        help="Number of epochs to train",
+        "-e", "--epochs", type=int, required=True, help="Number of epochs to train",
     )
     parser.add_argument(
         "-d", "--delta", type=float, default=1e-5, help="Targeted delta (default: 1e-5)"
@@ -151,11 +143,7 @@ def main():
     args = parser.parse_args()
 
     compute_dp_sgd_privacy(
-        args.sample_rate,
-        args.noise_multiplier,
-        args.epochs,
-        args.delta,
-        args.alphas,
+        args.sample_rate, args.noise_multiplier, args.epochs, args.delta, args.alphas,
     )
 
 

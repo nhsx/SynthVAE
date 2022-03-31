@@ -11,18 +11,10 @@ from .utils import create_or_extend_grad_sample, register_grad_sampler
 
 
 @register_grad_sampler(
-    [
-        nn.InstanceNorm1d,
-        nn.InstanceNorm2d,
-        nn.InstanceNorm3d,
-    ]
+    [nn.InstanceNorm1d, nn.InstanceNorm2d, nn.InstanceNorm3d,]
 )
 def compute_instance_norm_grad_sample(
-    layer: Union[
-        nn.InstanceNorm1d,
-        nn.InstanceNorm2d,
-        nn.InstanceNorm3d,
-    ],
+    layer: Union[nn.InstanceNorm1d, nn.InstanceNorm2d, nn.InstanceNorm3d,],
     A: torch.Tensor,
     B: torch.Tensor,
     batch_dim: int = 0,

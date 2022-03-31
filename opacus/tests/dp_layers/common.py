@@ -264,9 +264,7 @@ class DPModules_test(unittest.TestCase):
 
             try:
                 self.assertEqual(
-                    dp_out.shape,
-                    nn_out.shape,
-                    msg=msg,
+                    dp_out.shape, nn_out.shape, msg=msg,
                 )
 
             except AssertionError:
@@ -316,10 +314,7 @@ class DPModules_test(unittest.TestCase):
             )
             try:
                 assert_allclose(
-                    actual=dp_out,
-                    expected=nn_out,
-                    atol=atol,
-                    rtol=rtol,
+                    actual=dp_out, expected=nn_out, atol=atol, rtol=rtol,
                 )
             except AssertionError:
                 failed.append(msg)

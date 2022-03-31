@@ -37,7 +37,7 @@ class DatetimeTransformer(BaseTransformer):
             https://docs.python.org/3/library/datetime.html#strftime-and-strptime-behavior.
     """
 
-    INPUT_TYPE = 'datetime'
+    INPUT_TYPE = "datetime"
     DETERMINISTIC_TRANSFORM = True
     DETERMINISTIC_REVERSE = True
     COMPOSITION_IS_IDENTITY = True
@@ -45,7 +45,9 @@ class DatetimeTransformer(BaseTransformer):
     null_transformer = None
     divider = None
 
-    def __init__(self, nan='mean', null_column=None, strip_constant=False, datetime_format=None):
+    def __init__(
+        self, nan="mean", null_column=None, strip_constant=False, datetime_format=None
+    ):
         self.nan = nan
         self.null_column = null_column
         self.strip_constant = strip_constant
@@ -71,10 +73,10 @@ class DatetimeTransformer(BaseTransformer):
                 Mapping from the transformed column names to supported data types.
         """
         output_types = {
-            'value': 'float',
+            "value": "float",
         }
         if self.null_transformer and self.null_transformer.creates_null_column():
-            output_types['is_null'] = 'float'
+            output_types["is_null"] = "float"
 
         return self._add_prefix(output_types)
 
@@ -89,16 +91,18 @@ class DatetimeTransformer(BaseTransformer):
             self.divider = candidate
 
     def _convert_to_datetime(self, data):
-        if data.dtype == 'object':
+        if data.dtype == "object":
             try:
                 data = pd.to_datetime(data, format=self.datetime_format)
 
             except ValueError as error:
-                if 'Unknown string format:' in str(error):
-                    message = 'Data must be of dtype datetime, or castable to datetime.'
+                if "Unknown string format:" in str(error):
+                    message = "Data must be of dtype datetime, or castable to datetime."
                     raise TypeError(message) from None
 
-                raise ValueError('Data does not match specified datetime format.') from None
+                raise ValueError(
+                    "Data does not match specified datetime format."
+                ) from None
 
         return data
 
@@ -106,7 +110,9 @@ class DatetimeTransformer(BaseTransformer):
         """Transform datetime values to integer."""
         datetimes = self._convert_to_datetime(datetimes)
         nulls = datetimes.isna()
-        integers = pd.to_numeric(datetimes, errors='coerce').to_numpy().astype(np.float64)
+        integers = (
+            pd.to_numeric(datetimes, errors="coerce").to_numpy().astype(np.float64)
+        )
         integers[nulls] = np.nan
         transformed = pd.Series(integers)
 
@@ -193,5 +199,5 @@ class DatetimeRoundedTransformer(DatetimeTransformer):
             Defaults to ``None``.
     """
 
-    def __init__(self, nan='mean', null_column=None):
+    def __init__(self, nan="mean", null_column=None):
         super().__init__(nan=nan, null_column=null_column, strip_constant=True)

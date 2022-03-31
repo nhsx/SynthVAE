@@ -19,12 +19,7 @@ class InstanceNorm3d_test(GradSampleHooks_test):
     )
     @settings(deadline=10000)
     def test_5d_input(
-        self,
-        N: int,
-        C: int,
-        W: int,
-        H: int,
-        Z: int,
+        self, N: int, C: int, W: int, H: int, Z: int,
     ):
         x = torch.randn([N, C, Z, H, W])
         norm = nn.InstanceNorm3d(num_features=C, affine=True, track_running_stats=False)

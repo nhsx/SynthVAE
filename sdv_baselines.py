@@ -33,10 +33,7 @@ MODEL_CLASSES = {
 parser = argparse.ArgumentParser()
 
 parser.add_argument(
-    "--n_runs",
-    default=10,
-    type=int,
-    help="set number of runs/seeds",
+    "--n_runs", default=10, type=int, help="set number of runs/seeds",
 )
 parser.add_argument(
     "--model_type",
@@ -50,21 +47,21 @@ parser.add_argument(
     "--pre_proc_method",
     default="GMM",
     type=str,
-    help="Pre-processing method for the dataset. Either GMM or standard. (Gaussian mixture modelling method or standard scaler)"
+    help="Pre-processing method for the dataset. Either GMM or standard. (Gaussian mixture modelling method or standard scaler)",
 )
 
 parser.add_argument(
     "--savemetrics",
     default=False,
     type=bool,
-    help="Set if we want to save the metrics - saved under Metric Breakdown.csv unless changed"
+    help="Set if we want to save the metrics - saved under Metric Breakdown.csv unless changed",
 )
 
 parser.add_argument(
     "--gower",
     default=False,
     type=bool,
-    help="Do you want to calculate the average gower distance"
+    help="Do you want to calculate the average gower distance",
 )
 
 args = parser.parse_args()
@@ -77,15 +74,23 @@ data_supp = support.read_df()
 
 # Setup columns
 
-original_continuous_columns = ['duration'] + [f"x{i}" for i in range(7,15)]
-original_categorical_columns = ['event'] + [f"x{i}" for i in range(1,7)] 
+original_continuous_columns = ["duration"] + [f"x{i}" for i in range(7, 15)]
+original_categorical_columns = ["event"] + [f"x{i}" for i in range(1, 7)]
 
 
 #%% -------- Data Pre-Processing -------- #
 
 pre_proc_method = args.pre_proc_method
 
-x_train, data_supp, reordered_dataframe_columns, continuous_transformers, categorical_transformers, num_categories, num_continuous = support_pre_proc(data_supp=data_supp, pre_proc_method=pre_proc_method)
+(
+    x_train,
+    data_supp,
+    reordered_dataframe_columns,
+    continuous_transformers,
+    categorical_transformers,
+    num_categories,
+    num_continuous,
+) = support_pre_proc(data_supp=data_supp, pre_proc_method=pre_proc_method)
 
 data = pd.DataFrame(x_train, columns=reordered_dataframe_columns)
 
@@ -99,8 +104,8 @@ kses = []
 contkls = []
 disckls = []
 
-if(args.gower==True):
-    gowers=[]
+if args.gower == True:
+    gowers = []
 
 
 # Perform the train/generate/evaluate runs
@@ -109,12 +114,9 @@ for i in range(n_seeds):
 
     chosen_model = MODEL_CLASSES[args.model_type]
 
-    model = chosen_model() #field_transformers=transformer_dtypes)
+    model = chosen_model()  # field_transformers=transformer_dtypes)
 
-    print(
-        f"Train + Generate + Evaluate {args.model_type}"
-        f" - Run {i+1}/{n_seeds}"
-    )
+    print(f"Train + Generate + Evaluate {args.model_type}" f" - Run {i+1}/{n_seeds}")
 
     model.fit(data)
 
@@ -128,15 +130,22 @@ for i in range(n_seeds):
 
     # Reverse the transformations
 
-    synthetic_supp = reverse_transformers(synthetic_set=new_data, data_supp_columns=data_supp.columns, 
-                                      cont_transformers=continuous_transformers, cat_transformers=categorical_transformers,
-                                      pre_proc_method=pre_proc_method)
-
+    synthetic_supp = reverse_transformers(
+        synthetic_set=new_data,
+        data_supp_columns=data_supp.columns,
+        cont_transformers=continuous_transformers,
+        cat_transformers=categorical_transformers,
+        pre_proc_method=pre_proc_method,
+    )
 
     metrics = distribution_metrics(
-        gower=args.gower, data_supp=data_supp, synthetic_supp=synthetic_supp,
-        categorical_columns=original_categorical_columns, continuous_columns=original_continuous_columns,
-        saving_filepath=None, pre_proc_method=pre_proc_method
+        gower=args.gower,
+        data_supp=data_supp,
+        synthetic_supp=synthetic_supp,
+        categorical_columns=original_categorical_columns,
+        continuous_columns=original_continuous_columns,
+        saving_filepath=None,
+        pre_proc_method=pre_proc_method,
     )
 
     list_metrics = [metrics[i] for i in metrics.columns]
@@ -149,7 +158,7 @@ for i in range(n_seeds):
     kses.append(np.array(list_metrics[4]))
     contkls.append(np.array(list_metrics[5]))
     disckls.append(np.array(list_metrics[6]))
-    if(args.gower==True):
+    if args.gower == True:
         gowers.append(np.array(list_metrics[7]))
 
 svc = np.array(svc)
@@ -160,7 +169,7 @@ kses = np.array(kses)
 contkls = np.array(contkls)
 disckls = np.array(disckls)
 
-if(args.gower==True):
+if args.gower == True:
 
     gowers = np.array(gowers)
 
@@ -175,30 +184,30 @@ print(f"Gowers: {np.mean(gowers)} +/- {np.std(gowers)}")
 
 if args.savemetrics:
 
-    if(args.gower==True):
+    if args.gower == True:
         metrics = pd.DataFrame(
             {
-            "SVCDetection":svc[:,0],
-            "GMLogLikelihood":gmm[:,0],
-            "CSTest":cs[:,0],
-            "KSTest":ks[:,0],
-            "KSTestExtended":kses[:,0],
-            "ContinuousKLDivergence":contkls[:,0],
-            "DiscreteKLDivergence":disckls[:,0],
-            "Gower":gowers[:,0]
+                "SVCDetection": svc[:, 0],
+                "GMLogLikelihood": gmm[:, 0],
+                "CSTest": cs[:, 0],
+                "KSTest": ks[:, 0],
+                "KSTestExtended": kses[:, 0],
+                "ContinuousKLDivergence": contkls[:, 0],
+                "DiscreteKLDivergence": disckls[:, 0],
+                "Gower": gowers[:, 0],
             }
-            )
+        )
     else:
         metrics = pd.DataFrame(
             {
-            "SVCDetection":svc[:,0],
-            "GMLogLikelihood":gmm[:,0],
-            "CSTest":cs[:,0],
-            "KSTest":ks[:,0],
-            "KSTestExtended":kses[:,0],
-            "ContinuousKLDivergence":contkls[:,0],
-            "DiscreteKLDivergence":disckls[:,0],
+                "SVCDetection": svc[:, 0],
+                "GMLogLikelihood": gmm[:, 0],
+                "CSTest": cs[:, 0],
+                "KSTest": ks[:, 0],
+                "KSTestExtended": kses[:, 0],
+                "ContinuousKLDivergence": contkls[:, 0],
+                "DiscreteKLDivergence": disckls[:, 0],
             }
-            )
+        )
 
-    metrics.to_csv("Metric Breakdown.csv") # Change filepath location here
+    metrics.to_csv("Metric Breakdown.csv")  # Change filepath location here

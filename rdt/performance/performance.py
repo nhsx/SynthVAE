@@ -25,7 +25,7 @@ def _get_dataset_sizes(data_type):
     """
     sizes = [(s, s) for s in DATASET_SIZES]
 
-    if data_type == 'categorical':
+    if data_type == "categorical":
         sizes = [(s, max(s, 1000)) for s in DATASET_SIZES if s <= 10000]
 
     return sizes
@@ -63,11 +63,15 @@ def evaluate_transformer_performance(transformer, dataset_generator, verbose=Fal
         size = np.array([fit_size, transform_size, transform_size] * 2)
         performance = performance / size
         if verbose:
-            performance = performance.rename(lambda x: x + ' (s)' if 'Time' in x else x + ' (B)')
-            performance['Number of fit rows'] = fit_size
-            performance['Number of transform rows'] = transform_size
-            performance['Dataset'] = dataset_generator.__name__
-            performance['Transformer'] = f'{transformer.__module__ }.{transformer.__name__}'
+            performance = performance.rename(
+                lambda x: x + " (s)" if "Time" in x else x + " (B)"
+            )
+            performance["Number of fit rows"] = fit_size
+            performance["Number of transform rows"] = transform_size
+            performance["Dataset"] = dataset_generator.__name__
+            performance[
+                "Transformer"
+            ] = f"{transformer.__module__ }.{transformer.__name__}"
 
         out.append(performance)
 

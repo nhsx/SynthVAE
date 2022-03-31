@@ -6,12 +6,12 @@ import numpy as np
 import pandas as pd
 
 IRREVERSIBLE_WARNING = (
-    'Replacing nulls with existing value without `null_column`, which is not reversible. '
-    'Use `null_column=True` to ensure that the transformation is reversible.'
+    "Replacing nulls with existing value without `null_column`, which is not reversible. "
+    "Use `null_column=True` to ensure that the transformation is reversible."
 )
 
 
-class NullTransformer():
+class NullTransformer:
     """Transformer for data that contains Null values.
 
     Args:
@@ -64,19 +64,19 @@ class NullTransformer():
         """
         fill_value = self.fill_value
 
-        if fill_value in (None, 'mean', 'mode') and null_values.all():
+        if fill_value in (None, "mean", "mode") and null_values.all():
             return 0
 
         if fill_value is None:
             if pd.api.types.is_numeric_dtype(data):
-                fill_value = 'mean'
+                fill_value = "mean"
             else:
-                fill_value = 'mode'
+                fill_value = "mode"
 
-        if fill_value == 'mean':
+        if fill_value == "mean":
             return data.mean()
 
-        if fill_value == 'mode':
+        if fill_value == "mode":
             return data.mode(dropna=True)[0]
 
         return fill_value

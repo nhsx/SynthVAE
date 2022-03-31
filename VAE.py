@@ -18,18 +18,11 @@ class Encoder(nn.Module):
     """
 
     def __init__(
-        self,
-        input_dim,
-        latent_dim,
-        hidden_dim=32,
-        activation=nn.Tanh,
-        device="gpu",
+        self, input_dim, latent_dim, hidden_dim=32, activation=nn.Tanh, device="gpu",
     ):
         super().__init__()
         if device == "gpu":
-            self.device = torch.device(
-                "cuda:0" if torch.cuda.is_available() else "cpu"
-            )
+            self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
             print(f"Encoder: {device} specified, {self.device} used")
         else:
             self.device = torch.device("cpu")
@@ -70,9 +63,7 @@ class Decoder(nn.Module):
         self.num_categories = num_categories
 
         if device == "gpu":
-            self.device = torch.device(
-                "cuda:0" if torch.cuda.is_available() else "cpu"
-            )
+            self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
             print(f"Decoder: {device} specified, {self.device} used")
         else:
             self.device = torch.device("cpu")
@@ -93,9 +84,7 @@ class Decoder(nn.Module):
 class Noiser(nn.Module):
     def __init__(self, num_continuous):
         super().__init__()
-        self.output_logsigma_fn = nn.Linear(
-            num_continuous, num_continuous, bias=True
-        )
+        self.output_logsigma_fn = nn.Linear(num_continuous, num_continuous, bias=True)
         torch.nn.init.zeros_(self.output_logsigma_fn.weight)
         torch.nn.init.zeros_(self.output_logsigma_fn.bias)
         self.output_logsigma_fn.weight.requires_grad = False
@@ -125,7 +114,9 @@ class VAE(nn.Module):
         return x_recon
 
     def generate(self, N):
-        z_samples = torch.randn_like(torch.ones((N, self.encoder.latent_dim)), device=self.device)
+        z_samples = torch.randn_like(
+            torch.ones((N, self.encoder.latent_dim)), device=self.device
+        )
         x_gen = self.decoder(z_samples)
         x_gen_ = torch.ones_like(x_gen, device=self.device)
         i = 0
@@ -140,9 +131,7 @@ class VAE(nn.Module):
 
         x_gen_[:, -self.num_continuous :] = x_gen[
             :, -self.num_continuous :
-        ] + torch.exp(
-            self.noiser(x_gen[:, -self.num_continuous :])
-        ) * torch.randn_like(
+        ] + torch.exp(self.noiser(x_gen[:, -self.num_continuous :])) * torch.randn_like(
             x_gen[:, -self.num_continuous :]
         )
         return x_gen_
@@ -177,9 +166,7 @@ class VAE(nn.Module):
             gauss_loglik = (
                 Normal(
                     loc=x_recon[:, -self.num_continuous :],
-                    scale=torch.exp(
-                        self.noiser(x_recon[:, -self.num_continuous :])
-                    ),
+                    scale=torch.exp(self.noiser(x_recon[:, -self.num_continuous :])),
                 )
                 .log_prob(X[:, -self.num_continuous :])
                 .sum()
@@ -191,7 +178,15 @@ class VAE(nn.Module):
 
         return (elbo, reconstruct_loss, divergence_loss, categoric_loglik, gauss_loglik)
 
-    def train(self, x_dataloader, n_epochs, logging_freq=1, patience=5, delta=10, filepath=None):
+    def train(
+        self,
+        x_dataloader,
+        n_epochs,
+        logging_freq=1,
+        patience=5,
+        delta=10,
+        filepath=None,
+    ):
         # mean_norm = 0
         # counter = 0
         log_elbo = []
@@ -201,10 +196,10 @@ class VAE(nn.Module):
         log_num_loss = []
 
         # EARLY STOPPING #
-        min_elbo = 0.0 # For early stopping workflow
-        patience = patience # How many epochs patience we give for early stopping
-        stop_counter = 0 # Counter for stops
-        delta = delta # Difference in elbo value
+        min_elbo = 0.0  # For early stopping workflow
+        patience = patience  # How many epochs patience we give for early stopping
+        stop_counter = 0  # Counter for stops
+        delta = delta  # Difference in elbo value
 
         for epoch in range(n_epochs):
 
@@ -212,11 +207,17 @@ class VAE(nn.Module):
             divergence_epoch_loss = 0.0
             reconstruction_epoch_loss = 0.0
             categorical_epoch_reconstruct = 0.0
-            numerical_epoch_reconstruct =0.0
+            numerical_epoch_reconstruct = 0.0
 
             for batch_idx, (Y_subset,) in enumerate(tqdm(x_dataloader)):
                 self.optimizer.zero_grad()
-                elbo, reconstruct_loss, divergence_loss, categorical_reconstruc, numerical_reconstruct = self.loss(Y_subset.to(self.encoder.device))
+                (
+                    elbo,
+                    reconstruct_loss,
+                    divergence_loss,
+                    categorical_reconstruc,
+                    numerical_reconstruct,
+                ) = self.loss(Y_subset.to(self.encoder.device))
                 elbo.backward()
                 self.optimizer.step()
 
@@ -241,33 +242,42 @@ class VAE(nn.Module):
             log_cat_loss.append(categorical_epoch_reconstruct)
             log_num_loss.append(numerical_epoch_reconstruct)
 
-            if(epoch==0):
+            if epoch == 0:
 
                 min_elbo = train_loss
 
-            if(train_loss < (min_elbo - delta)):
+            if train_loss < (min_elbo - delta):
 
                 min_elbo = train_loss
                 stop_counter = 0  # Set counter to zero
-                if(filepath!=None):
-                    self.save(filepath) # Save best model if we want to
+                if filepath != None:
+                    self.save(filepath)  # Save best model if we want to
 
-            else: # elbo has not improved
-                
-                stop_counter+=1
+            else:  # elbo has not improved
+
+                stop_counter += 1
 
             if epoch % logging_freq == 0:
-                print(f"\tEpoch: {epoch:2}. Elbo: {train_loss:11.2f}. Reconstruction Loss: {reconstruction_epoch_loss:11.2f}. KL Divergence: {divergence_epoch_loss:11.2f}. Categorical Loss: {categorical_epoch_reconstruct:11.2f}. Numerical Loss: {numerical_epoch_reconstruct:11.2f}")
+                print(
+                    f"\tEpoch: {epoch:2}. Elbo: {train_loss:11.2f}. Reconstruction Loss: {reconstruction_epoch_loss:11.2f}. KL Divergence: {divergence_epoch_loss:11.2f}. Categorical Loss: {categorical_epoch_reconstruct:11.2f}. Numerical Loss: {numerical_epoch_reconstruct:11.2f}"
+                )
                 # print(f"\tMean norm: {mean_norm}")
-        # self.mean_norm = mean_norm
+            # self.mean_norm = mean_norm
 
-            if(stop_counter==patience):
-                
-                n_epochs = (epoch + 1)
+            if stop_counter == patience:
+
+                n_epochs = epoch + 1
 
                 break
 
-        return (n_epochs, log_elbo, log_reconstruct, log_divergence, log_cat_loss, log_num_loss)
+        return (
+            n_epochs,
+            log_elbo,
+            log_reconstruct,
+            log_divergence,
+            log_cat_loss,
+            log_num_loss,
+        )
 
     def diff_priv_train(
         self,
@@ -279,7 +289,7 @@ class VAE(nn.Module):
         target_delta=1e-5,
         logging_freq=1,
         sample_rate=0.1,
-        patience=5, 
+        patience=5,
         delta=10,
         filepath=None,
     ):
@@ -287,8 +297,7 @@ class VAE(nn.Module):
             self.privacy_engine = PrivacyEngine(
                 self,
                 sample_rate=sample_rate,
-                alphas=[1 + x / 10.0 for x in range(1, 100)]
-                + list(range(12, 64)),
+                alphas=[1 + x / 10.0 for x in range(1, 100)] + list(range(12, 64)),
                 noise_multiplier=noise_scale,
                 max_grad_norm=C,
             )
@@ -296,8 +305,7 @@ class VAE(nn.Module):
             self.privacy_engine = PrivacyEngine(
                 self,
                 sample_rate=sample_rate,
-                alphas=[1 + x / 10.0 for x in range(1, 100)]
-                + list(range(12, 64)),
+                alphas=[1 + x / 10.0 for x in range(1, 100)] + list(range(12, 64)),
                 target_epsilon=target_eps,
                 target_delta=target_delta,
                 epochs=n_epochs,
@@ -312,23 +320,29 @@ class VAE(nn.Module):
         log_num_loss = []
 
         # EARLY STOPPING #
-        min_elbo = 0.0 # For early stopping workflow
-        patience = patience # How many epochs patience we give for early stopping
-        stop_counter = 0 # Counter for stops
-        delta = delta # Difference in elbo value
+        min_elbo = 0.0  # For early stopping workflow
+        patience = patience  # How many epochs patience we give for early stopping
+        stop_counter = 0  # Counter for stops
+        delta = delta  # Difference in elbo value
 
         for epoch in range(n_epochs):
             train_loss = 0.0
             divergence_epoch_loss = 0.0
             reconstruction_epoch_loss = 0.0
             categorical_epoch_reconstruct = 0.0
-            numerical_epoch_reconstruct =0.0
+            numerical_epoch_reconstruct = 0.0
             # print(self.get_privacy_spent(target_delta))
 
             for batch_idx, (Y_subset,) in enumerate(tqdm(x_dataloader)):
 
                 self.optimizer.zero_grad()
-                elbo, reconstruct_loss, divergence_loss, categorical_reconstruct, numerical_reconstruct = self.loss(Y_subset.to(self.encoder.device))
+                (
+                    elbo,
+                    reconstruct_loss,
+                    divergence_loss,
+                    categorical_reconstruct,
+                    numerical_reconstruct,
+                ) = self.loss(Y_subset.to(self.encoder.device))
                 elbo.backward()
                 self.optimizer.step()
 
@@ -347,31 +361,40 @@ class VAE(nn.Module):
             log_cat_loss.append(categorical_epoch_reconstruct)
             log_num_loss.append(numerical_epoch_reconstruct)
 
-            if(epoch==0):
+            if epoch == 0:
 
                 min_elbo = train_loss
 
-            if(train_loss < (min_elbo - delta)):
+            if train_loss < (min_elbo - delta):
 
                 min_elbo = train_loss
                 stop_counter = 0  # Set counter to zero
-                if(filepath!=None):
-                    self.save(filepath) # Save best model if we want to
+                if filepath != None:
+                    self.save(filepath)  # Save best model if we want to
 
-            else: # elbo has not improved
-                
-                stop_counter+=1
+            else:  # elbo has not improved
 
-            if (epoch % logging_freq == 0):
-                print(f"\tEpoch: {epoch:2}. Elbo: {train_loss:11.2f}. Reconstruction Loss: {reconstruction_epoch_loss:11.2f}. KL Divergence: {divergence_epoch_loss:11.2f}. Categorical Loss: {categorical_epoch_reconstruct:11.2f}. Numerical Loss: {numerical_epoch_reconstruct:11.2f}")
+                stop_counter += 1
+
+            if epoch % logging_freq == 0:
+                print(
+                    f"\tEpoch: {epoch:2}. Elbo: {train_loss:11.2f}. Reconstruction Loss: {reconstruction_epoch_loss:11.2f}. KL Divergence: {divergence_epoch_loss:11.2f}. Categorical Loss: {categorical_epoch_reconstruct:11.2f}. Numerical Loss: {numerical_epoch_reconstruct:11.2f}"
+                )
                 # print(f"\tMean norm: {mean_norm}")
 
-            if (stop_counter==patience):
+            if stop_counter == patience:
 
-                n_epochs = (epoch + 1)
+                n_epochs = epoch + 1
                 break
 
-        return (n_epochs, log_elbo, log_reconstruct, log_divergence, log_cat_loss, log_num_loss)
+        return (
+            n_epochs,
+            log_elbo,
+            log_reconstruct,
+            log_divergence,
+            log_cat_loss,
+            log_num_loss,
+        )
 
     def get_privacy_spent(self, delta):
         if hasattr(self, "privacy_engine"):

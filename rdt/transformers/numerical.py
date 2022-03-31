@@ -55,7 +55,7 @@ class NumericalTransformer(BaseTransformer):
             is given, there won't be a maximum.
     """
 
-    INPUT_TYPE = 'numerical'
+    INPUT_TYPE = "numerical"
     DETERMINISTIC_TRANSFORM = True
     DETERMINISTIC_REVERSE = True
     COMPOSITION_IS_IDENTITY = True
@@ -67,8 +67,15 @@ class NumericalTransformer(BaseTransformer):
     _min_value = None
     _max_value = None
 
-    def __init__(self, dtype=None, nan='mean', null_column=None, rounding=None,
-                 min_value=None, max_value=None):
+    def __init__(
+        self,
+        dtype=None,
+        nan="mean",
+        null_column=None,
+        rounding=None,
+        min_value=None,
+        max_value=None,
+    ):
         self.nan = nan
         self.null_column = null_column
         self.dtype = dtype
@@ -84,10 +91,10 @@ class NumericalTransformer(BaseTransformer):
                 Mapping from the transformed column names to supported data types.
         """
         output_types = {
-            'value': 'float',
+            "value": "float",
         }
         if self.null_transformer and self.null_transformer.creates_null_column():
-            output_types['is_null'] = 'float'
+            output_types["is_null"] = "float"
 
         return self._add_prefix(output_types)
 
@@ -133,10 +140,10 @@ class NumericalTransformer(BaseTransformer):
                 Data to fit.
         """
         self._dtype = self.dtype or data.dtype
-        self._min_value = data.min() if self.min_value == 'auto' else self.min_value
-        self._max_value = data.max() if self.max_value == 'auto' else self.max_value
+        self._min_value = data.min() if self.min_value == "auto" else self.min_value
+        self._max_value = data.max() if self.max_value == "auto" else self.max_value
 
-        if self.rounding == 'auto':
+        if self.rounding == "auto":
             self._rounding_digits = self._learn_rounding_digits(data)
         elif isinstance(self.rounding, int):
             self._rounding_digits = self.rounding
@@ -181,7 +188,7 @@ class NumericalTransformer(BaseTransformer):
         if self.nan is not None:
             data = self.null_transformer.reverse_transform(data)
 
-        is_integer = np.dtype(self._dtype).kind == 'i'
+        is_integer = np.dtype(self._dtype).kind == "i"
         if self._rounding_digits is not None or is_integer:
             data = data.round(self._rounding_digits or 0)
 
@@ -221,9 +228,15 @@ class NumericalRoundedBoundedTransformer(NumericalTransformer):
             Defaults to ``None``.
     """
 
-    def __init__(self, dtype=None, nan='mean', null_column=None):
-        super().__init__(dtype=dtype, nan=nan, null_column=null_column, min_value='auto',
-                         max_value='auto', rounding='auto')
+    def __init__(self, dtype=None, nan="mean", null_column=None):
+        super().__init__(
+            dtype=dtype,
+            nan=nan,
+            null_column=null_column,
+            min_value="auto",
+            max_value="auto",
+            rounding="auto",
+        )
 
 
 class NumericalBoundedTransformer(NumericalTransformer):
@@ -255,9 +268,15 @@ class NumericalBoundedTransformer(NumericalTransformer):
             Defaults to ``None``.
     """
 
-    def __init__(self, dtype=None, nan='mean', null_column=None):
-        super().__init__(dtype=dtype, nan=nan, null_column=null_column, min_value='auto',
-                         max_value='auto', rounding=None)
+    def __init__(self, dtype=None, nan="mean", null_column=None):
+        super().__init__(
+            dtype=dtype,
+            nan=nan,
+            null_column=null_column,
+            min_value="auto",
+            max_value="auto",
+            rounding=None,
+        )
 
 
 class NumericalRoundedTransformer(NumericalTransformer):
@@ -289,9 +308,15 @@ class NumericalRoundedTransformer(NumericalTransformer):
             Defaults to ``None``.
     """
 
-    def __init__(self, dtype=None, nan='mean', null_column=None):
-        super().__init__(dtype=dtype, nan=nan, null_column=null_column, min_value=None,
-                         max_value=None, rounding='auto')
+    def __init__(self, dtype=None, nan="mean", null_column=None):
+        super().__init__(
+            dtype=dtype,
+            nan=nan,
+            null_column=null_column,
+            min_value=None,
+            max_value=None,
+            rounding="auto",
+        )
 
 
 class GaussianCopulaTransformer(NumericalTransformer):
@@ -358,7 +383,9 @@ class GaussianCopulaTransformer(NumericalTransformer):
     _univariate = None
     COMPOSITION_IS_IDENTITY = False
 
-    def __init__(self, dtype=None, nan='mean', null_column=None, distribution='parametric'):
+    def __init__(
+        self, dtype=None, nan="mean", null_column=None, distribution="parametric"
+    ):
         super().__init__(dtype=dtype, nan=nan, null_column=null_column)
         self._distributions = self._get_distributions()
 
@@ -373,63 +400,59 @@ class GaussianCopulaTransformer(NumericalTransformer):
             from copulas import univariate  # pylint: disable=import-outside-toplevel
         except ImportError as error:
             error.msg += (
-                '\n\nIt seems like `copulas` is not installed.\n'
-                'Please install it using:\n\n    pip install rdt[copulas]'
+                "\n\nIt seems like `copulas` is not installed.\n"
+                "Please install it using:\n\n    pip install rdt[copulas]"
             )
             raise
 
         return {
-            'univariate': univariate.Univariate,
-            'parametric': (
-                univariate.Univariate, {
-                    'parametric': univariate.ParametricType.PARAMETRIC,
-                },
+            "univariate": univariate.Univariate,
+            "parametric": (
+                univariate.Univariate,
+                {"parametric": univariate.ParametricType.PARAMETRIC,},
             ),
-            'bounded': (
+            "bounded": (
+                univariate.Univariate,
+                {"bounded": univariate.BoundedType.BOUNDED,},
+            ),
+            "semi_bounded": (
+                univariate.Univariate,
+                {"bounded": univariate.BoundedType.SEMI_BOUNDED,},
+            ),
+            "parametric_bounded": (
                 univariate.Univariate,
                 {
-                    'bounded': univariate.BoundedType.BOUNDED,
+                    "parametric": univariate.ParametricType.PARAMETRIC,
+                    "bounded": univariate.BoundedType.BOUNDED,
                 },
             ),
-            'semi_bounded': (
+            "parametric_semi_bounded": (
                 univariate.Univariate,
                 {
-                    'bounded': univariate.BoundedType.SEMI_BOUNDED,
+                    "parametric": univariate.ParametricType.PARAMETRIC,
+                    "bounded": univariate.BoundedType.SEMI_BOUNDED,
                 },
             ),
-            'parametric_bounded': (
-                univariate.Univariate,
-                {
-                    'parametric': univariate.ParametricType.PARAMETRIC,
-                    'bounded': univariate.BoundedType.BOUNDED,
-                },
-            ),
-            'parametric_semi_bounded': (
-                univariate.Univariate,
-                {
-                    'parametric': univariate.ParametricType.PARAMETRIC,
-                    'bounded': univariate.BoundedType.SEMI_BOUNDED,
-                },
-            ),
-            'gaussian': univariate.GaussianUnivariate,
-            'gamma': univariate.GammaUnivariate,
-            'beta': univariate.BetaUnivariate,
-            'student_t': univariate.StudentTUnivariate,
-            'gaussian_kde': univariate.GaussianKDE,
-            'truncated_gaussian': univariate.TruncatedGaussian,
+            "gaussian": univariate.GaussianUnivariate,
+            "gamma": univariate.GammaUnivariate,
+            "beta": univariate.BetaUnivariate,
+            "student_t": univariate.StudentTUnivariate,
+            "gaussian_kde": univariate.GaussianKDE,
+            "truncated_gaussian": univariate.TruncatedGaussian,
         }
 
     def _get_univariate(self):
         distribution = self._distribution
-        if isinstance(distribution, self._distributions['univariate']):
+        if isinstance(distribution, self._distributions["univariate"]):
             return copy.deepcopy(distribution)
         if isinstance(distribution, tuple):
             return distribution[0](**distribution[1])
-        if isinstance(distribution, type) and \
-           issubclass(distribution, self._distributions['univariate']):
+        if isinstance(distribution, type) and issubclass(
+            distribution, self._distributions["univariate"]
+        ):
             return distribution()
 
-        raise TypeError(f'Invalid distribution: {distribution}')
+        raise TypeError(f"Invalid distribution: {distribution}")
 
     def _fit(self, data):
         """Fit the transformer to the data.
@@ -556,13 +579,29 @@ class BayesGMMTransformer(NumericalTransformer):
     _bgm_transformer = None
     valid_component_indicator = None
 
-    def __init__(self, dtype=None, nan='mean', null_column=None, rounding=None,
-                 min_value=None, max_value=None, random_state=None, max_clusters=10, weight_threshold=0.005):
-        super().__init__(dtype=dtype, nan=nan, null_column=null_column, rounding=rounding,
-                         min_value=min_value, max_value=max_value)
+    def __init__(
+        self,
+        dtype=None,
+        nan="mean",
+        null_column=None,
+        rounding=None,
+        min_value=None,
+        max_value=None,
+        random_state=None,
+        max_clusters=10,
+        weight_threshold=0.005,
+    ):
+        super().__init__(
+            dtype=dtype,
+            nan=nan,
+            null_column=null_column,
+            rounding=rounding,
+            min_value=min_value,
+            max_value=max_value,
+        )
         self._max_clusters = max_clusters
         self._weight_threshold = weight_threshold
-        self.random_state=random_state
+        self.random_state = random_state
 
     def get_output_types(self):
         """Return the output types supported by the transformer.
@@ -571,12 +610,9 @@ class BayesGMMTransformer(NumericalTransformer):
             dict:
                 Mapping from the transformed column names to supported data types.
         """
-        output_types = {
-            'normalized': 'float',
-            'component': 'categorical'
-        }
+        output_types = {"normalized": "float", "component": "categorical"}
         if self.null_transformer and self.null_transformer.creates_null_column():
-            output_types['is_null'] = 'float'
+            output_types["is_null"] = "float"
 
         return self._add_prefix(output_types)
 
@@ -589,10 +625,10 @@ class BayesGMMTransformer(NumericalTransformer):
         """
         self._bgm_transformer = BayesianGaussianMixture(
             n_components=self._max_clusters,
-            weight_concentration_prior_type='dirichlet_process',
+            weight_concentration_prior_type="dirichlet_process",
             weight_concentration_prior=0.001,
             n_init=1,
-            random_state=self.random_state
+            random_state=self.random_state,
         )
 
         super()._fit(data)
@@ -601,7 +637,9 @@ class BayesGMMTransformer(NumericalTransformer):
             data = data[:, 0]
 
         self._bgm_transformer.fit(data.reshape(-1, 1))
-        self.valid_component_indicator = self._bgm_transformer.weights_ > self._weight_threshold
+        self.valid_component_indicator = (
+            self._bgm_transformer.weights_ > self._weight_threshold
+        )
 
     def _transform(self, data):
         """Transform the numerical data.
@@ -620,24 +658,25 @@ class BayesGMMTransformer(NumericalTransformer):
         data = data.reshape((len(data), 1))
         means = self._bgm_transformer.means_.reshape((1, self._max_clusters))
 
-        stds = np.sqrt(self._bgm_transformer.covariances_).reshape((1, self._max_clusters))
+        stds = np.sqrt(self._bgm_transformer.covariances_).reshape(
+            (1, self._max_clusters)
+        )
         normalized_values = (data - means) / (self.STD_MULTIPLIER * stds)
         normalized_values = normalized_values[:, self.valid_component_indicator]
         component_probs = self._bgm_transformer.predict_proba(data)
         component_probs = component_probs[:, self.valid_component_indicator]
 
-        selected_component = np.zeros(len(data), dtype='int')
+        selected_component = np.zeros(len(data), dtype="int")
         for i in range(len(data)):
             component_prob_t = component_probs[i] + 1e-6
             component_prob_t = component_prob_t / component_prob_t.sum()
             selected_component[i] = np.random.choice(
-                np.arange(self.valid_component_indicator.sum()),
-                p=component_prob_t
+                np.arange(self.valid_component_indicator.sum()), p=component_prob_t
             )
 
         aranged = np.arange(len(data))
         normalized = normalized_values[aranged, selected_component].reshape([-1, 1])
-        normalized = np.clip(normalized, -.99, .99)
+        normalized = np.clip(normalized, -0.99, 0.99)
         normalized = normalized[:, 0]
         rows = [normalized, selected_component]
         if self.null_transformer and self.null_transformer.creates_null_column():
