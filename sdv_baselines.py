@@ -12,7 +12,6 @@ from pycox.datasets import support
 # from sdgym.synthesizers import Independent
 
 # from sdv.demo import load_tabular_demo
-from sdv.evaluation import evaluate
 from sdv.tabular import CopulaGAN, CTGAN, GaussianCopula, TVAE
 
 # Other

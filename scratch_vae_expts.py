@@ -17,15 +17,6 @@ from torch.utils.data import TensorDataset, DataLoader
 # VAE functions
 from VAE import Decoder, Encoder, VAE
 
-# SDV aspects
-from sdv.evaluation import evaluate
-
-from sdv.metrics.tabular import (
-    NumericalLR,
-    NumericalMLP,
-    NumericalSVR,
-)  # Decision on privacy metrics/fairness metrics needed
-
 # Other
 from utils import (
     set_seed,
@@ -289,7 +280,7 @@ if args.metrics == True:
     # Save these metrics into a pandas dataframe
 
     metrics = pd.DataFrame(
-        data=[[cs, ks, kses, contkls, disckls, gowers]],
+        data=[[svc, gmm, cs, ks, kses, contkls, disckls, gowers]],
         columns=[
             "SVCDetection",
             "GMLogLikelihood",

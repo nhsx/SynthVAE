@@ -8,9 +8,6 @@ import pandas as pd
 # Graph Visualisation
 import matplotlib.pyplot as plt
 
-# SDV aspects
-from sdv.evaluation import evaluate
-import gower
 from sklearn.preprocessing import StandardScaler
 
 
