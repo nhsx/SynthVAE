@@ -489,7 +489,7 @@ def plot_elbo(
     if saving_filepath != None:
         # Save static image
         plt.savefig(
-            "{}ELBO Breakdown SynthVAE_{}.png".format(saving_filepath, pre_proc_method)
+            "{}ELBO_Breakdown_SynthVAE_{}.png".format(saving_filepath, pre_proc_method)
         )
 
     plt.show()
@@ -531,7 +531,7 @@ def plot_likelihood_breakdown(
     if saving_filepath != None:
         # Save static image
         plt.savefig(
-            "{}Reconstruction Breakdown SYNTHVAE_{}.png".format(
+            "{}Reconstruction_Breakdown_SynthVAE_{}.png".format(
                 saving_filepath, pre_proc_method
             )
         )
@@ -579,7 +579,7 @@ def plot_variable_distributions(
         if saving_filepath != None:
             # Save static image
             plt.savefig(
-                "{}Variable {} SynthVAE_{}.png".format(
+                "{}Variable_{}_SynthVAE_{}.png".format(
                     saving_filepath, column, pre_proc_method
                 )
             )
@@ -615,7 +615,7 @@ def plot_variable_distributions(
         if saving_filepath != None:
             # Save static image
             plt.savefig(
-                "{}Variable {} SynthVAE_{}.png".format(
+                "{}Variable_{}_SynthVAE_{}.png".format(
                     saving_filepath, column, pre_proc_method
                 )
             )

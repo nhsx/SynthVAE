@@ -74,7 +74,7 @@ def distribution_metrics(
     if saving_filepath != None:
 
         metrics.to_csv(
-            "{}Metrics SynthVAE_{}.csv".format(saving_filepath, pre_proc_method)
+            "{}Metrics_SynthVAE_{}.csv".format(saving_filepath, pre_proc_method)
         )
 
     return metrics
