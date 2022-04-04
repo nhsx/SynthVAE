@@ -165,7 +165,7 @@ For information on these metrics then look in the [report](./reports/report.pdf)
 
 #### Note On Reproducibility Of Results
 
-In order to get reproducible results we have added in the <b>random_state</b> argument to the RDT transformers in order to set the sklearn's <b>random_state</b> argument. This results in the GMM pre-processing method producing the same transformation each run for the same dataset. Currently we only use distributional metrics from SDV that do not rely on sklearn.
+In order to get reproducible results we have added in the <b>random_state</b> argument to the RDT transformers in order to set the sklearn's <b>random_state</b> argument. This results in the GMM pre-processing method producing the same transformation each run for the same dataset.
 
 #### Dataset
 
