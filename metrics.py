@@ -8,7 +8,7 @@ from sdv.metrics.tabular import NumericalMLP, CategoricalSVM
 # Distributional metrics - Check distribution differences between synthetic & original dataset as well as how
 # Easy it is to discriminate them i.e. svc detection
 def distribution_metrics(
-    gower,
+    gower_bool,
     data_supp,
     synthetic_supp,
     categorical_columns,
@@ -54,7 +54,7 @@ def distribution_metrics(
 
     metrics = np.array(evals["raw_score"])
 
-    if gower == True:
+    if gower_bool == True:
 
         # Find the gower distance
         metrics = np.append(

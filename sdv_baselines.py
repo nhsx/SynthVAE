@@ -121,8 +121,6 @@ for i in range(n_seeds):
 
     new_data = model.sample(data.shape[0])
 
-    print(new_data.head())
-
     # new_data = Independent._fit_sample(data, None)
 
     data_ = data.copy()
@@ -138,7 +136,7 @@ for i in range(n_seeds):
     )
 
     metrics = distribution_metrics(
-        gower=args.gower,
+        gower_bool=args.gower,
         data_supp=data_supp,
         synthetic_supp=synthetic_supp,
         categorical_columns=original_categorical_columns,
