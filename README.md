@@ -58,6 +58,8 @@ Note that the model used is a simple MLP encoder/decoder and we are working with
 
 ### Usage
 
+There are three main sections of interest (2 folders and a collation of python files): Hyperparameter tuning, investigations and files containing sdv_baselines, scratch_vae_expts and plot. Hyperparameter tuning and investigations can use either SUPPORT or internal MIMIC datasets. sdv_baselines, scratch_vae_expts and plot all use SUPPORT only. If you want to run these quickly then below outlines command line implementation.
+
 #### SDV Baselines
 
 To reproduce the experiments contained in the report involving the [SDV](https://github.com/sdv-dev/SDV) baseline models (e.g. CopulaGAN, CTGAN, GaussianCopula and TVAE), run `sdv_baselines.py`. The parameters can be found using the `--help` flag:
