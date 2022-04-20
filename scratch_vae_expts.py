@@ -227,13 +227,13 @@ for i in range(n_seeds):
         pre_proc_method=pre_proc_method,
     )
 
-    if args.savefile == True:
+    if args.savemodel == True:
         vae.save("SynthVAE model.pt")
 
-    if args.metrics == True:
+    if args.savemetrics == True:
 
         metrics = distribution_metrics(
-            gower=args.gower,
+            gower_bool=args.gower,
             data_supp=data_supp,
             synthetic_supp=synthetic_supp,
             categorical_columns=original_categorical_columns,
@@ -255,7 +255,7 @@ for i in range(n_seeds):
         if args.gower == True:
             gowers.append(np.array(list_metrics[7]))
 
-if args.metrics == True:
+if args.savemetrics == True:
 
     svc = np.array(svc)
     gmm = np.array(gmm)
@@ -293,7 +293,6 @@ if args.metrics == True:
         ],
     )
 
-    filepath = args.metrics
     metrics.to_csv("Metric Breakdown.csv")
 #%% -------- Visualisation Figures -------- ##
 if args.savevisualisation == True:
