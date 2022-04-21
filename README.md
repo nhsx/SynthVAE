@@ -39,6 +39,7 @@ To create a suitable environment:
 - ```python -m venv synth_env```
 - `source synth_env/bin/activate`
 - `pip install -r requirements.txt`
+- `pip uninstall rdt` (SDV installs rdt by default however we have included an added fix so this needs to be uninstalled to avoid conflicts)
 
 #### GPU Support
 
