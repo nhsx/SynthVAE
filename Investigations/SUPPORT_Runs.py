@@ -179,7 +179,7 @@ plot_variable_distributions(
 gower = False
 
 metrics = distribution_metrics(
-    gower=gower,
+    gower_bool=gower,
     data_supp=data_supp,
     synthetic_supp=synthetic_supp,
     categorical_columns=original_categorical_columns,

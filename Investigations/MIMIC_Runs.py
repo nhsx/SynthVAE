@@ -207,7 +207,7 @@ for index, column in enumerate(original_datetime_columns):
 gower = False
 
 metrics = distribution_metrics(
-    gower=gower,
+    gower_bool=gower,
     data_supp=original_metric_set,
     synthetic_supp=metric_synthetic_supp,
     categorical_columns=original_categorical_columns,
