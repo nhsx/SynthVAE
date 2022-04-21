@@ -128,14 +128,14 @@ optional arguments:
 There are a selection of plots & metrics the model can output. These are given by parse arguments <b>--savemetrics</b>, <b>--savevisualisation</b> or functions <b>plot_elbo</b>, <b>plot_likelihood_breakdown</b>, <b>plot_variable_distributions</b> & <b>distribution_metrics</b> in the notebooks provided. These outputs give you a graph displaying the ELBO breakdown during training, the breakdown of categorical & numerical likelihoods, a comparison of variable distributions between original data & synthetic data for each variable as well as a csv file displaying all the distributional metrics from SDV.
 
 <figure>
-  <img src="docs/ELBO Breakdown SynthVAE_GMM_run_1.png" width="432" height="288">
+  <img src="docs/ELBO Breakdown SynthVAE_GMM.png" width="432" height="288">
   <figcaption><b>Elbo Breakdown</b></figcaption>
 </figure>
 
 
 
 <figure>
-  <img src="docs/Reconstruction Breakdown SYNTHVAE_GMM_run_1.png" width="432" height="288">
+  <img src="docs/Reconstruction Breakdown SYNTHVAE_GMM.png" width="432" height="288">
   <figcaption><b>Likelihood Breakdown</b></figcaption>
 </figure>
 
