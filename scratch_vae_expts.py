@@ -114,7 +114,6 @@ dataset = TensorDataset(Y)
 batch_size = 32
 latent_dim = 256
 hidden_dim = 256
-n_epochs = 5
 logging_freq = 1  # Number of epochs we should log the results to the user
 patience = 5  # How many epochs should we allow the model train to see if
 # improvement is made
