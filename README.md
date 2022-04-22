@@ -170,7 +170,7 @@ For information on these metrics then look in the [report](./reports/report.pdf)
 
 #### Note On Reproducibility Of Results
 
-In order to get reproducible results we have added in the `random_state` argument to the RDT transformers in order to set the sklearn's `random_state` argument. This results in the GMM pre-processing method producing the same transformation each run for the same dataset.
+In order to get reproducible results we have added in the `random_state` argument to the RDT transformers in order to set the sklearn's `random_state` argument. This results in the GMM pre-processing method producing the same transformation each run for the same dataset. We also set the PyTorch seed at the top of each file using the `set_seed` function found in utils. If you do not wish to nullify the randomness in training then remove this `set_seed` line at the start of the files.
 
 #### Dataset
 
