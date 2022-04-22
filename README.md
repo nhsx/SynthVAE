@@ -97,6 +97,7 @@ optional arguments:
   --n_runs N_RUNS       set number of runs/seeds
   --diff_priv DIFF_PRIV
                         run VAE with differential privacy
+  --n_epochs            number of epochs to train for (early stopping is used by default)
   --savefile SAVEFILE   save trained model's state_dict to file
   --savevisualisation   {True, False}
                         save the loss & variable plots
