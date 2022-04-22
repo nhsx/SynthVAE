@@ -22,6 +22,7 @@ from VAE import Decoder, Encoder, VAE
 from rdt.transformers import datetime
 
 from utils import (
+    set_seed,
     mimic_pre_proc,
     constraint_filtering,
     plot_elbo,
@@ -29,6 +30,8 @@ from utils import (
     plot_variable_distributions,
 )
 from metrics import distribution_metrics, privacy_metrics
+
+set_seed(0)
 
 # Load in the mimic single table data
 

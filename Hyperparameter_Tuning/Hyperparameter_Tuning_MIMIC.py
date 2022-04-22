@@ -26,6 +26,7 @@ from rdt.transformers import datetime
 
 # Utility file contains all functions required to run notebook
 from utils import (
+    set_seed,
     mimic_pre_proc,
     constraint_filtering,
     plot_elbo,
@@ -37,6 +38,8 @@ from metrics import distribution_metrics
 
 import optuna
 import pickle
+
+set_seed(0)
 
 filepath = ".../Private MIMIC Data/table_one_synthvae.csv"
 

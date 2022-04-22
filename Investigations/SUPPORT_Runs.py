@@ -22,6 +22,7 @@ from torch.utils.data import TensorDataset, DataLoader
 from VAE import Decoder, Encoder, VAE
 
 from utils import (
+    set_seed,
     support_pre_proc,
     plot_elbo,
     plot_likelihood_breakdown,
@@ -29,6 +30,8 @@ from utils import (
     reverse_transformers,
 )
 from metrics import distribution_metrics, privacy_metrics
+
+set_seed(0)
 
 # Load in the support data
 data_supp = support.read_df()
