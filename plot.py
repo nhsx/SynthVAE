@@ -31,7 +31,7 @@ from VAE import Decoder, Encoder, VAE
 parser = argparse.ArgumentParser()
 
 parser.add_argument(
-    "--savefile",
+    "--save_file",
     required=True,
     type=str,
     help="load trained model's state_dict from file",
@@ -75,7 +75,7 @@ latent_dim = 2
 encoder = Encoder(x_train.shape[1], latent_dim)
 decoder = Decoder(latent_dim, num_continuous, num_categories=num_categories)
 vae = VAE(encoder, decoder)
-vae.load(args.savefile)
+vae.load(args.save_file)
 
 #%% -------- Generate Synthetic Data -------- #
 

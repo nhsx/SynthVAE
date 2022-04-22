@@ -50,7 +50,7 @@ parser.add_argument(
 )
 
 parser.add_argument(
-    "--savemetrics",
+    "--save_metrics",
     default=False,
     type=bool,
     help="Set if we want to save the metrics - saved under Metric Breakdown.csv unless changed",
@@ -179,7 +179,7 @@ print(f"ContKL: {np.mean(contkls)} +/- {np.std(contkls)}")
 print(f"DiscKL: {np.mean(disckls)} +/- {np.std(disckls)}")
 print(f"Gowers: {np.mean(gowers)} +/- {np.std(gowers)}")
 
-if args.savemetrics:
+if args.save_metrics:
 
     if args.gower == True:
         metrics = pd.DataFrame(

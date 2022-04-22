@@ -43,19 +43,19 @@ parser.add_argument(
     "--n_epochs", default=100, type=int, help="number of epochs to train for"
 )
 parser.add_argument(
-    "--savemodel",
+    "--save_model",
     default=None,
     type=bool,
     help="save trained model's state_dict to file",
 )
 parser.add_argument(
-    "--savevisualisation",
+    "--save_visualisation",
     default=None,
     type=bool,
     help="save model visualisations for ELBO & variable generations - only applicable for final run",
 )
 parser.add_argument(
-    "--savemetrics",
+    "--save_metrics",
     default=None,
     type=bool,
     help="save metrics - averaged over all runs",
@@ -226,10 +226,10 @@ for i in range(n_seeds):
         pre_proc_method=pre_proc_method,
     )
 
-    if args.savemodel == True:
+    if args.save_model == True:
         vae.save("SynthVAE model.pt")
 
-    if args.savemetrics == True:
+    if args.save_metrics == True:
 
         metrics = distribution_metrics(
             gower_bool=args.gower,
@@ -254,7 +254,7 @@ for i in range(n_seeds):
         if args.gower == True:
             gowers.append(np.array(list_metrics[7]))
 
-if args.savemetrics == True:
+if args.save_metrics == True:
 
     svc = np.array(svc)
     gmm = np.array(gmm)
@@ -294,7 +294,7 @@ if args.savemetrics == True:
 
     metrics.to_csv("Metric Breakdown.csv")
 #%% -------- Visualisation Figures -------- ##
-if args.savevisualisation == True:
+if args.save_visualisation == True:
 
     # -------- Plot ELBO Breakdowns -------- #
 
