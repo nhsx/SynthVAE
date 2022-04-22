@@ -43,6 +43,9 @@ parser.add_argument(
     "--n_epochs", default=100, type=int, help="number of epochs to train for"
 )
 parser.add_argument(
+    "--save_file", default=False, type=bool, help="Set if you want to save the trained model"
+)
+parser.add_argument(
     "--save_model",
     default=None,
     type=bool,
@@ -197,6 +200,10 @@ for i in range(n_seeds):
             log_categorical,
             log_numerical,
         ) = vae.train(data_loader, n_epochs=n_epochs)
+
+    if(args.save_file == True):
+        temp_filename = "trained_SynthVAE.pt"
+        vae.save(temp_filename)
 
     #%% -------- Generate Synthetic Data -------- #
 
