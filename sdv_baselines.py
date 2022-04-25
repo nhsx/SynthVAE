@@ -103,7 +103,7 @@ kses = []
 contkls = []
 disckls = []
 
-if args.gower == True:
+if args.gower:
     gowers = []
 
 
@@ -155,7 +155,7 @@ for i in range(n_seeds):
     kses.append(np.array(list_metrics[4]))
     contkls.append(np.array(list_metrics[5]))
     disckls.append(np.array(list_metrics[6]))
-    if args.gower == True:
+    if args.gower:
         gowers.append(np.array(list_metrics[7]))
 
 svc = np.array(svc)
@@ -166,9 +166,10 @@ kses = np.array(kses)
 contkls = np.array(contkls)
 disckls = np.array(disckls)
 
-if args.gower == True:
+if args.gower:
 
     gowers = np.array(gowers)
+    print(f"Gowers: {np.mean(gowers)} +/- {np.std(gowers)}")
 
 print(f"SVC: {np.mean(svc)} +/- {np.std(svc)}")
 print(f"GMM: {np.mean(gmm)} +/- {np.std(gmm)}")
@@ -177,11 +178,10 @@ print(f"KS: {np.mean(ks)} +/- {np.std(ks)}")
 print(f"KSE: {np.mean(kses)} +/- {np.std(kses)}")
 print(f"ContKL: {np.mean(contkls)} +/- {np.std(contkls)}")
 print(f"DiscKL: {np.mean(disckls)} +/- {np.std(disckls)}")
-print(f"Gowers: {np.mean(gowers)} +/- {np.std(gowers)}")
 
 if args.save_metrics:
 
-    if args.gower == True:
+    if args.gower:
         metrics = pd.DataFrame(
             {
                 "SVCDetection": svc[:, 0],

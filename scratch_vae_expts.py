@@ -43,23 +43,26 @@ parser.add_argument(
     "--n_epochs", default=100, type=int, help="number of epochs to train for"
 )
 parser.add_argument(
-    "--save_file", default=False, type=bool, help="Set if you want to save the trained model"
+    "--save_file",
+    default=False,
+    type=bool,
+    help="Set if you want to save the trained model",
 )
 parser.add_argument(
     "--save_model",
-    default=None,
+    default=False,
     type=bool,
     help="save trained model's state_dict to file",
 )
 parser.add_argument(
     "--save_visualisation",
-    default=None,
+    default=False,
     type=bool,
     help="save model visualisations for ELBO & variable generations - only applicable for final run",
 )
 parser.add_argument(
     "--save_metrics",
-    default=None,
+    default=False,
     type=bool,
     help="save metrics - averaged over all runs",
 )
@@ -157,7 +160,7 @@ kses = []
 contkls = []
 disckls = []
 
-if args.gower == True:
+if args.gower:
 
     gowers = []
 
@@ -201,7 +204,7 @@ for i in range(n_seeds):
             log_numerical,
         ) = vae.train(data_loader, n_epochs=n_epochs)
 
-    if(args.save_file == True):
+    if args.save_file:
         temp_filename = "trained_SynthVAE.pt"
         vae.save(temp_filename)
 
@@ -233,35 +236,33 @@ for i in range(n_seeds):
         pre_proc_method=pre_proc_method,
     )
 
-    if args.save_model == True:
+    if args.save_model:
         vae.save("SynthVAE model.pt")
 
-    if args.save_metrics == True:
+    metrics = distribution_metrics(
+        gower_bool=args.gower,
+        data_supp=data_supp,
+        synthetic_supp=synthetic_supp,
+        categorical_columns=original_categorical_columns,
+        continuous_columns=original_continuous_columns,
+        saving_filepath="",
+        pre_proc_method=pre_proc_method,
+    )
 
-        metrics = distribution_metrics(
-            gower_bool=args.gower,
-            data_supp=data_supp,
-            synthetic_supp=synthetic_supp,
-            categorical_columns=original_categorical_columns,
-            continuous_columns=original_continuous_columns,
-            saving_filepath="",
-            pre_proc_method=pre_proc_method,
-        )
+    list_metrics = [metrics[i] for i in metrics.columns]
 
-        list_metrics = [metrics[i] for i in metrics.columns]
-
-        # New version has added a lot more evaluation metrics - only use fidelity metrics for now
-        svc.append(np.array(list_metrics[0]))
-        gmm.append(np.array(list_metrics[1]))
-        cs.append(np.array(list_metrics[2]))
-        ks.append(np.array(list_metrics[3]))
-        kses.append(np.array(list_metrics[4]))
-        contkls.append(np.array(list_metrics[5]))
-        disckls.append(np.array(list_metrics[6]))
-        if args.gower == True:
-            gowers.append(np.array(list_metrics[7]))
-
-if args.save_metrics == True:
+    # New version has added a lot more evaluation metrics - only use fidelity metrics for now
+    svc.append(np.array(list_metrics[0]))
+    gmm.append(np.array(list_metrics[1]))
+    cs.append(np.array(list_metrics[2]))
+    ks.append(np.array(list_metrics[3]))
+    kses.append(np.array(list_metrics[4]))
+    contkls.append(np.array(list_metrics[5]))
+    disckls.append(np.array(list_metrics[6]))
+    if args.gower:
+        gowers.append(np.array(list_metrics[7]))
+        gowers = np.array(gowers)
+        print(f"Gowers : {np.mean(gowers)} +/- {np.std(gowers)}")
 
     svc = np.array(svc)
     gmm = np.array(gmm)
@@ -279,29 +280,42 @@ if args.save_metrics == True:
     print(f"ContKL: {np.mean(contkls)} +/- {np.std(contkls)}")
     print(f"DiscKL: {np.mean(disckls)} +/- {np.std(disckls)}")
 
-    if args.gower == True:
-        gowers = np.array(gowers)
-        print(f"Gowers : {np.mean(gowers)} +/- {np.std(gowers)}")
+if args.save_metrics:
 
     # Save these metrics into a pandas dataframe
 
-    metrics = pd.DataFrame(
-        data=[[svc, gmm, cs, ks, kses, contkls, disckls, gowers]],
-        columns=[
-            "SVCDetection",
-            "GMLogLikelihood",
-            "CSTest",
-            "KSTest",
-            "KSTestExtended",
-            "ContinuousKLDivergence",
-            "DiscreteKLDivergence",
-            "Gower",
-        ],
-    )
+    if args.gower:
+
+        metrics = pd.DataFrame(
+            data=[[svc, gmm, cs, ks, kses, contkls, disckls, gowers]],
+            columns=[
+                "SVCDetection",
+                "GMLogLikelihood",
+                "CSTest",
+                "KSTest",
+                "KSTestExtended",
+                "ContinuousKLDivergence",
+                "DiscreteKLDivergence",
+                "Gower",
+            ],
+        )
+
+    else:
+        metrics = pd.DataFrame(
+            {
+                "SVCDetection": svc[:, 0],
+                "GMLogLikelihood": gmm[:, 0],
+                "CSTest": cs[:, 0],
+                "KSTest": ks[:, 0],
+                "KSTestExtended": kses[:, 0],
+                "ContinuousKLDivergence": contkls[:, 0],
+                "DiscreteKLDivergence": disckls[:, 0],
+            }
+        )
 
     metrics.to_csv("Metric Breakdown.csv")
 #%% -------- Visualisation Figures -------- ##
-if args.save_visualisation == True:
+if args.save_visualisation:
 
     # -------- Plot ELBO Breakdowns -------- #
 
