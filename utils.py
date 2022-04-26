@@ -144,7 +144,7 @@ def mimic_pre_proc(data_supp, pre_proc_method="GMM"):
         "VALUEUOM",
         "LABEL",
     ]
-    original_continuous_columns = ["Unnamed: 0", "ROW_ID", "SUBJECT_ID", "VALUE", "age"]
+    original_continuous_columns = ["SUBJECT_ID", "VALUE", "age"]
     original_datetime_columns = ["ADMITTIME", "DISCHTIME", "DOB", "CHARTTIME"]
 
     categorical_columns = original_categorical_columns.copy()

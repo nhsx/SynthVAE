@@ -48,7 +48,7 @@ original_categorical_columns = [
     "VALUEUOM",
     "LABEL",
 ]
-original_continuous_columns = ["Unnamed: 0", "ROW_ID", "SUBJECT_ID", "VALUE", "age"]
+original_continuous_columns = ["SUBJECT_ID", "VALUE", "age"]
 original_datetime_columns = ["ADMITTIME", "DISCHTIME", "DOB", "CHARTTIME"]
 
 # Drop DOD column as it contains NANS - for now
