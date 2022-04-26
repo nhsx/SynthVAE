@@ -131,7 +131,7 @@ There are a selection of plots & metrics the model can output. These are given b
 
 <figure>
   <img src="docs/ELBO_Breakdown_SynthVAE_GMM.png" width="432" height="288">
-  <figcaption><b>Elbo Breakdown</b></figcaption>
+  <figcaption><b>ELBO Breakdown</b></figcaption>
 </figure>
 
 
