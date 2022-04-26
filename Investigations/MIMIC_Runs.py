@@ -33,7 +33,7 @@ from metrics import distribution_metrics, privacy_metrics
 
 set_seed(0)
 
-# Load in the mimic single table data
+# Load in the mimic single table data - use variable filepath to gather the data
 
 filepath = ".../Private MIMIC Data/table_one_synthvae.csv"
 
@@ -223,7 +223,7 @@ metrics = distribution_metrics(
 
 # Specify our private variable
 
-private_variable = "x14"
+private_variable = "ETHNICITY"
 
 privacy_metric = privacy_metrics(
     private_variable=private_variable,
