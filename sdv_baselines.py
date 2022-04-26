@@ -93,6 +93,17 @@ pre_proc_method = args.pre_proc_method
 
 data = pd.DataFrame(x_train, columns=reordered_dataframe_columns)
 
+# Define distributional metrics required - for sdv_baselines this is set by default
+distributional_metrics = [
+    "SVCDetection",
+    "GMLogLikelihood",
+    "CSTest",
+    "KSTest",
+    "KSTestExtended",
+    "ContinuousKLDivergence",
+    "DiscreteKLDivergence",
+]
+
 # Define lists to contain the metrics achieved on the
 # train/generate/evaluate runs
 svc = []
@@ -137,6 +148,7 @@ for i in range(n_seeds):
 
     metrics = distribution_metrics(
         gower_bool=args.gower,
+        distributional_metrics=distributional_metrics,
         data_supp=data_supp,
         synthetic_supp=synthetic_supp,
         categorical_columns=original_categorical_columns,

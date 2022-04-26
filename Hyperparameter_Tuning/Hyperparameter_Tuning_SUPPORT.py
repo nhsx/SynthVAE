@@ -85,6 +85,17 @@ target_delta = 1e-5  # Target delta for privacy accountant
 
 # Define the metrics you want the model to evaluate
 
+# Define distributional metrics required - for sdv_baselines this is set by default
+distributional_metrics = [
+    "SVCDetection",
+    "GMLogLikelihood",
+    "CSTest",
+    "KSTest",
+    "KSTestExtended",
+    "ContinuousKLDivergence",
+    "DiscreteKLDivergence",
+]
+
 gower = False
 
 # Prepare data for interaction with torch VAE
@@ -107,7 +118,8 @@ data_loader = DataLoader(
 
 def objective(
     trial,
-    user_metrics,
+    gower,
+    distributional_metrics,
     differential_privacy=False,
     target_delta=1e-3,
     target_eps=10.0,
@@ -180,6 +192,7 @@ def objective(
 
     metrics = distribution_metrics(
         gower_bool=gower,
+        distributional_metrics=distributional_metrics,
         data_supp=data_supp,
         synthetic_supp=synthetic_supp,
         categorical_columns=original_categorical_columns,
@@ -205,9 +218,9 @@ first_run = True  # First run indicates if we are creating a new hyperparam stud
 if first_run == True:
 
     if gower == True:
-        directions = ["maximize" for i in range(8)]
+        directions = ["maximize" for i in range(distributional_metrics.shape[0] + 1)]
     else:
-        directions = ["maximize" for i in range(7)]
+        directions = ["maximize" for i in range(distributional_metrics.shape[0])]
 
     study = optuna.create_study(directions=directions)
 
@@ -219,7 +232,8 @@ else:
 study.optimize(
     lambda trial: objective(
         trial,
-        gower=GenericBrowser,
+        gower=gower,
+        distributional_metrics=distributional_metrics,
         differential_privacy=differential_privacy,
         target_delta=target_delta,
         target_eps=target_eps,

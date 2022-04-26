@@ -151,6 +151,17 @@ data_loader = DataLoader(
 #     dataset, batch_size=batch_size, pin_memory=True, shuffle=shuffle
 # )
 
+# Define distributional metrics required - for sdv_baselines this is set by default
+distributional_metrics = [
+    "SVCDetection",
+    "GMLogLikelihood",
+    "CSTest",
+    "KSTest",
+    "KSTestExtended",
+    "ContinuousKLDivergence",
+    "DiscreteKLDivergence",
+]
+
 # For metric saving - save each metric after each run for each seed
 svc = []
 gmm = []

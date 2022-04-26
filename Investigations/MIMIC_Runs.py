@@ -207,10 +207,22 @@ for index, column in enumerate(original_datetime_columns):
 
 # Define the metrics you want the model to evaluate
 
+# Define distributional metrics required - for sdv_baselines this is set by default
+distributional_metrics = [
+    "SVCDetection",
+    "GMLogLikelihood",
+    "CSTest",
+    "KSTest",
+    "KSTestExtended",
+    "ContinuousKLDivergence",
+    "DiscreteKLDivergence",
+]
+
 gower = False
 
 metrics = distribution_metrics(
     gower_bool=gower,
+    distributional_metrics=distributional_metrics,
     data_supp=original_metric_set,
     synthetic_supp=metric_synthetic_supp,
     categorical_columns=original_categorical_columns,

@@ -181,8 +181,20 @@ plot_variable_distributions(
 
 gower = False
 
+# Define distributional metrics required - for sdv_baselines this is set by default
+distributional_metrics = [
+    "SVCDetection",
+    "GMLogLikelihood",
+    "CSTest",
+    "KSTest",
+    "KSTestExtended",
+    "ContinuousKLDivergence",
+    "DiscreteKLDivergence",
+]
+
 metrics = distribution_metrics(
     gower_bool=gower,
+    distributional_metrics=distributional_metrics,
     data_supp=data_supp,
     synthetic_supp=synthetic_supp,
     categorical_columns=original_categorical_columns,

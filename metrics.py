@@ -9,6 +9,7 @@ from sdv.metrics.tabular import NumericalMLP, CategoricalSVM
 # Easy it is to discriminate them i.e. svc detection
 def distribution_metrics(
     gower_bool,
+    distributional_metrics,
     data_supp,
     synthetic_supp,
     categorical_columns,
@@ -16,17 +17,6 @@ def distribution_metrics(
     saving_filepath=None,
     pre_proc_method="GMM",
 ):
-
-    # Calculate the sdv distributional metrics for SynthVAE
-    distributional_metrics = [
-        "SVCDetection",
-        "GMLogLikelihood",
-        "CSTest",
-        "KSTest",
-        "KSTestExtended",
-        "ContinuousKLDivergence",
-        "DiscreteKLDivergence",
-    ]
 
     # Define lists to contain the metrics achieved
 
