@@ -13,7 +13,7 @@ from sklearn.preprocessing import StandardScaler
 
 def set_seed(seed):
     np.random.seed(seed)
-    _ = torch.manual_seed(seed)
+    torch.manual_seed(seed)
 
 
 # -------- Pre-Processing for SUPPORT -------- #
