@@ -11,10 +11,7 @@ from .utils import create_or_extend_grad_sample, register_grad_sampler
 
 @register_grad_sampler(nn.GroupNorm)
 def compute_group_norm_grad_sample(
-    layer: nn.GroupNorm,
-    A: torch.Tensor,
-    B: torch.Tensor,
-    batch_dim: int = 0,
+    layer: nn.GroupNorm, A: torch.Tensor, B: torch.Tensor, batch_dim: int = 0,
 ) -> None:
     """
     Computes per sample gradients for GroupNorm

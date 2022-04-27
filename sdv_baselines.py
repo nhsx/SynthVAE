@@ -5,13 +5,6 @@ import warnings
 import numpy as np
 import pandas as pd
 
-# For Gower Distance
-import gower
-
-# For data preprocessing
-from sklearn.preprocessing import StandardScaler
-from sklearn_pandas import DataFrameMapper
-
 # For the SUPPORT dataset
 from pycox.datasets import support
 
@@ -19,15 +12,17 @@ from pycox.datasets import support
 # from sdgym.synthesizers import Independent
 
 # from sdv.demo import load_tabular_demo
-from sdv.evaluation import evaluate
 from sdv.tabular import CopulaGAN, CTGAN, GaussianCopula, TVAE
-from sdv.metrics.tabular import NumericalLR, NumericalMLP, NumericalSVR
 
 # Other
-from utils import set_seed
+from utils import set_seed, support_pre_proc, reverse_transformers
+from metrics import distribution_metrics
 
 
-warnings.filterwarnings("ignore")
+warnings.filterwarnings("ignore")  # We suppress warnings to avoid SDMETRICS throwing unique synthetic data warnings (i.e.
+# data in synthetic set is not in the real data set) as well as SKLEARN throwing convergence warnings (pre-processing uses
+# GMM from sklearn and this throws non convergence warnings)
+
 set_seed(0)
 
 MODEL_CLASSES = {
@@ -40,10 +35,7 @@ MODEL_CLASSES = {
 parser = argparse.ArgumentParser()
 
 parser.add_argument(
-    "--n_runs",
-    default=10,
-    type=int,
-    help="set number of runs/seeds",
+    "--n_runs", default=10, type=int, help="set number of runs/seeds",
 )
 parser.add_argument(
     "--model_type",
@@ -51,6 +43,27 @@ parser.add_argument(
     choices=MODEL_CLASSES.keys(),
     type=str,
     help="set model for baseline experiment",
+)
+
+parser.add_argument(
+    "--pre_proc_method",
+    default="GMM",
+    type=str,
+    help="Pre-processing method for the dataset. Either GMM or standard. (Gaussian mixture modelling method or standard scaler)",
+)
+
+parser.add_argument(
+    "--save_metrics",
+    default=False,
+    type=bool,
+    help="Set if we want to save the metrics - saved under Metric Breakdown.csv unless changed",
+)
+
+parser.add_argument(
+    "--gower",
+    default=False,
+    type=bool,
+    help="Do you want to calculate the average gower distance",
 )
 
 args = parser.parse_args()
@@ -61,56 +74,51 @@ my_seeds = np.random.randint(1e6, size=n_seeds)
 
 data_supp = support.read_df()
 
-# Explicitly type the categorical variables of the SUPPORT dataset
-support_cols = ["x1", "x2", "x3", "x4", "x5", "x6", "event"]
+# Setup columns
 
-data_supp[support_cols] = data_supp[support_cols].astype(object)
-data = data_supp
+original_continuous_columns = ["duration"] + [f"x{i}" for i in range(7, 15)]
+original_categorical_columns = ["event"] + [f"x{i}" for i in range(1, 7)]
 
-# Define categorical and continuous column labels
-cat_cols = [f"x{i}" for i in range(1, 7)] + ["event"]
-cont_cols = ["x0"] + [f"x{i}" for i in range(7, 14)] + ["duration"]
 
-# If preprocess is True, then a StandardScaler is applied
-# to the continuous variables
-preprocess = True
-if preprocess:
-    standardize = [([col], StandardScaler()) for col in cont_cols]
-    leave = [([col], None) for col in cat_cols]
+#%% -------- Data Pre-Processing -------- #
 
-    x_mapper = DataFrameMapper(leave + standardize)
+pre_proc_method = args.pre_proc_method
 
-    x_train_df = x_mapper.fit_transform(data)
-    x_train_df = x_mapper.transform(data)
+(
+    x_train,
+    data_supp,
+    reordered_dataframe_columns,
+    continuous_transformers,
+    categorical_transformers,
+    num_categories,
+    num_continuous,
+) = support_pre_proc(data_supp=data_supp, pre_proc_method=pre_proc_method)
 
-    data_ = pd.DataFrame(x_train_df)
-    data_.columns = cat_cols + cont_cols
-    data_[cont_cols] = data_[cont_cols].astype("float32")
-    data = data_
+data = pd.DataFrame(x_train, columns=reordered_dataframe_columns)
 
-transformer_dtypes = {
-    "i": "one_hot_encoding",
-    "f": "numerical",
-    "O": "one_hot_encoding",
-    "b": "one_hot_encoding",
-    "M": "datetime",
-}
+# Define distributional metrics required - for sdv_baselines this is set by default
+distributional_metrics = [
+    "SVCDetection",
+    "GMLogLikelihood",
+    "CSTest",
+    "KSTest",
+    "KSTestExtended",
+    "ContinuousKLDivergence",
+    "DiscreteKLDivergence",
+]
 
 # Define lists to contain the metrics achieved on the
 # train/generate/evaluate runs
-bns = []
-lrs = []
-svcs = []
-gmlls = []
+svc = []
+gmm = []
 cs = []
 ks = []
 kses = []
 contkls = []
 disckls = []
-lr_privs = []
-mlp_privs = []
-svr_privs = []
-gowers = []
+
+if args.gower:
+    gowers = []
 
 
 # Perform the train/generate/evaluate runs
@@ -119,12 +127,9 @@ for i in range(n_seeds):
 
     chosen_model = MODEL_CLASSES[args.model_type]
 
-    model = chosen_model(field_transformers=transformer_dtypes)
+    model = chosen_model()  # field_transformers=transformer_dtypes)
 
-    print(
-        f"Train + Generate + Evaluate {args.model_type}"
-        f" - Run {i+1}/{n_seeds}"
-    )
+    print(f"Train + Generate + Evaluate {args.model_type}" f" - Run {i+1}/{n_seeds}")
 
     model.fit(data)
 
@@ -134,87 +139,87 @@ for i in range(n_seeds):
 
     data_ = data.copy()
 
-    if preprocess:
-        for feature in x_mapper.features:
-            if feature[0][0] in cont_cols:
-                f = feature[0][0]
-                new_data[f] = feature[1].inverse_transform(new_data[f])
-                data_[f] = feature[1].inverse_transform(data_[f])
+    # Reverse the transformations
 
-    evals = evaluate(new_data, data_, aggregate=False)
-
-    bns.append(np.array(evals["raw_score"])[0])
-    lrs.append(np.array(evals["raw_score"])[1])
-    svcs.append(np.array(evals["raw_score"])[2])
-    gmlls.append(np.array(evals["raw_score"])[3])
-    cs.append(np.array(evals["raw_score"])[4])
-    ks.append(np.array(evals["raw_score"])[5])
-    kses.append(np.array(evals["raw_score"])[6])
-    contkls.append(np.array(evals["raw_score"])[7])
-    disckls.append(np.array(evals["raw_score"])[8])
-    gowers.append(np.mean(gower.gower_matrix(data_, new_data)))
-
-    lr_priv = NumericalLR.compute(
-        data_.fillna(0),
-        new_data.fillna(0),
-        key_fields=(
-            [f"x{i}" for j in range(1, data_.shape[1] - 2)]
-            + ["event"]
-            + ["duration"]
-        ),
-        sensitive_fields=["x0"],
+    synthetic_supp = reverse_transformers(
+        synthetic_set=new_data,
+        data_supp_columns=data_supp.columns,
+        cont_transformers=continuous_transformers,
+        cat_transformers=categorical_transformers,
+        pre_proc_method=pre_proc_method,
     )
-    lr_privs.append(lr_priv)
 
-    mlp_priv = NumericalMLP.compute(
-        data_.fillna(0),
-        new_data.fillna(0),
-        key_fields=(
-            [f"x{i}" for j in range(1, data_.shape[1] - 2)]
-            + ["event"]
-            + ["duration"]
-        ),
-        sensitive_fields=["x0"],
+    metrics = distribution_metrics(
+        gower_bool=args.gower,
+        distributional_metrics=distributional_metrics,
+        data_supp=data_supp,
+        synthetic_supp=synthetic_supp,
+        categorical_columns=original_categorical_columns,
+        continuous_columns=original_continuous_columns,
+        saving_filepath=None,
+        pre_proc_method=pre_proc_method,
     )
-    mlp_privs.append(mlp_priv)
 
-    svr_priv = NumericalSVR.compute(
-        data_.fillna(0),
-        new_data.fillna(0),
-        key_fields=(
-            [f"x{i}" for j in range(1, data_.shape[1] - 2)]
-            + ["event"]
-            + ["duration"]
-        ),
-        sensitive_fields=["x0"],
-    )
-    svr_privs.append(svr_priv)
+    list_metrics = [metrics[i] for i in metrics.columns]
 
-bns = np.array(bns)
-lrs = np.array(lrs)
-svcs = np.array(svcs)
-gmlls = np.array(gmlls)
+    # New version has added a lot more evaluation metrics - only use fidelity metrics for now
+    svc.append(np.array(list_metrics[0]))
+    gmm.append(np.array(list_metrics[1]))
+    cs.append(np.array(list_metrics[2]))
+    ks.append(np.array(list_metrics[3]))
+    kses.append(np.array(list_metrics[4]))
+    contkls.append(np.array(list_metrics[5]))
+    disckls.append(np.array(list_metrics[6]))
+    if args.gower:
+        gowers.append(np.array(list_metrics[7]))
+
+svc = np.array(svc)
+gmm = np.array(gmm)
 cs = np.array(cs)
 ks = np.array(ks)
 kses = np.array(kses)
 contkls = np.array(contkls)
 disckls = np.array(disckls)
-gowers = np.array(gowers)
 
-print(f"BN: {np.mean(bns)} +/- {np.std(bns)}")
-print(f"LR: {np.mean(lrs)} +/- {np.std(lrs)}")
-print(f"SVC: {np.mean(svcs)} +/- {np.std(svcs)}")
-print(f"GMLL: {np.mean(gmlls)} +/- {np.std(gmlls)}")
+if args.gower:
+
+    gowers = np.array(gowers)
+    print(f"Gowers: {np.mean(gowers)} +/- {np.std(gowers)}")
+
+print(f"SVC: {np.mean(svc)} +/- {np.std(svc)}")
+print(f"GMM: {np.mean(gmm)} +/- {np.std(gmm)}")
 print(f"CS: {np.mean(cs)} +/- {np.std(cs)}")
 print(f"KS: {np.mean(ks)} +/- {np.std(ks)}")
 print(f"KSE: {np.mean(kses)} +/- {np.std(kses)}")
 print(f"ContKL: {np.mean(contkls)} +/- {np.std(contkls)}")
 print(f"DiscKL: {np.mean(disckls)} +/- {np.std(disckls)}")
-print(f"Gower: {np.mean(gowers)} +/- {np.std(gowers)}")
 
-lr_privs = np.array(lr_privs)
-print(f"LR privs: {np.mean(lr_privs)} +/- {np.std(lr_privs)}")
-mlp_privs = np.array(mlp_privs)
-print(f"MLP privs: {np.mean(mlp_privs)} +/- {np.std(mlp_privs)}")
-svr_privs = np.array(svr_privs)
-print(f"SVR privs: {np.mean(svr_privs)} +/- {np.std(svr_privs)}")
+if args.save_metrics:
+
+    if args.gower:
+        metrics = pd.DataFrame(
+            {
+                "SVCDetection": svc[:, 0],
+                "GMLogLikelihood": gmm[:, 0],
+                "CSTest": cs[:, 0],
+                "KSTest": ks[:, 0],
+                "KSTestExtended": kses[:, 0],
+                "ContinuousKLDivergence": contkls[:, 0],
+                "DiscreteKLDivergence": disckls[:, 0],
+                "Gower": gowers[:, 0],
+            }
+        )
+    else:
+        metrics = pd.DataFrame(
+            {
+                "SVCDetection": svc[:, 0],
+                "GMLogLikelihood": gmm[:, 0],
+                "CSTest": cs[:, 0],
+                "KSTest": ks[:, 0],
+                "KSTestExtended": kses[:, 0],
+                "ContinuousKLDivergence": contkls[:, 0],
+                "DiscreteKLDivergence": disckls[:, 0],
+            }
+        )
+
+    metrics.to_csv("Metric Breakdown.csv")  # Change filepath location here

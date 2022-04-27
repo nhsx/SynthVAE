@@ -25,7 +25,5 @@ def compute_linear_grad_sample(
     if layer.bias is not None:
 
         create_or_extend_grad_sample(
-            layer.bias,
-            torch.einsum("n...k->nk", B),
-            batch_dim,
+            layer.bias, torch.einsum("n...k->nk", B), batch_dim,
         )

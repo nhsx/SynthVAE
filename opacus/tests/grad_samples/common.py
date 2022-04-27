@@ -255,10 +255,7 @@ class GradSampleHooks_test(unittest.TestCase):
         )
 
     def check_shapes(
-        self,
-        microbatch_grad_samples,
-        opacus_grad_samples,
-        loss_reduction,
+        self, microbatch_grad_samples, opacus_grad_samples, loss_reduction,
     ) -> None:
         failed = []
         for name, opacus_grad_sample in opacus_grad_samples.items():
@@ -270,9 +267,7 @@ class GradSampleHooks_test(unittest.TestCase):
             )
             try:
                 self.assertEqual(
-                    opacus_grad_sample.shape,
-                    microbatch_grad_sample.shape,
-                    msg=msg,
+                    opacus_grad_sample.shape, microbatch_grad_sample.shape, msg=msg,
                 )
 
             except AssertionError:
@@ -286,12 +281,7 @@ class GradSampleHooks_test(unittest.TestCase):
             )
 
     def check_values(
-        self,
-        microbatch_grad_samples,
-        opacus_grad_samples,
-        loss_reduction,
-        atol,
-        rtol,
+        self, microbatch_grad_samples, opacus_grad_samples, loss_reduction, atol, rtol,
     ) -> None:
         failed = []
         for name, opacus_grad_sample in opacus_grad_samples.items():

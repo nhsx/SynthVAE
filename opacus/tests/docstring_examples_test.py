@@ -66,10 +66,7 @@ class DocstringExamplesTest(unittest.TestCase):
         model = torch.nn.Linear(16, 32)  # An example model
         optimizer = torch.optim.SGD(model.parameters(), lr=0.05)
         privacy_engine = PrivacyEngine(
-            model,
-            sample_rate=0.01,
-            noise_multiplier=1.3,
-            max_grad_norm=1.0,
+            model, sample_rate=0.01, noise_multiplier=1.3, max_grad_norm=1.0,
         )
         privacy_engine.attach(optimizer)  # That's it! Now it's business as usual.
 
@@ -78,10 +75,7 @@ class DocstringExamplesTest(unittest.TestCase):
         # the docstring for opacus.privacy_engine.PrivacyEngine.to()
         model = torch.nn.Linear(16, 32)  # An example model. Default device is CPU
         privacy_engine = PrivacyEngine(
-            model,
-            sample_rate=0.01,
-            noise_multiplier=0.8,
-            max_grad_norm=0.5,
+            model, sample_rate=0.01, noise_multiplier=0.8, max_grad_norm=0.5,
         )
         device = "cpu"
         model.to(
@@ -104,10 +98,7 @@ class DocstringExamplesTest(unittest.TestCase):
         optimizer = torch.optim.SGD(model.parameters(), lr=0.05)
 
         privacy_engine = PrivacyEngine(
-            model,
-            sample_rate=0.01,
-            noise_multiplier=0.8,
-            max_grad_norm=0.5,
+            model, sample_rate=0.01, noise_multiplier=0.8, max_grad_norm=0.5,
         )
         privacy_engine.attach(optimizer)
 

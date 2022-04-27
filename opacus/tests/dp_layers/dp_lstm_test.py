@@ -105,12 +105,7 @@ class DPLSTM_test(DPModules_test):
             )
 
             self.compare_gradients(
-                lstm,
-                dp_lstm,
-                lstm_train_fn,
-                x,
-                atol=1e-5,
-                rtol=1e-3,
+                lstm, dp_lstm, lstm_train_fn, x, atol=1e-5, rtol=1e-3,
             )
 
         else:
@@ -127,11 +122,5 @@ class DPLSTM_test(DPModules_test):
                 rtol=1e-3,
             )
             self.compare_gradients(
-                lstm,
-                dp_lstm,
-                lstm_train_fn,
-                x,
-                (h0, c0),
-                atol=1e-5,
-                rtol=1e-3,
+                lstm, dp_lstm, lstm_train_fn, x, (h0, c0), atol=1e-5, rtol=1e-3,
             )

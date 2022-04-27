@@ -26,12 +26,7 @@ class GroupNorm_test(GradSampleHooks_test):
     )
     @settings(deadline=10000)
     def test_3d_input_groups(
-        self,
-        N: int,
-        C: int,
-        H: int,
-        W: int,
-        num_groups: Union[int, str],
+        self, N: int, C: int, H: int, W: int, num_groups: Union[int, str],
     ):
 
         if num_groups == "C":

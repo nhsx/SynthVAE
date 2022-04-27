@@ -39,8 +39,7 @@ def setup(rank, world_size):
         os.environ["RANK"] = str(rank)
         os.environ["WORLD_SIZE"] = str(world_size)
         torch.distributed.init_process_group(
-            init_method="env://",
-            backend="nccl",
+            init_method="env://", backend="nccl",
         )
 
 

@@ -88,8 +88,7 @@ class GradSampleModule_test(unittest.TestCase):
     def test_to_standard_module(self):
         copy_of_original_model = mobilenet_v3_small()
         copy_of_original_model.load_state_dict(
-            self.original_model.state_dict(),
-            strict=True,
+            self.original_model.state_dict(), strict=True,
         )
         new_grad_sample_module = GradSampleModule(
             copy_of_original_model, batch_first=True, loss_reduction="mean"
@@ -126,8 +125,7 @@ class GradSampleModule_test(unittest.TestCase):
         """
         copy_of_original_model = mobilenet_v3_small()
         copy_of_original_model.load_state_dict(
-            self.original_model.state_dict(),
-            strict=True,
+            self.original_model.state_dict(), strict=True,
         )
         new_grad_sample_module = GradSampleModule(
             copy_of_original_model, batch_first=True, loss_reduction="mean"

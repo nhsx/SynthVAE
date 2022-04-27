@@ -71,9 +71,7 @@ class ParamRenamedModule(nn.Module):
             pass
 
     def load_state_dict(
-        self,
-        state_dict: Dict[str, Tensor],
-        strict: bool = True,
+        self, state_dict: Dict[str, Tensor], strict: bool = True,
     ):
         """
         Identical to ``torch.nn.Module.load_state_dict()`` but handles the renamed keys.

@@ -20,13 +20,7 @@ class Linear_test(GradSampleHooks_test):
     )
     @settings(deadline=10000)
     def test_input_bias(
-        self,
-        N: int,
-        Z: int,
-        W: int,
-        H: int,
-        input_dim: int,
-        bias: bool,
+        self, N: int, Z: int, W: int, H: int, input_dim: int, bias: bool,
     ):
 
         if input_dim == 2:

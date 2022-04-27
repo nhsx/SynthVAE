@@ -118,10 +118,7 @@ class DPLSTMCell(nn.Module):
     """
 
     def __init__(
-        self,
-        input_size: int,
-        hidden_size: int,
-        bias: bool,
+        self, input_size: int, hidden_size: int, bias: bool,
     ):
         super().__init__()
         self.input_size = input_size
@@ -304,11 +301,7 @@ class BidirectionalDPLSTMLayer(nn.Module):
     """
 
     def __init__(
-        self,
-        input_size: int,
-        hidden_size: int,
-        bias: bool,
-        dropout: float,
+        self, input_size: int, hidden_size: int, bias: bool, dropout: float,
     ):
         super().__init__()
         self.input_size = input_size
@@ -494,12 +487,7 @@ class DPLSTM(ParamRenamedModule):
 
         if h_0s is None:
             h_0s = torch.zeros(
-                L,
-                P,
-                B,
-                self.hidden_size,
-                dtype=x[0].dtype,
-                device=x[0].device,
+                L, P, B, self.hidden_size, dtype=x[0].dtype, device=x[0].device,
             )
         else:
             h_0s = h_0s.reshape([L, P, B, H])
@@ -507,12 +495,7 @@ class DPLSTM(ParamRenamedModule):
 
         if c_0s is None:
             c_0s = torch.zeros(
-                L,
-                P,
-                B,
-                self.hidden_size,
-                dtype=x[0].dtype,
-                device=x[0].device,
+                L, P, B, self.hidden_size, dtype=x[0].dtype, device=x[0].device,
             )
         else:
             c_0s = c_0s.reshape([L, P, B, H])
@@ -547,9 +530,12 @@ class DPLSTM(ParamRenamedModule):
         else:
             out = self._rearrange_batch_dim(x)
 
-        return out, (
-            self._permute_hidden(hs, unsorted_indices),
-            self._permute_hidden(cs, unsorted_indices),
+        return (
+            out,
+            (
+                self._permute_hidden(hs, unsorted_indices),
+                self._permute_hidden(cs, unsorted_indices),
+            ),
         )
 
     def _permute_hidden(

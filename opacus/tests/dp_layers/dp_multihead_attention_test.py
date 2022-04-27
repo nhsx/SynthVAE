@@ -14,9 +14,7 @@ from .common import DPModules_test
 
 
 def attn_train_fn(
-    model: nn.Module,
-    *args,
-    **kwargs,
+    model: nn.Module, *args, **kwargs,
 ):
     model.train()
     criterion = nn.MSELoss()

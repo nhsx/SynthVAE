@@ -30,7 +30,5 @@ def compute_lstm_linear_grad_sample(
 
     if layer.bias is not None:
         create_or_accumulate_grad_sample(
-            layer.bias,
-            torch.einsum("n...k->nk", B),
-            layer,
+            layer.bias, torch.einsum("n...k->nk", B), layer,
         )

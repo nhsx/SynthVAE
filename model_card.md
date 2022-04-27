@@ -5,7 +5,7 @@ Archives (Jo & Gebru)](https://arxiv.org/pdf/1912.10389.pdf), we're providing so
 
 ## Model Details
 
-The implementation of the Variational AutoEncoder (VAE) with Differential Privacy within this repository was created as part of an NHSX Analytics Unit PhD internship project undertaken by Dominic Danks. This model card describes the first version of the model, released in September 2021.  Further information about the model implementation can be found in Section 5.4 of the associated [report](./reports/report.pdf).
+The implementation of the Variational AutoEncoder (VAE) with Differential Privacy within this repository was created as part of an NHSX Analytics Unit PhD internship project undertaken by Dominic Danks [(last commit to the repository: commit 88a4bdf)](https://github.com/DaveBrind/SynthVAE/commit/88a4bdf613f538af45834f22d38e52312cfe24c5). This model card describes the updated version of the model, released in March 2022.  Further information about the previous version created by Dom and its model implementation can be found in Section 5.4 of the associated [report](./reports/report.pdf).
 
 ## Model Use
 
@@ -19,7 +19,7 @@ This model is not suitable to provide privacy guarantees in a production environ
 
 ## Training Data
 
-Experiments in this repository are run against the [Study to Understand Prognoses Preferences Outcomes and Risks of Treatment (SUPPORT) dataset](https://biostat.app.vumc.org/wiki/Main/SupportDesc) accessed via the [pycox](https://github.com/havakv/pycox) python library.
+Experiments in this repository are run against the [Study to Understand Prognoses Preferences Outcomes and Risks of Treatment (SUPPORT) dataset](https://biostat.app.vumc.org/wiki/Main/SupportDesc) accessed via the [pycox](https://github.com/havakv/pycox) python library. We also performed further analysis on a single table that we extracted from [MIMIC-III](https://physionet.org/content/mimiciii/1.4/).
 
 ## Performance and Limitations
 
@@ -35,6 +35,10 @@ including as the level of DP is varied. It would also be of interest to apply DP
 [PATE](https://arxiv.org/pdf/1610.05755.pdf) to all of the considered methods and evaluate
 whether the performance drop as a function of implemented privacy is similar or different
 across the models.
+
+Currently the SynthVAE model only works for data which is 'clean'. I.e data that has no missingness or NaNs within its input. It can handle continuous, categorical and datetime variables. Special types such as nominal data cannot be handled properly however the model may still run. Column names have to be specified in the code for the variable group they belong to. A simple example CSV file is provided under [example_input.csv](./example_input.csv).
+
+Hyperparameter tuning of the model can result in errors if certain parameter values are selected. Most commonly, changing learning rate in our example results in errors during training. An extensive test to evaluate plausible ranges has not been performed as of yet. If you get errors during tuning then consider your hyperparameter values and adjust accordingly.
 
 ## Additional notes
 
