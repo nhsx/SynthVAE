@@ -278,7 +278,7 @@ for i in range(n_seeds):
     disckls_all_seeds.append(np.array(list_metrics[6]))
     if args.gower:
         gowers_all_seeds.append(np.array(list_metrics[7]))
-        gowers = np.array(gowers)
+        gowers = np.array(gowers_all_seeds)
         print(f"Gowers : {np.mean(gowers)} +/- {np.std(gowers)}")
 
     svc = np.array(svc_all_seeds)
