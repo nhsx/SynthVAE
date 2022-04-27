@@ -168,17 +168,17 @@ distributional_metrics = [
 ]
 
 # For metric saving - save each metric after each run for each seed
-svc = []
-gmm = []
-cs = []
-ks = []
-kses = []
-contkls = []
-disckls = []
+svc_all_seeds = []
+gmm_all_seeds = []
+cs_all_seeds = []
+ks_all_seeds = []
+kses_all_seeds = []
+contkls_all_seeds = []
+disckls_all_seeds = []
 
 if args.gower:
 
-    gowers = []
+    gowers_all_seeds = []
 
 for i in range(n_seeds):
     diff_priv_in = ""
@@ -269,25 +269,25 @@ for i in range(n_seeds):
     list_metrics = [metrics[i] for i in metrics.columns]
 
     # New version has added a lot more evaluation metrics - only use fidelity metrics for now
-    svc.append(np.array(list_metrics[0]))
-    gmm.append(np.array(list_metrics[1]))
-    cs.append(np.array(list_metrics[2]))
-    ks.append(np.array(list_metrics[3]))
-    kses.append(np.array(list_metrics[4]))
-    contkls.append(np.array(list_metrics[5]))
-    disckls.append(np.array(list_metrics[6]))
+    svc_all_seeds.append(np.array(list_metrics[0]))
+    gmm_all_seeds.append(np.array(list_metrics[1]))
+    cs_all_seeds.append(np.array(list_metrics[2]))
+    ks_all_seeds.append(np.array(list_metrics[3]))
+    kses_all_seeds.append(np.array(list_metrics[4]))
+    contkls_all_seeds.append(np.array(list_metrics[5]))
+    disckls_all_seeds.append(np.array(list_metrics[6]))
     if args.gower:
-        gowers.append(np.array(list_metrics[7]))
+        gowers_all_seeds.append(np.array(list_metrics[7]))
         gowers = np.array(gowers)
         print(f"Gowers : {np.mean(gowers)} +/- {np.std(gowers)}")
 
-    svc = np.array(svc)
-    gmm = np.array(gmm)
-    cs = np.array(cs)
-    ks = np.array(ks)
-    kses = np.array(kses)
-    contkls = np.array(contkls)
-    disckls = np.array(disckls)
+    svc = np.array(svc_all_seeds)
+    gmm = np.array(gmm_all_seeds)
+    cs = np.array(cs_all_seeds)
+    ks = np.array(ks_all_seeds)
+    kses = np.array(kses_all_seeds)
+    contkls = np.array(contkls_all_seeds)
+    disckls = np.array(disckls_all_seeds)
 
     print(f"SVC: {np.mean(svc)} +/- {np.std(svc)}")
     print(f"GMM: {np.mean(gmm)} +/- {np.std(gmm)}")
@@ -304,7 +304,7 @@ if args.save_metrics:
     if args.gower:
 
         metrics = pd.DataFrame(
-            data=[[svc, gmm, cs, ks, kses, contkls, disckls, gowers]],
+            data=[[svc_all_seeds, gmm_all_seeds, cs_all_seeds, ks_all_seeds, kses_all_seeds, contkls_all_seeds, disckls_all_seeds, gowers_all_seeds]],
             columns=[
                 "SVCDetection",
                 "GMLogLikelihood",
@@ -320,13 +320,13 @@ if args.save_metrics:
     else:
         metrics = pd.DataFrame(
             {
-                "SVCDetection": svc[:, 0],
-                "GMLogLikelihood": gmm[:, 0],
-                "CSTest": cs[:, 0],
-                "KSTest": ks[:, 0],
-                "KSTestExtended": kses[:, 0],
-                "ContinuousKLDivergence": contkls[:, 0],
-                "DiscreteKLDivergence": disckls[:, 0],
+                "SVCDetection": svc_all_seeds,
+                "GMLogLikelihood": gmm_all_seeds,
+                "CSTest": cs_all_seeds,
+                "KSTest": ks_all_seeds,
+                "KSTestExtended": kses_all_seeds,
+                "ContinuousKLDivergence": contkls_all_seeds,
+                "DiscreteKLDivergence": disckls_all_seeds,
             }
         )
 
