@@ -28,7 +28,10 @@ from utils import (
 )
 from metrics import distribution_metrics
 
-warnings.filterwarnings("ignore")
+warnings.filterwarnings("ignore")  # We suppress warnings to avoid SDMETRICS throwing unique synthetic data warnings (i.e.
+# data in synthetic set is not in the real data set) as well as SKLEARN throwing convergence warnings (pre-processing uses
+# GMM from sklearn and this throws non convergence warnings)
+
 set_seed(0)
 
 parser = argparse.ArgumentParser()

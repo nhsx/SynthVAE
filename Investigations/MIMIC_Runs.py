@@ -31,6 +31,12 @@ from utils import (
 )
 from metrics import distribution_metrics, privacy_metrics
 
+import warnings
+
+warnings.filterwarnings("ignore")  # We suppress warnings to avoid SDMETRICS throwing unique synthetic data warnings (i.e.
+# data in synthetic set is not in the real data set) as well as SKLEARN throwing convergence warnings (pre-processing uses
+# GMM from sklearn and this throws non convergence warnings)
+
 set_seed(0)
 
 # Load in the mimic single table data - use variable filepath to gather the data
