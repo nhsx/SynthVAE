@@ -627,6 +627,7 @@ class BayesGMMTransformer(NumericalTransformer):
             n_components=self._max_clusters,
             weight_concentration_prior_type="dirichlet_process",
             weight_concentration_prior=0.001,
+            max_iter=100,
             n_init=1,
             random_state=self.random_state,
         )
