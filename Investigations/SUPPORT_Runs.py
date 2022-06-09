@@ -33,7 +33,9 @@ from metrics import distribution_metrics, privacy_metrics
 
 import warnings
 
-warnings.filterwarnings("ignore")  # We suppress warnings to avoid SDMETRICS throwing unique synthetic data warnings (i.e.
+warnings.filterwarnings(
+    "ignore"
+)  # We suppress warnings to avoid SDMETRICS throwing unique synthetic data warnings (i.e.
 # data in synthetic set is not in the real data set) as well as SKLEARN throwing convergence warnings (pre-processing uses
 # GMM from sklearn and this throws non convergence warnings)
 
@@ -47,7 +49,7 @@ original_continuous_columns = ["duration"] + [f"x{i}" for i in range(7, 15)]
 original_categorical_columns = ["event"] + [f"x{i}" for i in range(1, 7)]
 #%% -------- Data Pre-Processing -------- #
 
-pre_proc_method = "GMM"
+pre_proc_method = "standard"
 
 (
     x_train,
@@ -63,8 +65,8 @@ pre_proc_method = "GMM"
 # User defined hyperparams
 # General training
 batch_size = 32
-latent_dim = 256
-hidden_dim = 256
+latent_dim = 8
+hidden_dim = 32
 n_epochs = 5
 logging_freq = 1  # Number of epochs we should log the results to the user
 patience = 5  # How many epochs should we allow the model train to see if
@@ -106,6 +108,8 @@ decoder = Decoder(latent_dim, num_continuous, num_categories=num_categories)
 
 vae = VAE(encoder, decoder)
 
+print(vae)
+
 if differential_privacy == False:
     (
         training_epochs,
@@ -114,7 +118,13 @@ if differential_privacy == False:
         log_divergence,
         log_categorical,
         log_numerical,
-    ) = vae.train(data_loader, n_epochs=n_epochs)
+    ) = vae.train(
+        data_loader,
+        n_epochs=n_epochs,
+        logging_freq=logging_freq,
+        patience=patience,
+        delta=delta,
+    )
 
 elif differential_privacy == True:
     (
@@ -127,6 +137,9 @@ elif differential_privacy == True:
     ) = vae.diff_priv_train(
         data_loader,
         n_epochs=n_epochs,
+        logging_freq=logging_freq,
+        patience=patience,
+        delta=delta,
         C=C,
         target_eps=target_eps,
         target_delta=target_delta,
@@ -158,7 +171,8 @@ likelihood_fig = plot_likelihood_breakdown(
 synthetic_sample = vae.generate(data_supp.shape[0])
 
 synthetic_sample = pd.DataFrame(
-    synthetic_sample.cpu().detach(), columns=reordered_dataframe_columns
+    synthetic_sample.cpu().detach().numpy(),
+    columns=reordered_dataframe_columns,
 )
 
 # Reverse the transformations
