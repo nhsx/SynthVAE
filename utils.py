@@ -28,7 +28,9 @@ def support_pre_proc(data_supp, pre_proc_method="GMM"):
     # We one-hot the categorical cols and standardise the continuous cols
     data_supp["x14"] = data_supp["x0"]
     # data_supp = data_supp.astype('float32')
-    data_supp = data_supp[["duration"] + [f"x{i}" for i in range(1, 15)] + ["event"]]
+    data_supp = data_supp[
+        ["duration"] + [f"x{i}" for i in range(1, 15)] + ["event"]
+    ]
     data_supp[["x1", "x2", "x3", "x4", "x5", "x6", "event"]] = data_supp[
         ["x1", "x2", "x3", "x4", "x5", "x6", "event"]
     ].astype(int)
@@ -47,21 +49,25 @@ def support_pre_proc(data_supp, pre_proc_method="GMM"):
     ).astype(int)
     num_continuous = len(continuous_columns)
 
-    transformed_dataset = data_supp
+    transformed_dataset = data_supp.copy(deep=True)
 
     # Define columns based on datatype and then loop over creating and fitting
     # transformers
 
     if pre_proc_method == "GMM":
-
         for index, column in enumerate(continuous_columns):
-
             # Fit GMM
-            temp_continuous = numerical.BayesGMMTransformer(random_state=gmm_seed)
+            temp_continuous = numerical.BayesGMMTransformer(
+                random_state=gmm_seed
+            )
             temp_continuous.fit(transformed_dataset, columns=column)
-            continuous_transformers["continuous_{}".format(column)] = temp_continuous
+            continuous_transformers[
+                "continuous_{}".format(column)
+            ] = temp_continuous
 
-            transformed_dataset = temp_continuous.transform(transformed_dataset)
+            transformed_dataset = temp_continuous.transform(
+                transformed_dataset
+            )
 
             # Each numerical one gets a .normalized column + a .component column giving the mixture info
             # This too needs to be one hot encoded
@@ -78,7 +84,10 @@ def support_pre_proc(data_supp, pre_proc_method="GMM"):
 
             num_categories = (
                 np.array(
-                    [np.amax(transformed_dataset[col]) for col in categorical_columns]
+                    [
+                        np.amax(transformed_dataset[col])
+                        for col in categorical_columns
+                    ]
                 )
                 + 1
             ).astype(int)
@@ -86,20 +95,26 @@ def support_pre_proc(data_supp, pre_proc_method="GMM"):
             num_continuous = len(continuous_columns)
 
     elif pre_proc_method == "standard":
+        for index, column in enumerate(continuous_columns):
+            # Fit sklearn standard scaler to each column
+            temp_continuous = StandardScaler()
+            temp_column = transformed_dataset[column].values.reshape(-1, 1)
+            temp_continuous.fit(temp_column)
+            continuous_transformers[
+                "continuous_{}".format(column)
+            ] = temp_continuous
 
-        # Fit sklearn standard scaler to each column
-        temp_continuous = StandardScaler()
-        temp_column = transformed_dataset[column].values.reshape(-1, 1)
-        temp_continuous.fit(temp_column)
-        continuous_transformers["continuous_{}".format(column)] = temp_continuous
-
-        transformed_dataset[column] = (temp_continuous.transform(temp_column)).flatten()
+            transformed_dataset[column] = (
+                temp_continuous.transform(temp_column)
+            ).flatten()
 
     for index, column in enumerate(categorical_columns):
 
         temp_categorical = categorical.OneHotEncodingTransformer()
         temp_categorical.fit(transformed_dataset, columns=column)
-        categorical_transformers["categorical_{}".format(index)] = temp_categorical
+        categorical_transformers[
+            "categorical_{}".format(index)
+        ] = temp_categorical
 
         transformed_dataset = temp_categorical.transform(transformed_dataset)
 
@@ -111,7 +126,8 @@ def support_pre_proc(data_supp, pre_proc_method="GMM"):
     reordered_dataframe = transformed_dataset.iloc[:, num_continuous:]
 
     reordered_dataframe = pd.concat(
-        [reordered_dataframe, transformed_dataset.iloc[:, :num_continuous]], axis=1
+        [reordered_dataframe, transformed_dataset.iloc[:, :num_continuous]],
+        axis=1,
     )
 
     x_train_df = reordered_dataframe.to_numpy()
@@ -184,7 +200,7 @@ def mimic_pre_proc(data_supp, pre_proc_method="GMM"):
 
     num_continuous = len(original_continuous_columns)
 
-    transformed_dataset = data_supp
+    transformed_dataset = data_supp.copy(deep=True)
 
     # Define columns based on datatype and then loop over creating and fitting
     # transformers
@@ -206,25 +222,33 @@ def mimic_pre_proc(data_supp, pre_proc_method="GMM"):
     # WE NEED TO RETAIN THIS SET AS METRICS DO NOT EVALUATE WITH DATETIMES BUT THEY WILL EVALUATE
     # IF DATETIMES ARE IN A SECONDS FORMAT
 
-    original_metric_set = transformed_dataset.copy()
+    original_metric_set = transformed_dataset.copy(deep=True)
 
     if pre_proc_method == "GMM":
 
         for index, column in enumerate(continuous_columns):
 
             # Fit GMM
-            temp_continuous = numerical.BayesGMMTransformer(random_state=gmm_seed)
+            temp_continuous = numerical.BayesGMMTransformer(
+                random_state=gmm_seed
+            )
             temp_continuous.fit(transformed_dataset, columns=column)
-            continuous_transformers["continuous_{}".format(column)] = temp_continuous
+            continuous_transformers[
+                "continuous_{}".format(column)
+            ] = temp_continuous
 
             categorical_columns += [str(column) + ".component"]
 
-            transformed_dataset = temp_continuous.transform(transformed_dataset)
+            transformed_dataset = temp_continuous.transform(
+                transformed_dataset
+            )
 
         # Each numerical one gets a .normalized column + a .component column giving the mixture info
         # This too needs to be one hot encoded
 
-        continuous_columns = [str(col) + ".normalized" for col in continuous_columns]
+        continuous_columns = [
+            str(col) + ".normalized" for col in continuous_columns
+        ]
 
     elif pre_proc_method == "standard":
 
@@ -234,7 +258,9 @@ def mimic_pre_proc(data_supp, pre_proc_method="GMM"):
             temp_continuous = StandardScaler()
             temp_column = transformed_dataset[column].values.reshape(-1, 1)
             temp_continuous.fit(temp_column)
-            continuous_transformers["continuous_{}".format(column)] = temp_continuous
+            continuous_transformers[
+                "continuous_{}".format(column)
+            ] = temp_continuous
 
             transformed_dataset[column] = (
                 temp_continuous.transform(temp_column)
@@ -269,7 +295,9 @@ def mimic_pre_proc(data_supp, pre_proc_method="GMM"):
 
         temp_categorical = categorical.OneHotEncodingTransformer()
         temp_categorical.fit(transformed_dataset, columns=column)
-        categorical_transformers["categorical_{}".format(index)] = temp_categorical
+        categorical_transformers[
+            "categorical_{}".format(index)
+        ] = temp_categorical
 
         transformed_dataset = temp_categorical.transform(transformed_dataset)
 
@@ -281,7 +309,8 @@ def mimic_pre_proc(data_supp, pre_proc_method="GMM"):
     reordered_dataframe = transformed_dataset.iloc[:, num_continuous:]
 
     reordered_dataframe = pd.concat(
-        [reordered_dataframe, transformed_dataset.iloc[:, :num_continuous]], axis=1
+        [reordered_dataframe, transformed_dataset.iloc[:, :num_continuous]],
+        axis=1,
     )
 
     x_train_df = reordered_dataframe.to_numpy()
@@ -313,7 +342,7 @@ def reverse_transformers(
 
     # Now all of the transformations from the dictionary - first loop over the categorical columns
 
-    synthetic_transformed_set = synthetic_set
+    synthetic_transformed_set = synthetic_set.copy(deep=True)
 
     if cat_transformers != None:
         for transformer_name in cat_transformers:
@@ -346,8 +375,12 @@ def reverse_transformers(
                 column_name = transformer_name[11:]
 
                 # Reverse the standard scaling
-                synthetic_transformed_set[column_name] = transformer.inverse_transform(
-                    synthetic_transformed_set[column_name].values.reshape(-1, 1)
+                synthetic_transformed_set[
+                    column_name
+                ] = transformer.inverse_transform(
+                    synthetic_transformed_set[column_name].values.reshape(
+                        -1, 1
+                    )
                 ).flatten()
 
     if date_transformers != None:
@@ -455,7 +488,9 @@ def constraint_filtering(
             new_filtered_set = constraint_check(new_set)
 
             # Add this onto the original and re-run
-            synthetic_dataframe = pd.concat([synthetic_dataframe, new_filtered_set])
+            synthetic_dataframe = pd.concat(
+                [synthetic_dataframe, new_filtered_set]
+            )
 
     return synthetic_dataframe
 
@@ -489,7 +524,9 @@ def plot_elbo(
     if saving_filepath != None:
         # Save static image
         plt.savefig(
-            "{}ELBO_Breakdown_SynthVAE_{}.png".format(saving_filepath, pre_proc_method)
+            "{}ELBO_Breakdown_SynthVAE_{}.png".format(
+                saving_filepath, pre_proc_method
+            )
         )
 
     plt.show()

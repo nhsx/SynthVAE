@@ -33,7 +33,9 @@ from metrics import distribution_metrics, privacy_metrics
 
 import warnings
 
-warnings.filterwarnings("ignore")  # We suppress warnings to avoid SDMETRICS throwing unique synthetic data warnings (i.e.
+warnings.filterwarnings(
+    "ignore"
+)  # We suppress warnings to avoid SDMETRICS throwing unique synthetic data warnings (i.e.
 # data in synthetic set is not in the real data set) as well as SKLEARN throwing convergence warnings (pre-processing uses
 # GMM from sklearn and this throws non convergence warnings)
 
@@ -125,6 +127,8 @@ decoder = Decoder(latent_dim, num_continuous, num_categories=num_categories)
 
 vae = VAE(encoder, decoder)
 
+print(vae)
+
 if differential_privacy == False:
     (
         training_epochs,
@@ -133,7 +137,13 @@ if differential_privacy == False:
         log_divergence,
         log_categorical,
         log_numerical,
-    ) = vae.train(data_loader, n_epochs=n_epochs)
+    ) = vae.train(
+        data_loader,
+        n_epochs=n_epochs,
+        logging_freq=logging_freq,
+        patience=patience,
+        delta=delta,
+    )
 
 elif differential_privacy == True:
     (
@@ -146,6 +156,9 @@ elif differential_privacy == True:
     ) = vae.diff_priv_train(
         data_loader,
         n_epochs=n_epochs,
+        logging_freq=logging_freq,
+        patience=patience,
+        delta=delta,
         C=C,
         target_eps=target_eps,
         target_delta=target_delta,
@@ -199,7 +212,7 @@ plot_variable_distributions(
 # If the dataset has datetimes then we need to re-convert these to a numerical
 # Value representing seconds, this is so we can evaluate the metrics on them
 
-metric_synthetic_supp = synthetic_supp.copy()
+metric_synthetic_supp = synthetic_supp.copy(deep=True)
 
 for index, column in enumerate(original_datetime_columns):
 
