@@ -18,46 +18,21 @@ _**Note:** No data, public or private are shared in this repository._
 - More information about the VAE with Differential Privacy can be found in the [model card](./model_card.md)
 - `scratch_vae_expts.py` is similar to the files you will find within the `investigations` folder. To re-run our results then `scratch_vae_expts.py` is all you require. If you want an easy way to understand our code and work process then using the respective notebooks within the `investigations` folder helps to run through the work.
 
-**N.B.** A modified copy of [Opacus](https://github.com/pytorch/opacus) (v0.14.0), a library for training PyTorch models with differential privacy, is contained within the repository. A modified copy of [RDT](https://github.com/sdv-dev/RDT) (v0.6.2) that allows us to set the `random_state` for our GMM transformer method is also contained within the repository. See the [model card](./model_card.md) for more details.
-
-### Built With
-
-[![Python v3.8](https://img.shields.io/badge/python-v3.8-blue.svg)](https://www.python.org/downloads/release/python-380/)
-- [PyTorch v1.9.0](https://github.com/pytorch)
-- [SDV v0.13.1](https://github.com/sdv-dev/SDV)
-- [Opacus v0.14.0](https://github.com/pytorch/opacus)
-
 ### Getting Started
 
 #### Installation
 
 To get a local copy up and running follow these simple steps.
 
-To clone the repo:
+Clone the repo:
 
 `git clone https://github.com/nhsx/SynthVAE.git`
 
-To create a suitable environment:
-- ```python -m venv synth_env```
-- `source synth_env/bin/activate`
-- `pip install -r requirements.txt`
-- `pip uninstall rdt` (SDV installs rdt by default however we have included an added fix so this needs to be uninstalled to avoid conflicts)
-
-#### GPU Support
-
-This code has been tested both on CPU in the torch v1.9.0 given. But it has also been run on a GPU environment. The specifications for the device running this are as follows:
-
-- NVIDIA GeForce RTX 3070 Laptop GPU
-- CUDA v11.1
-- cuDNN v8.1.0 for CUDA v11.1
-
-Refer to [PyTorch documentation](https://pytorch.org/get-started/previous-versions/) under v1.9.0 for wheel linux & windows CUDA 11.1 for the pip install required.
-
-We use:
-- `'pip install torch==1.9.0+cu111 torchvision==0.10.0+cu111 torchaudio==0.9.0 -f https://download.pytorch.org/whl/torch_stable.html'` 
-after using the pip install on requirements file in order to get the gpu supported versions of PyTorch that we require.
-
-Note that the model used is a simple MLP encoder/decoder and we are working with tabular data. Therefore the speed up provided by GPU is not that noticeable and it is easy to train using the CPU version for people without GPU support.
+Install the required version of Python (3.10) and follow the steps below to run the project:
+1. Install [`poetry`](https://python-poetry.org/docs/)
+2. Instantiate a virtual environment to install the package in: `python -m venv synthvae`
+3. Activate the virtual environment: `source synthvae/bin/activate`
+4. Install dependencies: `poetry install`
 
 ### Usage
 
@@ -163,7 +138,7 @@ There are a selection of plots & metrics the model can output. These are given b
 
 The distributional metrics produces a csv following this order - depending on number of runs:
 
-| SVCDetection | GMLogLikelihood | CSTest | KSTestExtended | KSTestExtended | ContinuousKLDivergence | DiscreteKLDivergence |
+| SVCDetection | GMLogLikelihood | CSTest | KSTest | KSTestExtended | ContinuousKLDivergence | DiscreteKLDivergence |
 | --- | --- | --- | --- | --- | --- | --- |
 | 0.32 | -520.01 | 0.91 | 0.85 | 0.87 | 0.91 | 0.97 |
 | 0.31 | -523.21 | 0.90 | 0.86 | 0.88 | 0.92 | 0.99 |

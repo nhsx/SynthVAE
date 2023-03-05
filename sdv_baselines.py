@@ -101,8 +101,7 @@ distributional_metrics = [
     "SVCDetection",
     "GMLogLikelihood",
     "CSTest",
-    "KSTest",
-    "KSTestExtended",
+    "KSComplement",
     "ContinuousKLDivergence",
     "DiscreteKLDivergence",
 ]
@@ -113,7 +112,6 @@ svc = []
 gmm = []
 cs = []
 ks = []
-kses = []
 contkls = []
 disckls = []
 
@@ -156,8 +154,7 @@ for i in range(n_seeds):
         synthetic_supp=synthetic_supp,
         categorical_columns=original_categorical_columns,
         continuous_columns=original_continuous_columns,
-        saving_filepath=None,
-        pre_proc_method=pre_proc_method,
+        pre_proc_method=pre_proc_method
     )
 
     list_metrics = [metrics[i] for i in metrics.columns]
@@ -167,17 +164,15 @@ for i in range(n_seeds):
     gmm.append(np.array(list_metrics[1]))
     cs.append(np.array(list_metrics[2]))
     ks.append(np.array(list_metrics[3]))
-    kses.append(np.array(list_metrics[4]))
-    contkls.append(np.array(list_metrics[5]))
-    disckls.append(np.array(list_metrics[6]))
+    contkls.append(np.array(list_metrics[4]))
+    disckls.append(np.array(list_metrics[5]))
     if args.gower:
-        gowers.append(np.array(list_metrics[7]))
+        gowers.append(np.array(list_metrics[6]))
 
 svc = np.array(svc)
 gmm = np.array(gmm)
 cs = np.array(cs)
 ks = np.array(ks)
-kses = np.array(kses)
 contkls = np.array(contkls)
 disckls = np.array(disckls)
 
@@ -190,7 +185,6 @@ print(f"SVC: {np.mean(svc)} +/- {np.std(svc)}")
 print(f"GMM: {np.mean(gmm)} +/- {np.std(gmm)}")
 print(f"CS: {np.mean(cs)} +/- {np.std(cs)}")
 print(f"KS: {np.mean(ks)} +/- {np.std(ks)}")
-print(f"KSE: {np.mean(kses)} +/- {np.std(kses)}")
 print(f"ContKL: {np.mean(contkls)} +/- {np.std(contkls)}")
 print(f"DiscKL: {np.mean(disckls)} +/- {np.std(disckls)}")
 
@@ -202,8 +196,7 @@ if args.save_metrics:
                 "SVCDetection": svc[:, 0],
                 "GMLogLikelihood": gmm[:, 0],
                 "CSTest": cs[:, 0],
-                "KSTest": ks[:, 0],
-                "KSTestExtended": kses[:, 0],
+                "KSComplement": ks[:, 0],
                 "ContinuousKLDivergence": contkls[:, 0],
                 "DiscreteKLDivergence": disckls[:, 0],
                 "Gower": gowers[:, 0],
@@ -216,7 +209,6 @@ if args.save_metrics:
                 "GMLogLikelihood": gmm[:, 0],
                 "CSTest": cs[:, 0],
                 "KSTest": ks[:, 0],
-                "KSTestExtended": kses[:, 0],
                 "ContinuousKLDivergence": contkls[:, 0],
                 "DiscreteKLDivergence": disckls[:, 0],
             }

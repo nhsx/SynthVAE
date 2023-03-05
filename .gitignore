@@ -1,8 +1,18 @@
-synth_env
-__pycache__
-*.png
-*.pt
-*.pkl
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Auxiliary
 .DS_Store
 .ipynb_checkpoints
-/data
+*.pt
