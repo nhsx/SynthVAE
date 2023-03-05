@@ -14,7 +14,7 @@ def distribution_metrics(
     synthetic_supp,
     categorical_columns,
     continuous_columns,
-    saving_filepath=None,
+    saving_filepath="metrics/",
     pre_proc_method="GMM",
 ):
 

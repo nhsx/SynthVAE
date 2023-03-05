@@ -68,11 +68,13 @@ pre_proc_method = args.pre_proc_method
     num_continuous,
 ) = support_pre_proc(data_supp=data_supp, pre_proc_method=pre_proc_method)
 
+
 ###############################################################################
 
 # Load saved model - ensure parameters are equivalent to the saved model
-latent_dim = 2
-encoder = Encoder(x_train.shape[1], latent_dim)
+latent_dim = 256
+hidden_dim = 256
+encoder = Encoder(x_train.shape[1], latent_dim, hidden_dim=hidden_dim)
 decoder = Decoder(latent_dim, num_continuous, num_categories=num_categories)
 vae = VAE(encoder, decoder)
 vae.load(args.save_file)

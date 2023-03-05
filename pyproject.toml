@@ -1,0 +1,29 @@
+[tool.poetry]
+name = "synthvae"
+version = "0.3.0"
+description = "Synthetic data generation by a Variational AutoEncoder with Differential Privacy assessed using Synthetic Data Vault metrics"
+authors = ["HarrisonWilde <harrisondwilde@outlook.com>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.10,<3.11"
+torch = "^1.13.1"
+tqdm = "^4.65.0"
+scikit-learn = "^1.2.1"
+rdt = "^1.3.0"
+opacus = "^1.3.0"
+sdv = "^0.18.0"
+pandas = "^1.5.3"
+gower = "^0.1.2"
+matplotlib = "^3.7.1"
+llvmlite = "^0.39.1"
+numba = "^0.56.4"
+pycox = "^0.2.3"
+jupyter = "^1.0.0"
+notebook = "^6.5.2"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

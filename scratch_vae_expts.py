@@ -161,8 +161,7 @@ distributional_metrics = [
     "SVCDetection",
     "GMLogLikelihood",
     "CSTest",
-    "KSTest",
-    "KSTestExtended",
+    "KSComplement",
     "ContinuousKLDivergence",
     "DiscreteKLDivergence",
 ]
@@ -172,7 +171,6 @@ svc_all_seeds = []
 gmm_all_seeds = []
 cs_all_seeds = []
 ks_all_seeds = []
-kses_all_seeds = []
 contkls_all_seeds = []
 disckls_all_seeds = []
 
@@ -262,8 +260,7 @@ for i in range(n_seeds):
         synthetic_supp=synthetic_supp,
         categorical_columns=original_categorical_columns,
         continuous_columns=original_continuous_columns,
-        saving_filepath="",
-        pre_proc_method=pre_proc_method,
+        pre_proc_method=pre_proc_method
     )
 
     list_metrics = [metrics[i] for i in metrics.columns]
@@ -273,11 +270,10 @@ for i in range(n_seeds):
     gmm_all_seeds.append(np.array(list_metrics[1]))
     cs_all_seeds.append(np.array(list_metrics[2]))
     ks_all_seeds.append(np.array(list_metrics[3]))
-    kses_all_seeds.append(np.array(list_metrics[4]))
-    contkls_all_seeds.append(np.array(list_metrics[5]))
-    disckls_all_seeds.append(np.array(list_metrics[6]))
+    contkls_all_seeds.append(np.array(list_metrics[4]))
+    disckls_all_seeds.append(np.array(list_metrics[5]))
     if args.gower:
-        gowers_all_seeds.append(np.array(list_metrics[7]))
+        gowers_all_seeds.append(np.array(list_metrics[6]))
         gowers = np.array(gowers_all_seeds)
         print(f"Gowers : {np.mean(gowers)} +/- {np.std(gowers)}")
 
@@ -285,7 +281,6 @@ for i in range(n_seeds):
     gmm = np.array(gmm_all_seeds)
     cs = np.array(cs_all_seeds)
     ks = np.array(ks_all_seeds)
-    kses = np.array(kses_all_seeds)
     contkls = np.array(contkls_all_seeds)
     disckls = np.array(disckls_all_seeds)
 
@@ -293,7 +288,6 @@ for i in range(n_seeds):
     print(f"GMM: {np.mean(gmm)} +/- {np.std(gmm)}")
     print(f"CS: {np.mean(cs)} +/- {np.std(cs)}")
     print(f"KS: {np.mean(ks)} +/- {np.std(ks)}")
-    print(f"KSE: {np.mean(kses)} +/- {np.std(kses)}")
     print(f"ContKL: {np.mean(contkls)} +/- {np.std(contkls)}")
     print(f"DiscKL: {np.mean(disckls)} +/- {np.std(disckls)}")
 
@@ -304,13 +298,12 @@ if args.save_metrics:
     if args.gower:
 
         metrics = pd.DataFrame(
-            data=[[svc_all_seeds, gmm_all_seeds, cs_all_seeds, ks_all_seeds, kses_all_seeds, contkls_all_seeds, disckls_all_seeds, gowers_all_seeds]],
+            data=[[svc_all_seeds, gmm_all_seeds, cs_all_seeds, ks_all_seeds, contkls_all_seeds, disckls_all_seeds, gowers_all_seeds]],
             columns=[
-                "SVCDetection",
+                "SVCDetection"
                 "GMLogLikelihood",
                 "CSTest",
-                "KSTest",
-                "KSTestExtended",
+                "KSComplement",
                 "ContinuousKLDivergence",
                 "DiscreteKLDivergence",
                 "Gower",
@@ -323,8 +316,7 @@ if args.save_metrics:
                 "SVCDetection": svc_all_seeds,
                 "GMLogLikelihood": gmm_all_seeds,
                 "CSTest": cs_all_seeds,
-                "KSTest": ks_all_seeds,
-                "KSTestExtended": kses_all_seeds,
+                "KSComplement": ks_all_seeds,
                 "ContinuousKLDivergence": contkls_all_seeds,
                 "DiscreteKLDivergence": disckls_all_seeds,
             }

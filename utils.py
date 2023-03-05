@@ -1,8 +1,6 @@
-from datetime import datetime
-from lzma import CHECK_CRC32
 import numpy as np
 import torch
-from rdt.transformers import numerical, categorical, DatetimeTransformer
+from rdt.transformers import numerical, categorical, datetime
 import pandas as pd
 
 # Graph Visualisation
@@ -57,10 +55,8 @@ def support_pre_proc(data_supp, pre_proc_method="GMM"):
     if pre_proc_method == "GMM":
         for index, column in enumerate(continuous_columns):
             # Fit GMM
-            temp_continuous = numerical.BayesGMMTransformer(
-                random_state=gmm_seed
-            )
-            temp_continuous.fit(transformed_dataset, columns=column)
+            temp_continuous = numerical.ClusterBasedNormalizer()
+            temp_continuous.fit(transformed_dataset, column=column)
             continuous_transformers[
                 "continuous_{}".format(column)
             ] = temp_continuous
@@ -110,8 +106,8 @@ def support_pre_proc(data_supp, pre_proc_method="GMM"):
 
     for index, column in enumerate(categorical_columns):
 
-        temp_categorical = categorical.OneHotEncodingTransformer()
-        temp_categorical.fit(transformed_dataset, columns=column)
+        temp_categorical = categorical.OneHotEncoder()
+        temp_categorical.fit(transformed_dataset, column=column)
         categorical_transformers[
             "categorical_{}".format(index)
         ] = temp_categorical
@@ -210,8 +206,8 @@ def mimic_pre_proc(data_supp, pre_proc_method="GMM"):
     for index, column in enumerate(original_datetime_columns):
 
         # Fit datetime transformer - converts to seconds
-        temp_datetime = DatetimeTransformer()
-        temp_datetime.fit(transformed_dataset, columns=column)
+        temp_datetime = datetime.OptimizedTimestampEncoder()
+        temp_datetime.fit(transformed_dataset, column=column)
         datetime_transformers["datetime_{}".format(column)] = temp_datetime
 
         transformed_dataset = temp_datetime.transform(transformed_dataset)
@@ -229,10 +225,8 @@ def mimic_pre_proc(data_supp, pre_proc_method="GMM"):
         for index, column in enumerate(continuous_columns):
 
             # Fit GMM
-            temp_continuous = numerical.BayesGMMTransformer(
-                random_state=gmm_seed
-            )
-            temp_continuous.fit(transformed_dataset, columns=column)
+            temp_continuous = numerical.BayesGMMTransformer()
+            temp_continuous.fit(transformed_dataset, column=column)
             continuous_transformers[
                 "continuous_{}".format(column)
             ] = temp_continuous
@@ -293,8 +287,8 @@ def mimic_pre_proc(data_supp, pre_proc_method="GMM"):
 
     for index, column in enumerate(categorical_columns):
 
-        temp_categorical = categorical.OneHotEncodingTransformer()
-        temp_categorical.fit(transformed_dataset, columns=column)
+        temp_categorical = categorical.OneHotEncoder()
+        temp_categorical.fit(transformed_dataset, column=column)
         categorical_transformers[
             "categorical_{}".format(index)
         ] = temp_categorical
