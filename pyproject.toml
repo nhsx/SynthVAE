@@ -1,13 +1,13 @@
 [tool.poetry]
-name = "synthvae"
-version = "0.3.0"
-description = "Synthetic data generation by a Variational AutoEncoder with Differential Privacy assessed using Synthetic Data Vault metrics"
+name = "nhssynth"
+version = "0.1.0"
+description = "Synthetic data generation pipeline leveraging a Differentially Private Variational Auto Encoder assessed using a variety of metrics"
 authors = ["HarrisonWilde <harrisondwilde@outlook.com>"]
 license = "MIT"
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = ">=3.10,<3.11"
+python = ">=3.8,<3.11"
 torch = "^1.13.1"
 tqdm = "^4.65.0"
 scikit-learn = "^1.2.1"
@@ -20,9 +20,10 @@ matplotlib = "^3.7.1"
 llvmlite = "^0.39.1"
 numba = "^0.56.4"
 pycox = "^0.2.3"
-jupyter = "^1.0.0"
-notebook = "^6.5.2"
+pyyaml = "^6.0"
 
+[tool.poetry.scripts]
+cli = 'nhssynth.cli:run'
 
 [build-system]
 requires = ["poetry-core"]

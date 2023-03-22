@@ -1,173 +1,72 @@
-# Synthetic Data Exploration: Variational Autoencoders
-## NHSX Analytics Unit - PhD Internship Project
+# NHS Synth
 
-### About the Project
+<div align="center">
 
-[![status: experimental](https://github.com/GIScience/badges/raw/master/status/experimental.svg)](https://github.com/GIScience/badges#experimental)
+[![Python](https://img.shields.io/badge/python-3.8%20--%203.10-blue)](https://www.python.org/downloads/release/python-31010/)
+[![MIT license](https://img.shields.io/badge/License-MIT-blue.svg)](https://lbesson.mit-license.org/)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![Imports: isort](https://img.shields.io/badge/%20imports-isort-%231674b1?style=flat)](https://pycqa.github.io/isort/)
 
-This repository holds code for the NHSX Analytics Unit PhD internship project (previously known as Synthetic Data Generation - VAE) contextualising and investigating the potential use of Variational AutoEncoders (VAEs) for synthetic health data generation initially undertaken by Dominic Danks ([last commit to the repository: commit 88a4bdf](https://github.com/nhsx/SynthVAE/commit/88a4bdf613f538af45834f22d38e52312cfe24c5)). This has then been further extended through the work undertaken by David Brind.
+</div>
+
+## About the Project
+
+The project currently consists of a Python package alongside research and investigative materials covering the effectiveness of the package and synthetic data more generally when applied to NHS use cases.
 
 [Project Description - Synthetic Data Exploration: Variational Autoencoders](https://nhsx.github.io/nhsx-internship-projects/synthetic-data-exploration-vae/)
 
+The codebase builds on previous NHSX Analytics Unit PhD internships contextualising and investigating the potential use of Variational Auto Encoders (VAEs) for synthetic data generation. These were undertaken by Dominic Danks ([last commit to the repository: 88a4bdf](https://github.com/nhsx/NHSSynth/commit/88a4bdf613f538af45834f22d38e52312cfe24c5)) and David Brind ([last commit to the repository: ]()).
+
 _**Note:** No data, public or private are shared in this repository._
+
+## Getting Started
 
 ### Project Stucture
 
-- The main code is found in the root of the repository (see Usage below for more information)
-- The accompanying [report](./reports/report.pdf) is also available in the `reports` folder
-- More information about the VAE with Differential Privacy can be found in the [model card](./model_card.md)
-- `scratch_vae_expts.py` is similar to the files you will find within the `investigations` folder. To re-run our results then `scratch_vae_expts.py` is all you require. If you want an easy way to understand our code and work process then using the respective notebooks within the `investigations` folder helps to run through the work.
+- The main package and codebase is found in [`src/nhssynth`]() (see Usage below for more information)
+- Accompanying materials are available in the `docs` folder:
+  - A [report](docs/reports/report.pdf) summarising the previous iteration of this project
+  - A [model card](docs/model_card.md) providing more information about the VAE with Differential Privacy
+- Numerous [exemplar configurations](config) are found in `config`
+- Empty `data` and `experiments` folders are provided; these are the default locations for inputs and outputs when running the project using the provided [`cli`](src/nhssynth/cli/) module
+- Pre-processing notebooks for specific datasets used to assess the approach and other non-core code can be found in [`auxiliary`](auxiliary/)
 
-### Getting Started
+### Installation
 
-#### Installation
+As it stands, we recommend the following steps to reproduce our experiments and fully work with this project:
 
-To get a local copy up and running follow these simple steps.
+1. Clone the repo
+2. Ensure one of the required versions of Python is installed
+3. Install [`poetry`](https://python-poetry.org/docs/#installation)
+4. Instantiate a virtual environment, e.g. via `python -m venv nhssynth`
+3. Activate the virtual environment, e.g. via `source nhssynth/bin/activate`
+4. Install project dependencies with `poetry install` (optionally install `jupyter` and `notebook` to work with some of the preprocessing files in [`auxiliary`](auxiliary/))
+5. Interact with the package in one of two ways:
+    - Via the [`cli`](src/nhssynth/cli/) module using `poetry run cli`
+    - Through building the package with `poetry build` and using it in an existing project (`import nhssynth`). However, if you intend on doing the latter it may be preferable to instead follow the second, simpler setup below.
 
-Clone the repo:
+For more standard usage of the package:
 
-`git clone https://github.com/nhsx/SynthVAE.git`
-
-Install the required version of Python (3.10) and follow the steps below to run the project:
-1. Install [`poetry`](https://python-poetry.org/docs/)
-2. Instantiate a virtual environment to install the package in: `python -m venv synthvae`
-3. Activate the virtual environment: `source synthvae/bin/activate`
-4. Install dependencies: `poetry install`
+1. Run `pip install nhssynth` within a supported Python installation
+2. Use the modules exported by the package as you would any other. _Note that in this setup you will have to work more closely with the configuration and code to ensure you are handling inputs and outputs for each module appropriately. The cli handles a lot of this complexity, and interacting with the modules directly is considered advanced usage._
 
 ### Usage
 
-There are three main sections of interest (2 folders and a collation of python files): `Hyperparameter_Tuning`, `Investigations` and files containing `sdv_baselines.py`, `scratch_vae_expts.py` and `plot.py`. `Hyperparameter_Tuning` and `Investigations` can use either SUPPORT or internal MIMIC datasets. `sdv_baselines.py`, `scratch_vae_expts.py` and `plot.py` all use SUPPORT only. If you want to run these quickly then below outlines command line implementation.
-
-#### SDV Baselines
-
-To reproduce the experiments contained in the report involving the [SDV](https://github.com/sdv-dev/SDV) baseline models (e.g. CopulaGAN, CTGAN, GaussianCopula and TVAE), run `sdv_baselines.py`. The parameters can be found using the `--help` flag:
-
-```
-python sdv_baselines.py --help
-
-usage: sdv_baselines.py [-h] [--n_runs N_RUNS] [--model_type {CopulaGAN,CTGAN,GaussianCopula,TVAE}] [--pre_proc_method {GMM, standard}] [--save_metrics {True, False}] [--gower {True, False}]
-
-optional arguments:
-  -h, --help            show this help message and exit
-  --n_runs N_RUNS       set number of runs/seeds
-  --model_type          {CopulaGAN,CTGAN,GaussianCopula,TVAE}
-                        set model for baseline experiment
-  --pre_proc_method     {GMM, standard}
-                        set the pre-processing method
-  --save_metrics        {True, False}        
-                        set if you wish to save the metrics for this model run - saves default as Metric Breakdown.csv unless changed
-  --gower               {True, False}
-                        calculate the average gower distance
-```
-
-#### Scratch VAE + Differential Privacy
-
-To reproduce the experiments contained in the report involving the VAE with/without differential privacy, run `scratch_vae_expts.py`. The parameters can be found using the `--help` flag:
-
-```
-python scratch_vae_expts.py --help
-
-usage: scratch_vae_expts.py [-h] [--n_runs N_RUNS] [--diff_priv DIFF_PRIV] [--n_epochs N_EPOCHS] [--save_file {True, False}] [--save_visualisation {True, False}] [--save_metrics {True, False}] [--pre_proc_method {GMM, standard}] [--gower {True, False}]
-
-optional arguments:
-  -h, --help            show this help message and exit
-  --n_runs N_RUNS       set number of runs/seeds
-  --diff_priv DIFF_PRIV
-                        run VAE with differential privacy
-  --n_epochs N_EPOCHS   number of epochs to train for (early stopping is used by default)
-  --save_file           {True, False}
-                        save trained model's state_dict as 'trained_SynthVAE.pt'
-  --save_visualisation  {True, False}
-                        save the loss & variable plots
-  --save_metrics        {True, False}
-                        calculate and save the metrics of the training set
-  --pre_proc_method     {GMM, standard}
-                        set the pre-processing method
-  --gower               {True, False}
-                        calculate the average gower distance
-```
-
-Code to load a saved model and generate correlation heatmaps is contained within `plot.py`.
-The file containing the save model's `state_dict` should be provided via a command line argument:
-
-```
-python plot.py --help
-
-usage: plot.py [-h] [--save_file SAVEFILE] [--pre_proc_method {GMM, standard}]
-
-optional arguments:
-  -h, --help           show this help message and exit
-  --save_file SAVEFILE  load trained model's state_dict from file
-  --pre_proc_method    {GMM, standard}
-                       specify the pre-processing method that you wish to employ
-```
-
-#### Outputs Of The Model
-
-There are a selection of plots & metrics the model can output. These are given by parse arguments `--save_metrics`, `--save_visualisation` or functions `plot_elbo`, `plot_likelihood_breakdown`, `plot_variable_distributions` & `distribution_metrics` in the notebooks provided. These outputs give you a graph displaying the ELBO breakdown during training, the breakdown of categorical & numerical likelihoods, a comparison of variable distributions between original data & synthetic data for each variable as well as a csv file displaying all the distributional metrics from SDV.
-
-<figure>
-  <img src="docs/ELBO_Breakdown_SynthVAE_GMM.png" width="432" height="288">
-  <figcaption><b>ELBO Breakdown</b></figcaption>
-</figure>
-
-
-
-<figure>
-  <img src="docs/Reconstruction_Breakdown_SynthVAE_GMM.png" width="432" height="288">
-  <figcaption><b>Likelihood Breakdown</b></figcaption>
-</figure>
-
-
-
-<figure>
-  <img src="docs/Variable duration SynthVAE_GMM_run_1.png" width="432" height="288">
-  <figcaption><b>Example Continuous Variable Comparison</b></figcaption>
-</figure>
-
-
-
-
-<figure>
-  <img src="docs/Variable event SynthVAE_GMM_run_1.png" width="432" height="288">
-  <figcaption><b>Example Discrete Variable Comparison</b></figcaption>
-</figure>
-
-
-
-
-The distributional metrics produces a csv following this order - depending on number of runs:
-
-| SVCDetection | GMLogLikelihood | CSTest | KSTest | KSTestExtended | ContinuousKLDivergence | DiscreteKLDivergence |
-| --- | --- | --- | --- | --- | --- | --- |
-| 0.32 | -520.01 | 0.91 | 0.85 | 0.87 | 0.91 | 0.97 |
-| 0.31 | -523.21 | 0.90 | 0.86 | 0.88 | 0.92 | 0.99 |
-
-For information on these metrics then look in the [report](./reports/report.pdf) as well as the [SDV single table metrics documentation](https://sdv.dev/SDV/user_guides/evaluation/single_table_metrics.html)
-
-#### Note On Reproducibility Of Results
-
-In order to get reproducible results we have added in the `random_state` argument to the RDT transformers in order to set the sklearn's `random_state` argument. This results in the GMM pre-processing method producing the same transformation each run for the same dataset. We also set the PyTorch seed at the top of each file using the `set_seed` function found in utils. If you do not wish to nullify the randomness in training then remove this `set_seed` line at the start of the files.
-
-#### Dataset
-
-Experiments are run against the [Study to Understand Prognoses Preferences Outcomes and Risks of Treatment (SUPPORT) dataset](https://biostat.app.vumc.org/wiki/Main/SupportDesc) accessed via the [pycox](https://github.com/havakv/pycox) python library. Further experiments to test scalability of model were also performed on a pre-processed single table extracted from [MIMIC-III dataset](https://physionet.org/content/mimiciii/1.4/). The pre-processing to access this single table can be found within the [SynthVAE files](./MIMIC_preproc.ipynb).
-
-Your dataset should follow a simple structure as shown in the [example table](./example_input.csv) - continuous, categorical & datetime variables with no missingness or NaN values. Number of columns can be as many as required along with as many rows as required.
+This package comprises a pipeline that is runnable via `poetry run cli pipeline <args>` or `poetry run cli config <config filepath>`. You can run the modules that make up this pipeline independently via `poetry run cli <module name>`. To see the modules that are available and their corresponding arguments and function, run `poetry run cli --help` / `poetry run cli <module name> --help`.
 
 ### Roadmap
 
-See the [open issues](https://github.com/nhsx/SynthVAE/issues) for a list of proposed features (and known issues).
+See the [open issues](https://github.com/nhsx/NHSSynth/issues) for a list of proposed features (and known issues).
 
 ### Contributing
 
 Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
 
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+1. Fork the project
+2. Create your branch (`git checkout -b <yourusername>/<featurename>`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin <yourusername>/<featurename>`)
+5. Open a PR and we will try to get it merged!
 
 _See [CONTRIBUTING.md](./CONTRIBUTING.md) for detailed guidance._
 
